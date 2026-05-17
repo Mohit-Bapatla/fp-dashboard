@@ -1,3 +1,4 @@
+import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
@@ -28,7 +29,10 @@ export function DashboardTopNav({ role, navItems }: DashboardTopNavProps) {
             {meta.eyebrow}
           </p>
         </div>
-        <RoleBadge role={role} />
+        <div className="flex items-center gap-3">
+          <RoleBadge role={role} />
+          <UserButton />
+        </div>
       </div>
 
       <nav

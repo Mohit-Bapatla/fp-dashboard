@@ -56,6 +56,7 @@ export default function Home() {
                 className="group flex min-h-36 flex-col justify-between rounded-lg border border-border bg-muted/50 p-5 transition hover:border-primary hover:bg-muted"
                 href={dashboard.href}
                 key={dashboard.href}
+                prefetch={false}
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-md bg-background text-primary">
                   <Icon aria-hidden="true" className="h-5 w-5" />
