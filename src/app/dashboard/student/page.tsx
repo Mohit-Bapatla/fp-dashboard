@@ -14,6 +14,8 @@ import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import { roleNavigation } from "@/components/dashboard/role-config";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { StudentResumeManager } from "@/components/student/student-resume-manager";
+import { prisma } from "@/lib/db/prisma";
 import { getStudentProfileCompletion } from "@/lib/student/profile-completion";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
 
@@ -27,6 +29,16 @@ export default async function StudentDashboardPage() {
   const user = await getCurrentStudentProfile(userId);
   const profile = user.studentProfile;
   const completion = getStudentProfileCompletion(profile);
+  const resume = profile
+    ? await prisma.resume.findFirst({
+        where: {
+          studentProfileId: profile.id,
+        },
+        orderBy: {
+          updatedAt: "desc",
+        },
+      })
+    : null;
 
   return (
     <DashboardShell navItems={roleNavigation.student} role="student">
@@ -74,9 +86,13 @@ export default async function StudentDashboardPage() {
             value="0"
           />
           <StatCard
-            helper="Resume upload is intentionally out of scope for this stage."
+            helper={
+              resume
+                ? "Your private resume file is uploaded."
+                : "Upload a PDF or DOCX resume when your profile is ready."
+            }
             label="Resume status"
-            value="Later"
+            value={resume ? "Ready" : "Missing"}
           />
         </section>
 
@@ -169,6 +185,18 @@ export default async function StudentDashboardPage() {
         )}
 
         <section className="grid gap-4 lg:grid-cols-2">
+          <StudentResumeManager
+            hasProfile={Boolean(profile)}
+            resume={
+              resume
+                ? {
+                    id: resume.id,
+                    fileName: resume.fileName,
+                    updatedAt: resume.updatedAt,
+                  }
+                : null
+            }
+          />
           <article className="rounded-lg border border-dashed border-border bg-muted/35 p-6">
             <FileClock aria-hidden="true" className="h-5 w-5 text-primary" />
             <h2 className="mt-4 text-base font-semibold text-foreground">
