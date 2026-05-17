@@ -1,0 +1,16 @@
+-- AlterTable
+ALTER TABLE "StudentProfile" ADD COLUMN     "availability" TEXT[] DEFAULT ARRAY[]::TEXT[],
+ADD COLUMN     "careerGoals" TEXT,
+ADD COLUMN     "city" TEXT,
+ADD COLUMN     "country" TEXT,
+ADD COLUMN     "experienceLevel" TEXT,
+ADD COLUMN     "githubUrl" TEXT,
+ADD COLUMN     "gradeYear" TEXT,
+ADD COLUMN     "interestedSpecialties" TEXT[] DEFAULT ARRAY[]::TEXT[],
+ADD COLUMN     "languages" TEXT[] DEFAULT ARRAY[]::TEXT[],
+ADD COLUMN     "linkedinUrl" TEXT,
+ADD COLUMN     "locationPreference" TEXT,
+ADD COLUMN     "opportunityTypes" "OpportunityType"[] DEFAULT ARRAY[]::"OpportunityType"[],
+ADD COLUMN     "portfolioUrl" TEXT,
+ADD COLUMN     "remotePreference" TEXT,
+ADD COLUMN     "state" TEXT;

@@ -112,8 +112,23 @@ model StudentProfile {
   userId              String             @unique
   user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   school              String?
+  gradeYear           String?
   major               String?
   graduationYear      Int?
+  city                String?
+  state               String?
+  country             String?
+  locationPreference  String?
+  remotePreference    String?
+  interestedSpecialties String[]         @default([])
+  opportunityTypes    OpportunityType[]  @default([])
+  availability        String[]           @default([])
+  languages           String[]           @default([])
+  careerGoals         String?
+  experienceLevel     String?
+  linkedinUrl         String?
+  githubUrl           String?
+  portfolioUrl        String?
   bio                 String?
   resumes             Resume[]
   applications        Application[]
