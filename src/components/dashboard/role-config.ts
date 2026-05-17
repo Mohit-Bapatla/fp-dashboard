@@ -84,7 +84,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       active: true,
     },
     { label: "Profile", href: "#", icon: GraduationCap },
-    { label: "Opportunities", href: "#", icon: BriefcaseBusiness },
+    {
+      label: "Opportunities",
+      href: "/dashboard/student/opportunities",
+      icon: BriefcaseBusiness,
+    },
     { label: "Applications", href: "#", icon: ClipboardCheck },
     { label: "Placement Requests", href: "#", icon: FileClock },
     { label: "Saved", href: "#", icon: Bookmark },
