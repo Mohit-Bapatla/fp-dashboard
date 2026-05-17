@@ -129,7 +129,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
     { label: "Users", href: "#", icon: Users },
     { label: "Students", href: "#", icon: GraduationCap },
     { label: "Partners", href: "#", icon: Building2 },
-    { label: "Opportunities", href: "#", icon: BriefcaseBusiness },
+    {
+      label: "Opportunities",
+      href: "/dashboard/admin/opportunities",
+      icon: BriefcaseBusiness,
+    },
     { label: "Applications", href: "#", icon: ClipboardCheck },
     { label: "Placement Requests", href: "#", icon: Handshake },
     { label: "Audit Logs", href: "#", icon: LockKeyhole },

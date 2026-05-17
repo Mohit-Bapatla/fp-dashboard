@@ -160,10 +160,15 @@ model PartnerOrganization {
   name              String             @unique
   status            PartnerStatus      @default(NOT_CONTACTED)
   website           String?
+  type              String?
   description       String?
+  location          String?
   city              String?
   state             String?
+  country           String?
   healthcareFocus   String?
+  specialtyAreas    String[]           @default([])
+  contactEmail      String?
   members           PartnerMember[]
   opportunities     Opportunity[]
   placementRequests PlacementRequest[]
@@ -199,9 +204,16 @@ model Opportunity {
   title             String
   description       String?
   type              OpportunityType
+  specialty         String?
   status            OpportunityStatus  @default(DRAFT)
   location          String?
+  remoteType        String?
+  paidStatus        String?
+  deadline          DateTime?
   capacity          Int?
+  eligibilityRequirements String?
+  requiredDocuments String[]           @default([])
+  applicationInstructions String?
   startsAt          DateTime?
   endsAt            DateTime?
   publishedAt       DateTime?
