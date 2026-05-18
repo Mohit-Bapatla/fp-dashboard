@@ -148,6 +148,7 @@ model Resume {
   fileUrl          String?
   parseStatus      ResumeParseStatus @default(NOT_STARTED)
   parsedText       String?
+  applications     Application[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
@@ -233,8 +234,10 @@ model Application {
   id               String            @id @default(cuid())
   studentProfileId String
   opportunityId    String
+  resumeId         String?
   studentProfile   StudentProfile    @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
   opportunity      Opportunity       @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  resume           Resume?           @relation(fields: [resumeId], references: [id], onDelete: SetNull)
   status           ApplicationStatus @default(DRAFT)
   statement        String?
   submittedAt      DateTime?
@@ -243,6 +246,7 @@ model Application {
   updatedAt        DateTime          @updatedAt
 
   @@unique([studentProfileId, opportunityId])
+  @@index([resumeId])
   @@index([status])
   @@index([createdAt])
 }

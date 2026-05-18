@@ -2,14 +2,17 @@ import {
   ArrowLeft,
   BriefcaseBusiness,
   CalendarDays,
+  CheckCircle2,
   FileText,
   MapPin,
+  UserRound,
 } from "lucide-react";
 import Link from "next/link";
 
 import type { OpportunityType } from "@/generated/prisma/enums";
 
 export type StudentOpportunityDetailData = {
+  id: string;
   title: string;
   description: string | null;
   type: OpportunityType;
@@ -30,6 +33,21 @@ export type StudentOpportunityDetailData = {
     description: string | null;
   };
 };
+
+export type StudentOpportunityApplyState =
+  | {
+      kind: "alreadyApplied";
+      submittedAt: Date | null;
+    }
+  | {
+      kind: "canApply";
+    }
+  | {
+      kind: "needsProfile";
+    }
+  | {
+      kind: "needsResume";
+    };
 
 function formatEnumLabel(value: string) {
   return value
@@ -54,8 +72,10 @@ function fieldValue(value: string | null) {
 }
 
 export function StudentOpportunityDetail({
+  applyState,
   opportunity,
 }: {
+  applyState: StudentOpportunityApplyState;
   opportunity: StudentOpportunityDetailData;
 }) {
   return (
@@ -86,13 +106,10 @@ export function StudentOpportunityDetail({
               {opportunity.organization.name}
             </p>
           </div>
-          <button
-            className="inline-flex min-h-10 shrink-0 cursor-not-allowed items-center justify-center rounded-md border border-border bg-muted px-4 text-sm font-medium text-muted-foreground"
-            disabled
-            type="button"
-          >
-            Applications coming soon
-          </button>
+          <ApplyCallToAction
+            opportunityId={opportunity.id}
+            state={applyState}
+          />
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -196,6 +213,63 @@ export function StudentOpportunityDetail({
         </aside>
       </section>
     </div>
+  );
+}
+
+function ApplyCallToAction({
+  opportunityId,
+  state,
+}: {
+  opportunityId: string;
+  state: StudentOpportunityApplyState;
+}) {
+  if (state.kind === "alreadyApplied") {
+    return (
+      <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 font-semibold text-foreground">
+          <CheckCircle2 aria-hidden="true" className="h-4 w-4 text-primary" />
+          Already applied
+        </div>
+        <p className="mt-2">
+          {state.submittedAt
+            ? `Submitted ${formatDate(state.submittedAt)}.`
+            : "Your application has been submitted."}
+        </p>
+      </div>
+    );
+  }
+
+  if (state.kind === "needsProfile") {
+    return (
+      <Link
+        className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+        href="/dashboard/student/onboarding"
+      >
+        <UserRound aria-hidden="true" className="h-4 w-4" />
+        Complete profile to apply
+      </Link>
+    );
+  }
+
+  if (state.kind === "needsResume") {
+    return (
+      <Link
+        className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+        href="/dashboard/student"
+      >
+        <FileText aria-hidden="true" className="h-4 w-4" />
+        Upload resume to apply
+      </Link>
+    );
+  }
+
+  return (
+    <Link
+      className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+      href={`/dashboard/student/opportunities/${opportunityId}/apply`}
+    >
+      Apply now
+    </Link>
   );
 }
 
