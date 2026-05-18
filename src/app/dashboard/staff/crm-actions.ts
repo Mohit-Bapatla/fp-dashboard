@@ -10,6 +10,7 @@ import {
   getOptionalDate,
   getSafeStaffRedirect,
   getString,
+  isOutreachTaskPriority,
   isOutreachTaskStatus,
   isPartnerStatus,
 } from "@/lib/staff/crm-validation";
@@ -19,6 +20,7 @@ function revalidateStaffCrmPaths() {
   revalidatePath("/dashboard/staff/partners");
   revalidatePath("/dashboard/staff/contacts");
   revalidatePath("/dashboard/staff/outreach");
+  revalidatePath("/dashboard/staff/tasks");
 }
 
 export async function updatePartnerOutreach(formData: FormData) {
@@ -114,6 +116,10 @@ export async function saveOutreachTask(formData: FormData) {
   const taskId = getString(formData, "taskId");
   const title = getString(formData, "title");
   const status = getString(formData, "status");
+  const priorityValue = getString(formData, "priority");
+  const priority = isOutreachTaskPriority(priorityValue)
+    ? priorityValue
+    : "NORMAL";
   const redirectTo = getSafeStaffRedirect(
     formData,
     "/dashboard/staff/outreach",
@@ -191,6 +197,7 @@ export async function saveOutreachTask(formData: FormData) {
     notes: getNullableString(formData, "notes"),
     partnerOrganizationId: effectiveOrganizationId,
     placementRequestId: placementRequest?.id ?? null,
+    priority,
     status,
     title,
   };

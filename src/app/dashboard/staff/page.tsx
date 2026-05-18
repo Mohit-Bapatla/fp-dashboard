@@ -15,7 +15,16 @@ import { assertPlacementQueueAccess } from "@/lib/placement-requests/authorizati
 import { getStaffNavItems } from "@/lib/staff/navigation";
 
 export default async function StaffDashboardPage() {
-  await assertPlacementQueueAccess();
+  const { userId } = await assertPlacementQueueAccess();
+
+  const currentUser = await prisma.user.findUnique({
+    where: {
+      clerkUserId: userId,
+    },
+    select: {
+      id: true,
+    },
+  });
 
   const [
     totalRequests,
@@ -24,6 +33,8 @@ export default async function StaffDashboardPage() {
     contactCount,
     dueContactFollowUps,
     dueOutreachTasks,
+    myOpenTasks,
+    blockedTasks,
   ] = await Promise.all([
     prisma.placementRequest.count(),
     prisma.placementRequest.count({
@@ -50,6 +61,21 @@ export default async function StaffDashboardPage() {
         status: {
           not: "COMPLETED",
         },
+      },
+    }),
+    currentUser
+      ? prisma.outreachTask.count({
+          where: {
+            assignedToId: currentUser.id,
+            status: {
+              not: "COMPLETED",
+            },
+          },
+        })
+      : Promise.resolve(0),
+    prisma.outreachTask.count({
+      where: {
+        status: "BLOCKED",
       },
     }),
   ]);
@@ -99,9 +125,19 @@ export default async function StaffDashboardPage() {
             value={partnerCount.toString()}
           />
           <StatCard
+            helper="Open tasks assigned to you."
+            label="My open tasks"
+            value={myOpenTasks.toString()}
+          />
+          <StatCard
             helper={`${dueContactFollowUps} contact follow-ups and ${dueOutreachTasks} tasks are due.`}
             label="Due outreach"
             value={(dueContactFollowUps + dueOutreachTasks).toString()}
+          />
+          <StatCard
+            helper="Tasks currently blocked across the staff workspace."
+            label="Blocked tasks"
+            value={blockedTasks.toString()}
           />
         </section>
 
@@ -123,6 +159,12 @@ export default async function StaffDashboardPage() {
             href="/dashboard/staff/outreach"
             icon={ListChecks}
             title="Outreach tasks"
+          />
+          <StaffPanel
+            description="Manage assigned tasks, priority queues, overdue work, blocked items, and completed follow-ups."
+            href="/dashboard/staff/tasks"
+            icon={ListChecks}
+            title="Task workspace"
           />
           <StaffPanel
             description="Assign owners, update status, set priority, and maintain internal notes for student placement requests."

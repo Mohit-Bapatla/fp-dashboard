@@ -135,6 +135,7 @@ export default async function StaffOutreachPage({
         partnerOrganization: { select: { name: true } },
         placementRequestId: true,
         placementRequest: { select: { title: true } },
+        priority: true,
         status: true,
         title: true,
       },

@@ -330,6 +330,7 @@ model OutreachTask {
   description           String?
   notes                 String?
   status                OutreachTaskStatus  @default(NOT_STARTED)
+  priority              String              @default("NORMAL")
   dueAt                 DateTime?
   completedAt           DateTime?
   createdAt             DateTime            @default(now())
@@ -341,6 +342,7 @@ model OutreachTask {
   @@index([assignedToId])
   @@index([createdById])
   @@index([status])
+  @@index([priority])
   @@index([status, dueAt])
   @@index([dueAt])
 }

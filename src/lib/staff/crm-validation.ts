@@ -23,6 +23,15 @@ export const outreachTaskStatusOptions: OutreachTaskStatus[] = [
   "BLOCKED",
 ];
 
+export const outreachTaskPriorityOptions = [
+  "LOW",
+  "NORMAL",
+  "HIGH",
+  "URGENT",
+] as const;
+
+export type OutreachTaskPriority = (typeof outreachTaskPriorityOptions)[number];
+
 export function formatEnumLabel(value: string) {
   return value
     .toLowerCase()
@@ -69,6 +78,12 @@ export function isOutreachTaskStatus(
   value: string,
 ): value is OutreachTaskStatus {
   return outreachTaskStatusOptions.includes(value as OutreachTaskStatus);
+}
+
+export function isOutreachTaskPriority(
+  value: string,
+): value is OutreachTaskPriority {
+  return outreachTaskPriorityOptions.includes(value as OutreachTaskPriority);
 }
 
 export function getSafeStaffRedirect(formData: FormData, fallback: string) {

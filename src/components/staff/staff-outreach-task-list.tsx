@@ -2,11 +2,16 @@ import { CalendarDays, ListChecks, Search } from "lucide-react";
 
 import { saveOutreachTask } from "@/app/dashboard/staff/crm-actions";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { OutreachTaskStatusBadge } from "@/components/staff/crm-badges";
+import {
+  OutreachTaskPriorityBadge,
+  OutreachTaskStatusBadge,
+} from "@/components/staff/crm-badges";
 import type { OutreachTaskStatus } from "@/generated/prisma/enums";
 import {
   formatDateInput,
   formatEnumLabel,
+  type OutreachTaskPriority,
+  outreachTaskPriorityOptions,
   outreachTaskStatusOptions,
 } from "@/lib/staff/crm-validation";
 
@@ -65,11 +70,14 @@ export type StaffOutreachTaskItem = {
   placementRequest: {
     title: string;
   } | null;
+  priority: OutreachTaskPriority;
   status: OutreachTaskStatus;
   title: string;
 };
 
 type StaffOutreachTaskListProps = {
+  createDescription?: string;
+  createTitle?: string;
   contacts: StaffTaskContactOption[];
   organizations: StaffTaskOrganizationOption[];
   placementRequests: StaffPlacementRequestOption[];
@@ -144,6 +152,20 @@ function TaskForm({
           {outreachTaskStatusOptions.map((status) => (
             <option key={status} value={status}>
               {formatEnumLabel(status)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="text-sm font-medium text-foreground">
+        Priority
+        <select
+          className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground"
+          defaultValue={task?.priority ?? "NORMAL"}
+          name="priority"
+        >
+          {outreachTaskPriorityOptions.map((priority) => (
+            <option key={priority} value={priority}>
+              {priority}
             </option>
           ))}
         </select>
@@ -248,16 +270,20 @@ function TaskForm({
 export function NewOutreachTaskForm(
   props: Omit<StaffOutreachTaskListProps, "tasks">,
 ) {
+  const {
+    createDescription = "Track a follow-up, outreach step, or placement-related task.",
+    createTitle = "Create outreach task",
+    ...formProps
+  } = props;
+
   return (
     <section className="rounded-lg border border-border bg-background p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-foreground">
-        Create outreach task
-      </h2>
+      <h2 className="text-lg font-semibold text-foreground">{createTitle}</h2>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
-        Track a follow-up, outreach step, or placement-related task.
+        {createDescription}
       </p>
       <div className="mt-5">
-        <TaskForm {...props} />
+        <TaskForm {...formProps} />
       </div>
     </section>
   );
@@ -292,6 +318,7 @@ export function StaffOutreachTaskList({
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <OutreachTaskStatusBadge status={task.status} />
+                <OutreachTaskPriorityBadge priority={task.priority} />
                 <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
                   <CalendarDays aria-hidden="true" className="h-3.5 w-3.5" />
                   Due {formatDate(task.dueAt)}
