@@ -58,7 +58,7 @@ function TextField({
 }: TextFieldProps) {
   const error = errors[name];
   const className = cn(
-    "mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-primary",
+    "mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-primary",
     error && "border-red-400 focus:border-red-500",
   );
 
@@ -106,9 +106,48 @@ export function StudentOnboardingForm({
   return (
     <form
       action={formAction}
-      className="rounded-lg border border-border bg-background shadow-sm"
+      className="rounded-xl border border-border bg-background shadow-sm"
     >
       <div className="border-b border-border p-6">
+        <nav aria-label="Form progress" className="mb-5">
+          <ol className="flex items-center">
+            {steps.map((_s, i) => (
+              <li
+                className={cn(
+                  "flex items-center",
+                  i < steps.length - 1 && "flex-1",
+                )}
+                key={i}
+              >
+                <div
+                  aria-current={i === step ? "step" : undefined}
+                  className={cn(
+                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-colors",
+                    i < step
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : i === step
+                        ? "border-primary bg-background text-primary"
+                        : "border-border bg-background text-muted-foreground",
+                  )}
+                >
+                  {i < step ? (
+                    <Check aria-hidden="true" className="h-3 w-3" />
+                  ) : (
+                    i + 1
+                  )}
+                </div>
+                {i < steps.length - 1 && (
+                  <div
+                    className={cn(
+                      "mx-2 h-px flex-1 transition-colors",
+                      i < step ? "bg-primary" : "bg-border",
+                    )}
+                  />
+                )}
+              </li>
+            ))}
+          </ol>
+        </nav>
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
@@ -122,7 +161,7 @@ export function StudentOnboardingForm({
             </p>
           </div>
           <div className="min-w-36 text-sm text-muted-foreground">
-            <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div className="h-2.5 overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-primary transition-all"
                 style={{ width: `${progress}%` }}
@@ -233,7 +272,7 @@ export function StudentOnboardingForm({
             <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {opportunityTypeOptions.map((type) => (
                 <label
-                  className="flex min-h-11 items-center gap-3 rounded-md border border-border bg-background px-3 text-sm text-foreground"
+                  className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-background px-3 text-sm text-foreground transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/[0.04]"
                   key={type}
                 >
                   <input
@@ -330,7 +369,7 @@ export function StudentOnboardingForm({
 
       <div className="flex flex-col justify-between gap-3 border-t border-border p-6 sm:flex-row">
         <button
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={step === 0 || isPending}
           onClick={() => setStep((current) => Math.max(current - 1, 0))}
           type="button"
@@ -341,7 +380,7 @@ export function StudentOnboardingForm({
 
         {step < steps.length - 1 ? (
           <button
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isPending}
             onClick={() =>
               setStep((current) => Math.min(current + 1, steps.length - 1))
@@ -353,7 +392,7 @@ export function StudentOnboardingForm({
           </button>
         ) : (
           <button
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isPending}
             type="submit"
           >
