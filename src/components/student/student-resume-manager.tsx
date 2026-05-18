@@ -3,6 +3,8 @@
 import { Download, FileText, Trash2, Upload } from "lucide-react";
 import { useActionState, useEffect } from "react";
 
+import { cn } from "@/lib/utils";
+
 import {
   createStudentResumeSignedUrl,
   deleteStudentResume,
@@ -54,7 +56,7 @@ export function StudentResumeManager({
   }, [downloadState.signedUrl]);
 
   return (
-    <article className="rounded-xl border border-border bg-background p-6 shadow-sm">
+    <article className="rounded-xl border border-border bg-background p-6 shadow-sm" id="resume">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
           <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-muted text-primary">
@@ -62,17 +64,25 @@ export function StudentResumeManager({
           </div>
           <h2 className="mt-5 text-xl font-semibold text-foreground">Resume</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Upload one PDF or DOCX resume. Your file is stored privately and
-            only temporary download links are generated.
+            A resume is required to apply to most opportunities. Upload one PDF
+            or DOCX file — stored privately, accessible only via temporary
+            download links.
           </p>
         </div>
-        <div className="rounded-full border border-border bg-muted/50 px-3 py-1 text-sm font-medium text-muted-foreground">
-          {resume ? "Uploaded" : "Not uploaded"}
+        <div
+          className={cn(
+            "rounded-full border px-3 py-1 text-xs font-medium",
+            resume
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border-border bg-muted/50 text-muted-foreground",
+          )}
+        >
+          {resume ? "Resume on file" : "No resume"}
         </div>
       </div>
 
       {!hasProfile ? (
-        <div className="mt-6 rounded-lg border border-dashed border-border bg-muted/35 p-4 text-sm leading-6 text-muted-foreground">
+        <div className="mt-6 rounded-xl border border-dashed border-border bg-muted/35 p-4 text-sm leading-6 text-muted-foreground">
           Complete student onboarding before uploading a resume.
         </div>
       ) : (
@@ -89,7 +99,7 @@ export function StudentResumeManager({
                 <form action={downloadAction}>
                   <input name="resumeId" type="hidden" value={resume.id} />
                   <button
-                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={downloadPending}
                     type="submit"
                   >
@@ -100,7 +110,7 @@ export function StudentResumeManager({
                 <form action={deleteAction}>
                   <input name="resumeId" type="hidden" value={resume.id} />
                   <button
-                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-red-200 px-4 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-red-200 px-4 text-sm font-medium text-red-700 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={deletePending}
                     type="submit"
                   >
@@ -117,14 +127,14 @@ export function StudentResumeManager({
               {resume ? "Replace resume" : "Upload resume"}
               <input
                 accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                className="mt-2 block w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-foreground"
+                className="mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm file:mr-4 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-foreground"
                 name="resume"
                 required
                 type="file"
               />
             </label>
             <button
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={uploadPending}
               type="submit"
             >
@@ -136,14 +146,14 @@ export function StudentResumeManager({
       )}
 
       {uploadState.error || deleteState.error || downloadState.error ? (
-        <p className="mt-4 text-sm text-red-600">
+        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {uploadState.error ?? deleteState.error ?? downloadState.error}
-        </p>
+        </div>
       ) : null}
       {uploadState.success || deleteState.success ? (
-        <p className="mt-4 text-sm text-primary">
+        <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
           {uploadState.success ?? deleteState.success}
-        </p>
+        </div>
       ) : null}
     </article>
   );
