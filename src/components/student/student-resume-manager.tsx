@@ -54,10 +54,10 @@ export function StudentResumeManager({
   }, [downloadState.signedUrl]);
 
   return (
-    <article className="rounded-lg border border-border bg-background p-6 shadow-sm">
+    <article className="rounded-xl border border-border bg-background p-6 shadow-sm">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-muted text-primary">
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-muted text-primary">
             <FileText aria-hidden="true" className="h-5 w-5" />
           </div>
           <h2 className="mt-5 text-xl font-semibold text-foreground">Resume</h2>
