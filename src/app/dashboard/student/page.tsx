@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import {
   ArrowRight,
   ClipboardCheck,
+  FileClock,
   GraduationCap,
   MapPin,
   Target,
@@ -28,7 +29,12 @@ export default async function StudentDashboardPage() {
   const user = await getCurrentStudentProfile(userId);
   const profile = user.studentProfile;
   const completion = getStudentProfileCompletion(profile);
-  const [resume, applicationCount, activeApplicationCount] = profile
+  const [
+    resume,
+    applicationCount,
+    activeApplicationCount,
+    placementRequestCount,
+  ] = profile
     ? await Promise.all([
         prisma.resume.findFirst({
           where: {
@@ -51,8 +57,13 @@ export default async function StudentDashboardPage() {
             },
           },
         }),
+        prisma.placementRequest.count({
+          where: {
+            studentProfileId: profile.id,
+          },
+        }),
       ])
-    : [null, 0, 0];
+    : [null, 0, 0, 0];
 
   return (
     <DashboardShell
@@ -98,9 +109,9 @@ export default async function StudentDashboardPage() {
             value={applicationCount.toString()}
           />
           <StatCard
-            helper="Placement requests will appear here in a later workflow stage."
+            helper="Personalized requests submitted to the placement team."
             label="Placement requests"
-            value="0"
+            value={placementRequestCount.toString()}
           />
           <StatCard
             helper={
@@ -231,6 +242,23 @@ export default async function StudentDashboardPage() {
               href="/dashboard/student/applications"
             >
               View applications
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+          </article>
+          <article className="rounded-lg border border-border bg-background p-6 shadow-sm">
+            <FileClock aria-hidden="true" className="h-5 w-5 text-primary" />
+            <h2 className="mt-4 text-base font-semibold text-foreground">
+              Can&apos;t find an opportunity?
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Submit a personalized placement request when the opportunity board
+              does not have the right fit for your goals or availability.
+            </p>
+            <Link
+              className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+              href="/dashboard/student/placement-requests"
+            >
+              View placement requests
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </Link>
           </article>

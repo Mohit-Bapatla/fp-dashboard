@@ -94,6 +94,7 @@ model User {
   studentProfile             StudentProfile?
   partnerMemberships         PartnerMember[]
   placementRequestsRequested PlacementRequest[] @relation("PlacementRequestRequester")
+  placementRequestsAssigned  PlacementRequest[] @relation("PlacementRequestAssignee")
   outreachTasksAssigned      OutreachTask[]      @relation("OutreachTaskAssignee")
   outreachTasksCreated       OutreachTask[]      @relation("OutreachTaskCreator")
   notifications              Notification[]
@@ -257,13 +258,22 @@ model PlacementRequest {
   opportunityId         String?
   partnerOrganizationId String?
   requestedById         String?
+  assignedStaffId       String?
   studentProfile        StudentProfile         @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
   opportunity           Opportunity?           @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
   partnerOrganization   PartnerOrganization?   @relation(fields: [partnerOrganizationId], references: [id], onDelete: SetNull)
   requestedBy           User?                  @relation("PlacementRequestRequester", fields: [requestedById], references: [id], onDelete: SetNull)
+  assignedStaff         User?                  @relation("PlacementRequestAssignee", fields: [assignedStaffId], references: [id], onDelete: SetNull)
   status                PlacementRequestStatus @default(NEW)
   title                 String
   description           String?
+  requestedSpecialties  String[]               @default([])
+  requestedOpportunityTypes OpportunityType[]   @default([])
+  locationPreference    String?
+  remotePreference      String?
+  availability          String[]               @default([])
+  urgency               String?
+  priority              String                 @default("NORMAL")
   notes                 String?
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
@@ -272,7 +282,10 @@ model PlacementRequest {
   @@index([opportunityId])
   @@index([partnerOrganizationId])
   @@index([requestedById])
+  @@index([assignedStaffId])
   @@index([status])
+  @@index([priority])
+  @@index([status, priority])
   @@index([createdAt])
 }
 

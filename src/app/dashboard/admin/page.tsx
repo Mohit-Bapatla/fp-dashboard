@@ -2,6 +2,7 @@ import {
   BriefcaseBusiness,
   Building2,
   ClipboardCheck,
+  FileClock,
   GraduationCap,
   Plus,
 } from "lucide-react";
@@ -25,6 +26,7 @@ export default async function AdminDashboardPage() {
     opportunityCount,
     publishedOpportunityCount,
     applicationCount,
+    placementRequestCount,
     applicationsNeedingReviewCount,
     recentApplications,
     recentPartners,
@@ -43,6 +45,7 @@ export default async function AdminDashboardPage() {
       },
     }),
     prisma.application.count(),
+    prisma.placementRequest.count(),
     prisma.application.count({
       where: {
         status: {
@@ -185,6 +188,11 @@ export default async function AdminDashboardPage() {
             value={applicationCount.toString()}
           />
           <StatCard
+            helper="Personalized student placement requests in the queue."
+            label="Placement requests"
+            value={placementRequestCount.toString()}
+          />
+          <StatCard
             helper="Submitted or under-review applications needing attention."
             label="Needs review"
             value={applicationsNeedingReviewCount.toString()}
@@ -220,6 +228,16 @@ export default async function AdminDashboardPage() {
             <p className="text-sm leading-6 text-muted-foreground">
               Update safe application statuses and inspect application summaries
               across the platform.
+            </p>
+          </AdminOverviewPanel>
+          <AdminOverviewPanel
+            href="/dashboard/admin/placement-requests"
+            icon={FileClock}
+            title="Placement Requests"
+          >
+            <p className="text-sm leading-6 text-muted-foreground">
+              Monitor personalized request progress, assignment, priority, and
+              internal placement notes.
             </p>
           </AdminOverviewPanel>
         </section>
