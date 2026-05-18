@@ -4,3 +4,4 @@ coverage
 out
 build
 package-lock.json
+.claude

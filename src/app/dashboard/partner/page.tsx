@@ -1,33 +1,182 @@
-import { RoleDashboardPage } from "@/components/dashboard/role-dashboard-page";
+import { Building2, Handshake } from "lucide-react";
 
-export default function PartnerDashboardPage() {
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { roleNavigation } from "@/components/dashboard/role-config";
+import { RoleBadge } from "@/components/dashboard/role-badge";
+import { StatCard } from "@/components/dashboard/stat-card";
+import { PartnerDashboardSummary } from "@/components/partner/partner-dashboard-summary";
+import { PartnerOpportunityList } from "@/components/partner/partner-opportunity-list";
+import { prisma } from "@/lib/db/prisma";
+import { getCurrentPartnerContext } from "@/lib/partner/context";
+
+export default async function PartnerDashboardPage() {
+  const context = await getCurrentPartnerContext();
+  const { organizationIds, primaryOrganization } = context;
+
+  if (organizationIds.length === 0 || !primaryOrganization) {
+    return (
+      <DashboardShell navItems={roleNavigation.partner} role="partner">
+        <div className="space-y-8">
+          <header>
+            <RoleBadge role="partner" />
+            <h1 className="mt-4 text-3xl font-semibold tracking-normal text-foreground">
+              Partner Dashboard
+            </h1>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
+              View organization details and opportunity activity once your
+              partner account is connected to an organization.
+            </p>
+          </header>
+          <EmptyState
+            description="Your account is authenticated as a partner, but it is not linked to a partner organization yet. A Future Physicians administrator will connect your account before organization data appears here."
+            icon={Building2}
+            title="Organization not connected"
+          />
+        </div>
+      </DashboardShell>
+    );
+  }
+
+  const [
+    totalOpportunities,
+    publishedOpportunities,
+    closedOpportunities,
+    totalApplications,
+    opportunities,
+  ] = await Promise.all([
+    prisma.opportunity.count({
+      where: {
+        organizationId: {
+          in: organizationIds,
+        },
+      },
+    }),
+    prisma.opportunity.count({
+      where: {
+        organizationId: {
+          in: organizationIds,
+        },
+        status: "PUBLISHED",
+      },
+    }),
+    prisma.opportunity.count({
+      where: {
+        organizationId: {
+          in: organizationIds,
+        },
+        status: "CLOSED",
+      },
+    }),
+    prisma.application.count({
+      where: {
+        opportunity: {
+          organizationId: {
+            in: organizationIds,
+          },
+        },
+      },
+    }),
+    prisma.opportunity.findMany({
+      where: {
+        organizationId: {
+          in: organizationIds,
+        },
+      },
+      orderBy: [
+        {
+          updatedAt: "desc",
+        },
+      ],
+      take: 8,
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        status: true,
+        deadline: true,
+        capacity: true,
+        updatedAt: true,
+        organization: {
+          select: {
+            name: true,
+          },
+        },
+        _count: {
+          select: {
+            applications: true,
+          },
+        },
+      },
+    }),
+  ]);
+
   return (
-    <RoleDashboardPage
-      role="partner"
-      title="Partner Dashboard"
-      description="Manage organization details, publish healthcare opportunities, review applicants, and monitor placement activity for partner teams."
-      stats={[
-        {
-          label: "Active opportunities",
-          value: "8",
-          helper: "Placeholder inventory for partner-owned opportunities.",
-        },
-        {
-          label: "Applicants",
-          value: "31",
-          helper: "Future applicant queue for partner review.",
-        },
-        {
-          label: "Pending requests",
-          value: "5",
-          helper: "Placement requests waiting on coordination details.",
-        },
-        {
-          label: "Profile health",
-          value: "72%",
-          helper: "Organization completeness indicator for a later stage.",
-        },
-      ]}
-    />
+    <DashboardShell navItems={roleNavigation.partner} role="partner">
+      <div className="space-y-8">
+        <header className="flex flex-col gap-5 rounded-lg border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <RoleBadge className="mb-5" role="partner" />
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
+              Organization workspace
+            </p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
+              Partner Dashboard
+            </h1>
+            <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
+              Review your linked organization profile, opportunity inventory,
+              and application volume across Future Physicians records.
+            </p>
+          </div>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-primary">
+            <Handshake aria-hidden="true" className="h-6 w-6" />
+          </div>
+        </header>
+
+        <section
+          aria-label="Partner opportunity stats"
+          className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+        >
+          <StatCard
+            helper="All opportunities connected to your linked organization records."
+            label="Total opportunities"
+            value={totalOpportunities.toString()}
+          />
+          <StatCard
+            helper="Published opportunities visible in student workflows."
+            label="Published"
+            value={publishedOpportunities.toString()}
+          />
+          <StatCard
+            helper="Closed opportunity records owned by your organization."
+            label="Closed"
+            value={closedOpportunities.toString()}
+          />
+          <StatCard
+            helper="Applications across your linked organization opportunities."
+            label="Applications"
+            value={totalApplications.toString()}
+          />
+        </section>
+
+        <PartnerDashboardSummary
+          organization={primaryOrganization}
+          organizationCount={organizationIds.length}
+        />
+
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">
+              Organization opportunities
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Recent opportunity records connected to your organization. Posting
+              and applicant review workflows will arrive in later stages.
+            </p>
+          </div>
+          <PartnerOpportunityList opportunities={opportunities} />
+        </section>
+      </div>
+    </DashboardShell>
   );
 }
