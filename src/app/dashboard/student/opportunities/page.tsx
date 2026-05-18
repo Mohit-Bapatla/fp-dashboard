@@ -199,7 +199,7 @@ export default async function StudentOpportunitiesPage({
       role="student"
     >
       <div className="space-y-8">
-        <header className="flex flex-col gap-5 rounded-lg border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start lg:justify-between">
+        <header className="flex flex-col gap-5 rounded-xl border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start lg:justify-between">
           <div>
             <RoleBadge className="mb-5" role="student" />
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
@@ -209,11 +209,12 @@ export default async function StudentOpportunitiesPage({
               Browse Opportunities
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
-              Explore published healthcare opportunities from Future Physicians
-              partner organizations. Applications are coming in a later stage.
+              Browse and apply to published healthcare opportunities from Future
+              Physicians partner organizations. Filter by specialty, location,
+              format, and more.
             </p>
           </div>
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-primary">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-primary">
             <BriefcaseBusiness aria-hidden="true" className="h-6 w-6" />
           </div>
         </header>
