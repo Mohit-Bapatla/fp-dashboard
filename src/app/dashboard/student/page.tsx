@@ -2,7 +2,6 @@ import { auth } from "@clerk/nextjs/server";
 import {
   ArrowRight,
   ClipboardCheck,
-  FileClock,
   GraduationCap,
   MapPin,
   Target,
@@ -12,10 +11,10 @@ import Link from "next/link";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { RoleBadge } from "@/components/dashboard/role-badge";
-import { roleNavigation } from "@/components/dashboard/role-config";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { StudentResumeManager } from "@/components/student/student-resume-manager";
 import { prisma } from "@/lib/db/prisma";
+import { getStudentNavItems } from "@/lib/student/navigation";
 import { getStudentProfileCompletion } from "@/lib/student/profile-completion";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
 
@@ -29,19 +28,37 @@ export default async function StudentDashboardPage() {
   const user = await getCurrentStudentProfile(userId);
   const profile = user.studentProfile;
   const completion = getStudentProfileCompletion(profile);
-  const resume = profile
-    ? await prisma.resume.findFirst({
-        where: {
-          studentProfileId: profile.id,
-        },
-        orderBy: {
-          updatedAt: "desc",
-        },
-      })
-    : null;
+  const [resume, applicationCount, activeApplicationCount] = profile
+    ? await Promise.all([
+        prisma.resume.findFirst({
+          where: {
+            studentProfileId: profile.id,
+          },
+          orderBy: {
+            updatedAt: "desc",
+          },
+        }),
+        prisma.application.count({
+          where: {
+            studentProfileId: profile.id,
+          },
+        }),
+        prisma.application.count({
+          where: {
+            studentProfileId: profile.id,
+            status: {
+              in: ["SUBMITTED", "UNDER_REVIEW", "INTERVIEW", "ACCEPTED"],
+            },
+          },
+        }),
+      ])
+    : [null, 0, 0];
 
   return (
-    <DashboardShell navItems={roleNavigation.student} role="student">
+    <DashboardShell
+      navItems={getStudentNavItems("/dashboard/student")}
+      role="student"
+    >
       <div className="space-y-8">
         <section className="flex flex-col justify-between gap-5 rounded-lg border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start">
           <div className="max-w-3xl">
@@ -76,9 +93,9 @@ export default async function StudentDashboardPage() {
             value={`${completion.percent}%`}
           />
           <StatCard
-            helper="Applications will appear here after the opportunity board launches."
+            helper={`${activeApplicationCount} active ${activeApplicationCount === 1 ? "application" : "applications"} in progress or accepted.`}
             label="Applications"
-            value="0"
+            value={applicationCount.toString()}
           />
           <StatCard
             helper="Placement requests will appear here in a later workflow stage."
@@ -197,15 +214,25 @@ export default async function StudentDashboardPage() {
                 : null
             }
           />
-          <article className="rounded-lg border border-dashed border-border bg-muted/35 p-6">
-            <FileClock aria-hidden="true" className="h-5 w-5 text-primary" />
+          <article className="rounded-lg border border-border bg-background p-6 shadow-sm">
+            <ClipboardCheck
+              aria-hidden="true"
+              className="h-5 w-5 text-primary"
+            />
             <h2 className="mt-4 text-base font-semibold text-foreground">
-              Coming next
+              Application tracker
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Applications, saved opportunities, and placement request workflows
-              remain placeholders until later stages.
+              Review submitted applications, attached resumes, status updates,
+              and withdrawal options for active submissions.
             </p>
+            <Link
+              className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+              href="/dashboard/student/applications"
+            >
+              View applications
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
           </article>
         </section>
       </div>
