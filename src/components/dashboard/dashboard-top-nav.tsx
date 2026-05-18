@@ -37,7 +37,7 @@ export function DashboardTopNav({ role, navItems }: DashboardTopNavProps) {
 
       <nav
         aria-label={`${meta.label} mobile navigation`}
-        className="flex gap-2 overflow-x-auto border-t border-border px-4 py-3 md:hidden"
+        className="flex gap-2 overflow-x-auto border-t border-border px-4 py-3 md:hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
         {navItems.map((item) => {
           const ItemIcon = item.icon;
@@ -46,8 +46,8 @@ export function DashboardTopNav({ role, navItems }: DashboardTopNavProps) {
             <Link
               aria-current={item.active ? "page" : undefined}
               className={cn(
-                "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-md border border-border px-3 text-sm font-medium text-muted-foreground",
-                item.active && "border-primary bg-muted text-foreground",
+                "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
+                item.active && "border-primary/60 bg-primary/[0.08] text-foreground",
               )}
               href={item.href}
               key={item.label}
