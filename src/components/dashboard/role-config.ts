@@ -105,7 +105,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       icon: LayoutDashboard,
       active: true,
     },
-    { label: "Opportunities", href: "#", icon: BriefcaseBusiness },
+    {
+      label: "Opportunities",
+      href: "/dashboard/partner/opportunities",
+      icon: BriefcaseBusiness,
+    },
     { label: "Applicants", href: "#", icon: Users },
     { label: "Organization", href: "#", icon: Building2 },
     { label: "Analytics", href: "#", icon: BarChart3 },

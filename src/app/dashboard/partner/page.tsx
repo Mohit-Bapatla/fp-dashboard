@@ -2,13 +2,13 @@ import { Building2, Handshake } from "lucide-react";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { roleNavigation } from "@/components/dashboard/role-config";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { PartnerDashboardSummary } from "@/components/partner/partner-dashboard-summary";
 import { PartnerOpportunityList } from "@/components/partner/partner-opportunity-list";
 import { prisma } from "@/lib/db/prisma";
 import { getCurrentPartnerContext } from "@/lib/partner/context";
+import { getPartnerNavItems } from "@/lib/partner/navigation";
 
 export default async function PartnerDashboardPage() {
   const context = await getCurrentPartnerContext();
@@ -16,7 +16,10 @@ export default async function PartnerDashboardPage() {
 
   if (organizationIds.length === 0 || !primaryOrganization) {
     return (
-      <DashboardShell navItems={roleNavigation.partner} role="partner">
+      <DashboardShell
+        navItems={getPartnerNavItems("/dashboard/partner")}
+        role="partner"
+      >
         <div className="space-y-8">
           <header>
             <RoleBadge role="partner" />
@@ -112,7 +115,10 @@ export default async function PartnerDashboardPage() {
   ]);
 
   return (
-    <DashboardShell navItems={roleNavigation.partner} role="partner">
+    <DashboardShell
+      navItems={getPartnerNavItems("/dashboard/partner")}
+      role="partner"
+    >
       <div className="space-y-8">
         <header className="flex flex-col gap-5 rounded-lg border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start lg:justify-between">
           <div>
