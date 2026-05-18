@@ -1,4 +1,10 @@
-import { FileClock, ListChecks, MailCheck, Users } from "lucide-react";
+import {
+  Building2,
+  FileClock,
+  ListChecks,
+  MailCheck,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
@@ -11,30 +17,42 @@ import { getStaffNavItems } from "@/lib/staff/navigation";
 export default async function StaffDashboardPage() {
   await assertPlacementQueueAccess();
 
-  const [totalRequests, newRequests, activeRequests, urgentRequests] =
-    await Promise.all([
-      prisma.placementRequest.count(),
-      prisma.placementRequest.count({
-        where: {
-          status: "NEW",
+  const [
+    totalRequests,
+    activeRequests,
+    partnerCount,
+    contactCount,
+    dueContactFollowUps,
+    dueOutreachTasks,
+  ] = await Promise.all([
+    prisma.placementRequest.count(),
+    prisma.placementRequest.count({
+      where: {
+        status: {
+          notIn: ["PLACED", "CLOSED"],
         },
-      }),
-      prisma.placementRequest.count({
-        where: {
-          status: {
-            notIn: ["PLACED", "CLOSED"],
-          },
+      },
+    }),
+    prisma.partnerOrganization.count(),
+    prisma.outreachContact.count(),
+    prisma.outreachContact.count({
+      where: {
+        nextFollowUpAt: {
+          lte: new Date(),
         },
-      }),
-      prisma.placementRequest.count({
-        where: {
-          priority: "URGENT",
-          status: {
-            notIn: ["PLACED", "CLOSED"],
-          },
+      },
+    }),
+    prisma.outreachTask.count({
+      where: {
+        dueAt: {
+          lte: new Date(),
         },
-      }),
-    ]);
+        status: {
+          not: "COMPLETED",
+        },
+      },
+    }),
+  ]);
 
   return (
     <DashboardShell
@@ -52,8 +70,8 @@ export default async function StaffDashboardPage() {
               Staff Dashboard
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-              Coordinate personalized placement requests, triage student needs,
-              and keep internal support work moving.
+              Coordinate personalized placement requests, partner outreach,
+              contacts, and follow-up tasks from the staff workspace.
             </p>
           </div>
           <Link
@@ -71,40 +89,46 @@ export default async function StaffDashboardPage() {
             value={totalRequests.toString()}
           />
           <StatCard
-            helper="Requests waiting for first staff review."
-            label="New"
-            value={newRequests.toString()}
-          />
-          <StatCard
             helper="Requests not yet placed or closed."
-            label="Active"
+            label="Active requests"
             value={activeRequests.toString()}
           />
           <StatCard
-            helper="Active requests marked urgent."
-            label="Urgent"
-            value={urgentRequests.toString()}
+            helper={`${contactCount} outreach contacts are linked to partner organizations.`}
+            label="Partners"
+            value={partnerCount.toString()}
+          />
+          <StatCard
+            helper={`${dueContactFollowUps} contact follow-ups and ${dueOutreachTasks} tasks are due.`}
+            label="Due outreach"
+            value={(dueContactFollowUps + dueOutreachTasks).toString()}
           />
         </section>
 
         <section className="grid gap-4 lg:grid-cols-3">
           <StaffPanel
+            description="Review partner status, follow-up dates, notes, and relationship activity."
+            href="/dashboard/staff/partners"
+            icon={Building2}
+            title="Partner CRM"
+          />
+          <StaffPanel
+            description="Create and edit partner outreach contacts with notes and follow-up dates."
+            href="/dashboard/staff/contacts"
+            icon={Users}
+            title="Contacts"
+          />
+          <StaffPanel
+            description="Create and manage outreach tasks, due dates, assignees, and placement request links."
+            href="/dashboard/staff/outreach"
+            icon={ListChecks}
+            title="Outreach tasks"
+          />
+          <StaffPanel
             description="Assign owners, update status, set priority, and maintain internal notes for student placement requests."
             href="/dashboard/staff/placement-requests"
             icon={FileClock}
             title="Placement queue"
-          />
-          <StaffPanel
-            description="Partner contact and outreach workflows remain staged for a later CRM-focused build."
-            href="#"
-            icon={Users}
-            title="Partner contacts"
-          />
-          <StaffPanel
-            description="Task and outreach logging will connect to placement requests in a later stage."
-            href="#"
-            icon={ListChecks}
-            title="Tasks"
           />
         </section>
       </div>

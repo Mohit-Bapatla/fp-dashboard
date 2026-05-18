@@ -171,6 +171,8 @@ model PartnerOrganization {
   healthcareFocus   String?
   specialtyAreas    String[]           @default([])
   contactEmail      String?
+  lastContactedAt   DateTime?
+  nextFollowUpAt    DateTime?
   members           PartnerMember[]
   opportunities     Opportunity[]
   placementRequests PlacementRequest[]
@@ -181,6 +183,7 @@ model PartnerOrganization {
   updatedAt         DateTime           @updatedAt
 
   @@index([status])
+  @@index([nextFollowUpAt])
   @@index([createdAt])
 }
 
@@ -264,6 +267,7 @@ model PlacementRequest {
   partnerOrganization   PartnerOrganization?   @relation(fields: [partnerOrganizationId], references: [id], onDelete: SetNull)
   requestedBy           User?                  @relation("PlacementRequestRequester", fields: [requestedById], references: [id], onDelete: SetNull)
   assignedStaff         User?                  @relation("PlacementRequestAssignee", fields: [assignedStaffId], references: [id], onDelete: SetNull)
+  outreachTasks         OutreachTask[]
   status                PlacementRequestStatus @default(NEW)
   title                 String
   description           String?
@@ -299,26 +303,32 @@ model OutreachContact {
   phone          String?
   title          String?
   notes          String?
+  lastContactedAt DateTime?
+  nextFollowUpAt  DateTime?
   tasks          OutreachTask[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
 
   @@index([organizationId])
   @@index([email])
+  @@index([nextFollowUpAt])
 }
 
 model OutreachTask {
   id                    String              @id @default(cuid())
   contactId             String?
   partnerOrganizationId String?
+  placementRequestId    String?
   assignedToId          String?
   createdById           String?
   contact               OutreachContact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
   partnerOrganization   PartnerOrganization? @relation(fields: [partnerOrganizationId], references: [id], onDelete: SetNull)
+  placementRequest      PlacementRequest?    @relation(fields: [placementRequestId], references: [id], onDelete: SetNull)
   assignedTo            User?               @relation("OutreachTaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   createdBy             User?               @relation("OutreachTaskCreator", fields: [createdById], references: [id], onDelete: SetNull)
   title                 String
   description           String?
+  notes                 String?
   status                OutreachTaskStatus  @default(NOT_STARTED)
   dueAt                 DateTime?
   completedAt           DateTime?
@@ -327,9 +337,11 @@ model OutreachTask {
 
   @@index([contactId])
   @@index([partnerOrganizationId])
+  @@index([placementRequestId])
   @@index([assignedToId])
   @@index([createdById])
   @@index([status])
+  @@index([status, dueAt])
   @@index([dueAt])
 }
 
