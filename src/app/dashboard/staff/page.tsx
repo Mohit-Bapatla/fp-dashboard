@@ -34,7 +34,10 @@ export default async function StaffDashboardPage() {
     dueContactFollowUps,
     dueOutreachTasks,
     myOpenTasks,
+    myCompletedTasks,
+    myOverdueTasks,
     blockedTasks,
+    completedTasks,
   ] = await Promise.all([
     prisma.placementRequest.count(),
     prisma.placementRequest.count({
@@ -73,9 +76,35 @@ export default async function StaffDashboardPage() {
           },
         })
       : Promise.resolve(0),
+    currentUser
+      ? prisma.outreachTask.count({
+          where: {
+            assignedToId: currentUser.id,
+            status: "COMPLETED",
+          },
+        })
+      : Promise.resolve(0),
+    currentUser
+      ? prisma.outreachTask.count({
+          where: {
+            assignedToId: currentUser.id,
+            dueAt: {
+              lte: new Date(),
+            },
+            status: {
+              not: "COMPLETED",
+            },
+          },
+        })
+      : Promise.resolve(0),
     prisma.outreachTask.count({
       where: {
         status: "BLOCKED",
+      },
+    }),
+    prisma.outreachTask.count({
+      where: {
+        status: "COMPLETED",
       },
     }),
   ]);
@@ -125,9 +154,14 @@ export default async function StaffDashboardPage() {
             value={partnerCount.toString()}
           />
           <StatCard
-            helper="Open tasks assigned to you."
-            label="My open tasks"
+            helper={`${myOverdueTasks} assigned tasks are overdue.`}
+            label="Assigned tasks"
             value={myOpenTasks.toString()}
+          />
+          <StatCard
+            helper="Tasks assigned to you that have been completed."
+            label="My completed tasks"
+            value={myCompletedTasks.toString()}
           />
           <StatCard
             helper={`${dueContactFollowUps} contact follow-ups and ${dueOutreachTasks} tasks are due.`}
@@ -138,6 +172,11 @@ export default async function StaffDashboardPage() {
             helper="Tasks currently blocked across the staff workspace."
             label="Blocked tasks"
             value={blockedTasks.toString()}
+          />
+          <StatCard
+            helper="Completed outreach tasks across staff operations."
+            label="Completed tasks"
+            value={completedTasks.toString()}
           />
         </section>
 

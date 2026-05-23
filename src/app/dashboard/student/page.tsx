@@ -33,6 +33,9 @@ export default async function StudentDashboardPage() {
     resume,
     applicationCount,
     activeApplicationCount,
+    acceptedApplicationCount,
+    rejectedApplicationCount,
+    withdrawnApplicationCount,
     placementRequestCount,
   ] = profile
     ? await Promise.all([
@@ -57,13 +60,31 @@ export default async function StudentDashboardPage() {
             },
           },
         }),
+        prisma.application.count({
+          where: {
+            studentProfileId: profile.id,
+            status: "ACCEPTED",
+          },
+        }),
+        prisma.application.count({
+          where: {
+            studentProfileId: profile.id,
+            status: "REJECTED",
+          },
+        }),
+        prisma.application.count({
+          where: {
+            studentProfileId: profile.id,
+            status: "WITHDRAWN",
+          },
+        }),
         prisma.placementRequest.count({
           where: {
             studentProfileId: profile.id,
           },
         }),
       ])
-    : [null, 0, 0, 0];
+    : [null, 0, 0, 0, 0, 0, 0];
 
   return (
     <DashboardShell
@@ -104,14 +125,24 @@ export default async function StudentDashboardPage() {
             value={`${completion.percent}%`}
           />
           <StatCard
-            helper={`${activeApplicationCount} active ${activeApplicationCount === 1 ? "application" : "applications"} in progress or accepted.`}
-            label="Applications"
+            helper="All applications submitted from your student profile."
+            label="Applications submitted"
             value={applicationCount.toString()}
+          />
+          <StatCard
+            helper="Applications still submitted, under review, interviewing, or accepted."
+            label="Active applications"
+            value={activeApplicationCount.toString()}
           />
           <StatCard
             helper="Personalized requests submitted to the placement team."
             label="Placement requests"
             value={placementRequestCount.toString()}
+          />
+          <StatCard
+            helper={`${rejectedApplicationCount} rejected and ${withdrawnApplicationCount} withdrawn.`}
+            label="Accepted"
+            value={acceptedApplicationCount.toString()}
           />
           <StatCard
             helper={

@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   BriefcaseBusiness,
   Building2,
   ClipboardCheck,
@@ -240,6 +241,16 @@ export default async function AdminDashboardPage() {
               internal placement notes.
             </p>
           </AdminOverviewPanel>
+          <AdminOverviewPanel
+            href="/dashboard/admin/analytics"
+            icon={BarChart3}
+            title="Analytics"
+          >
+            <p className="text-sm leading-6 text-muted-foreground">
+              Review operational counts by status across students, partners,
+              opportunities, applications, placement requests, and outreach.
+            </p>
+          </AdminOverviewPanel>
         </section>
 
         <section className="grid gap-4 xl:grid-cols-3">
@@ -311,7 +322,7 @@ export default async function AdminDashboardPage() {
         </section>
 
         <EmptyState
-          description="Advanced analytics remain staged for later admin work."
+          description="Advanced cohorts, funnels, and monitoring remain staged for later admin work."
           icon={BriefcaseBusiness}
           title="More admin tools coming soon"
         />

@@ -130,7 +130,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       icon: Users,
     },
     { label: "Organization", href: "#", icon: Building2 },
-    { label: "Analytics", href: "#", icon: BarChart3 },
+    {
+      label: "Analytics",
+      href: "/dashboard/partner/analytics",
+      icon: BarChart3,
+    },
     { label: "Settings", href: "#", icon: Settings },
   ],
   staff: [
@@ -191,6 +195,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       label: "Placement Requests",
       href: "/dashboard/admin/placement-requests",
       icon: Handshake,
+    },
+    {
+      label: "Analytics",
+      href: "/dashboard/admin/analytics",
+      icon: BarChart3,
     },
     {
       label: "Audit Logs",
