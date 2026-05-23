@@ -311,7 +311,7 @@ export default async function AdminDashboardPage() {
         </section>
 
         <EmptyState
-          description="Audit logs, email notifications, placement requests, and advanced analytics remain staged for later admin work."
+          description="Advanced analytics remain staged for later admin work."
           icon={BriefcaseBusiness}
           title="More admin tools coming soon"
         />

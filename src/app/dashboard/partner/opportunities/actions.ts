@@ -3,8 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { createAuditLog } from "@/lib/audit/audit-log";
 import type { PartnerOpportunityActionState } from "@/lib/partner/opportunity-validation";
 import { prisma } from "@/lib/db/prisma";
+import {
+  createNotifications,
+  getUsersByRoles,
+} from "@/lib/notifications/notifications";
 import { getCurrentPartnerContext } from "@/lib/partner/context";
 import { validatePartnerOpportunityForm } from "@/lib/partner/opportunity-validation";
 
@@ -18,6 +23,7 @@ function revalidatePartnerOpportunityPaths() {
   revalidatePath("/dashboard/partner");
   revalidatePath("/dashboard/partner/opportunities");
   revalidatePath("/dashboard/admin/opportunities");
+  revalidatePath("/dashboard/notifications");
 }
 
 function hasOrganizationAccess(
@@ -100,6 +106,18 @@ export async function savePartnerOpportunity(
         ...validation.data,
       },
     });
+    await createAuditLog({
+      action: "OPPORTUNITY_UPDATED",
+      actorId: context.user.id,
+      entityId: existingOpportunity.id,
+      entityType: "Opportunity",
+      metadata: {
+        newStatus: existingOpportunity.status,
+        previousStatus: existingOpportunity.status,
+        source: "partner",
+        title: validation.data.title,
+      },
+    });
 
     revalidatePartnerOpportunityPaths();
     redirect(
@@ -114,6 +132,18 @@ export async function savePartnerOpportunity(
     },
     select: {
       id: true,
+    },
+  });
+  await createAuditLog({
+    action: "OPPORTUNITY_CREATED",
+    actorId: context.user.id,
+    entityId: opportunity.id,
+    entityType: "Opportunity",
+    metadata: {
+      organizationId: validation.data.organizationId,
+      source: "partner",
+      status: "DRAFT",
+      title: validation.data.title,
     },
   });
 
@@ -141,6 +171,7 @@ export async function submitPartnerOpportunityForApproval(formData: FormData) {
     },
     select: {
       id: true,
+      title: true,
     },
   });
 
@@ -153,6 +184,27 @@ export async function submitPartnerOpportunityForApproval(formData: FormData) {
         status: "PENDING_APPROVAL",
       },
     });
+    const adminUsers = await getUsersByRoles(["ADMIN", "SUPER_ADMIN"]);
+
+    await Promise.all([
+      createNotifications(
+        adminUsers.map((adminUser) => adminUser.id),
+        {
+          body: `${opportunity.title} was submitted for approval.`,
+          title: "Opportunity awaiting approval",
+        },
+      ),
+      createAuditLog({
+        action: "OPPORTUNITY_SUBMITTED_FOR_APPROVAL",
+        actorId: context.user.id,
+        entityId: opportunity.id,
+        entityType: "Opportunity",
+        metadata: {
+          newStatus: "PENDING_APPROVAL",
+          title: opportunity.title,
+        },
+      }),
+    ]);
   }
 
   revalidatePartnerOpportunityPaths();
@@ -179,6 +231,8 @@ async function updatePublishedPartnerOpportunityStatus(
       },
       select: {
         id: true,
+        status: true,
+        title: true,
       },
     });
 
@@ -189,6 +243,18 @@ async function updatePublishedPartnerOpportunityStatus(
         },
         data: {
           status,
+        },
+      });
+      await createAuditLog({
+        action: `OPPORTUNITY_${status}`,
+        actorId: context.user.id,
+        entityId: opportunity.id,
+        entityType: "Opportunity",
+        metadata: {
+          newStatus: status,
+          previousStatus: opportunity.status,
+          source: "partner",
+          title: opportunity.title,
         },
       });
     }

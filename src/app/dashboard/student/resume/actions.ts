@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { createAuditLog } from "@/lib/audit/audit-log";
 import { prisma } from "@/lib/db/prisma";
 import {
   createResumeSignedUrl,
@@ -76,10 +77,19 @@ export async function uploadStudentResume(
   }
 
   const oldPath = context.resume?.fileUrl ?? null;
+  const profile = await prisma.studentProfile.findUnique({
+    where: {
+      id: context.profileId,
+    },
+    select: {
+      userId: true,
+    },
+  });
+  let resumeId: string;
 
   try {
     if (context.resume) {
-      await prisma.resume.update({
+      const resume = await prisma.resume.update({
         where: {
           id: context.resume.id,
         },
@@ -89,16 +99,24 @@ export async function uploadStudentResume(
           parseStatus: "NOT_STARTED",
           parsedText: null,
         },
+        select: {
+          id: true,
+        },
       });
+      resumeId = resume.id;
     } else {
-      await prisma.resume.create({
+      const resume = await prisma.resume.create({
         data: {
           studentProfileId: context.profileId,
           fileName: resumeFile.name,
           fileUrl: newPath,
           parseStatus: "NOT_STARTED",
         },
+        select: {
+          id: true,
+        },
       });
+      resumeId = resume.id;
     }
   } catch {
     await supabase.storage.from(resumeBucketName).remove([newPath]);
@@ -112,6 +130,17 @@ export async function uploadStudentResume(
   if (oldPath) {
     await supabase.storage.from(resumeBucketName).remove([oldPath]);
   }
+
+  await createAuditLog({
+    action: context.resume ? "RESUME_REPLACED" : "RESUME_UPLOADED",
+    actorId: profile?.userId ?? null,
+    entityId: resumeId,
+    entityType: "Resume",
+    metadata: {
+      fileName: resumeFile.name,
+      studentProfileId: context.profileId,
+    },
+  });
 
   revalidatePath("/dashboard/student");
 
@@ -153,6 +182,25 @@ export async function deleteStudentResume(
   await prisma.resume.delete({
     where: {
       id: context.resume.id,
+    },
+  });
+  const profile = await prisma.studentProfile.findUnique({
+    where: {
+      id: context.profileId,
+    },
+    select: {
+      userId: true,
+    },
+  });
+
+  await createAuditLog({
+    action: "RESUME_DELETED",
+    actorId: profile?.userId ?? null,
+    entityId: context.resume.id,
+    entityType: "Resume",
+    metadata: {
+      fileName: context.resume.fileName,
+      studentProfileId: context.profileId,
     },
   });
 

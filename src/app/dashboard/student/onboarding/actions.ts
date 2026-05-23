@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 import { getAppRole } from "@/lib/auth/roles";
+import { createAuditLog } from "@/lib/audit/audit-log";
 import { prisma } from "@/lib/db/prisma";
 import type { StudentOnboardingActionState } from "@/lib/student/onboarding-state";
 import { getOrCreateCurrentStudentUser } from "@/lib/student/profile";
@@ -34,6 +35,7 @@ export async function saveStudentProfile(
   }
 
   const user = await getOrCreateCurrentStudentUser(userId);
+  const hadProfile = Boolean(user.studentProfile);
 
   await prisma.user.update({
     where: {
@@ -45,7 +47,7 @@ export async function saveStudentProfile(
     },
   });
 
-  await prisma.studentProfile.upsert({
+  const studentProfile = await prisma.studentProfile.upsert({
     where: {
       userId: user.id,
     },
@@ -85,6 +87,18 @@ export async function saveStudentProfile(
       linkedinUrl: validation.data.linkedinUrl,
       githubUrl: validation.data.githubUrl,
       portfolioUrl: validation.data.portfolioUrl,
+    },
+    select: {
+      id: true,
+    },
+  });
+  await createAuditLog({
+    action: hadProfile ? "STUDENT_PROFILE_UPDATED" : "STUDENT_PROFILE_CREATED",
+    actorId: user.id,
+    entityId: studentProfile.id,
+    entityType: "StudentProfile",
+    metadata: {
+      school: validation.data.school,
     },
   });
 

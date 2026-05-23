@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import type { ApplicationStatus } from "@/generated/prisma/enums";
+import { createAuditLog } from "@/lib/audit/audit-log";
 import { prisma } from "@/lib/db/prisma";
+import { applicationStatusEmail } from "@/lib/email/templates";
+import { sendTransactionalEmail } from "@/lib/email/resend";
+import { createNotifications } from "@/lib/notifications/notifications";
 import { getCurrentPartnerContext } from "@/lib/partner/context";
 import {
   createSupabaseAdminClient,
@@ -34,6 +38,7 @@ function revalidateApplicantReviewPaths() {
   revalidatePath("/dashboard/partner/applicants");
   revalidatePath("/dashboard/student");
   revalidatePath("/dashboard/student/applications");
+  revalidatePath("/dashboard/notifications");
 }
 
 function getSafeRedirectTo(formData: FormData) {
@@ -72,6 +77,22 @@ export async function updatePartnerApplicationStatus(formData: FormData) {
     },
     select: {
       id: true,
+      status: true,
+      studentProfile: {
+        select: {
+          user: {
+            select: {
+              email: true,
+              id: true,
+            },
+          },
+        },
+      },
+      opportunity: {
+        select: {
+          title: true,
+        },
+      },
     },
   });
 
@@ -83,6 +104,36 @@ export async function updatePartnerApplicationStatus(formData: FormData) {
       data: {
         reviewedAt: new Date(),
         status,
+      },
+    });
+    const email = applicationStatusEmail({
+      opportunityTitle: application.opportunity.title,
+      status,
+      studentName: application.studentProfile.user.email,
+    });
+    const [emailResult] = await Promise.all([
+      sendTransactionalEmail({
+        ...email,
+        to: application.studentProfile.user.email,
+      }),
+      createNotifications([application.studentProfile.user.id], {
+        body: `Your application for ${application.opportunity.title} was updated to ${status}.`,
+        title: "Application status updated",
+      }),
+    ]);
+
+    await createAuditLog({
+      action: "APPLICATION_STATUS_UPDATED",
+      actorId: context.user.id,
+      entityId: application.id,
+      entityType: "Application",
+      metadata: {
+        emailSent: emailResult.sent,
+        emailSkipped: emailResult.skipped,
+        newStatus: status,
+        opportunityTitle: application.opportunity.title,
+        previousStatus: application.status,
+        source: "partner",
       },
     });
   }

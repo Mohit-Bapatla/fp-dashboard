@@ -3,7 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import {
+  createAuditLog,
+  getActorIdFromClerkUserId,
+} from "@/lib/audit/audit-log";
 import { prisma } from "@/lib/db/prisma";
+import { outreachTaskAssignedEmail } from "@/lib/email/templates";
+import { sendTransactionalEmail } from "@/lib/email/resend";
+import { createNotifications } from "@/lib/notifications/notifications";
 import { assertPlacementQueueAccess } from "@/lib/placement-requests/authorization";
 import {
   getNullableString,
@@ -21,10 +28,11 @@ function revalidateStaffCrmPaths() {
   revalidatePath("/dashboard/staff/contacts");
   revalidatePath("/dashboard/staff/outreach");
   revalidatePath("/dashboard/staff/tasks");
+  revalidatePath("/dashboard/notifications");
 }
 
 export async function updatePartnerOutreach(formData: FormData) {
-  await assertPlacementQueueAccess();
+  const { userId } = await assertPlacementQueueAccess();
 
   const organizationId = getString(formData, "organizationId");
   const status = getString(formData, "status");
@@ -37,9 +45,24 @@ export async function updatePartnerOutreach(formData: FormData) {
     redirect(redirectTo);
   }
 
-  await prisma.partnerOrganization.update({
+  const organization = await prisma.partnerOrganization.findUnique({
     where: {
       id: organizationId,
+    },
+    select: {
+      id: true,
+      name: true,
+      status: true,
+    },
+  });
+
+  if (!organization) {
+    redirect(redirectTo);
+  }
+
+  await prisma.partnerOrganization.update({
+    where: {
+      id: organization.id,
     },
     data: {
       description: getNullableString(formData, "description"),
@@ -48,13 +71,26 @@ export async function updatePartnerOutreach(formData: FormData) {
       status,
     },
   });
+  const actorId = await getActorIdFromClerkUserId(userId);
+
+  await createAuditLog({
+    action: "PARTNER_OUTREACH_UPDATED",
+    actorId,
+    entityId: organization.id,
+    entityType: "PartnerOrganization",
+    metadata: {
+      newStatus: status,
+      organizationName: organization.name,
+      previousStatus: organization.status,
+    },
+  });
 
   revalidateStaffCrmPaths();
   redirect(redirectTo);
 }
 
 export async function saveOutreachContact(formData: FormData) {
-  await assertPlacementQueueAccess();
+  const { userId } = await assertPlacementQueueAccess();
 
   const contactId = getString(formData, "contactId");
   const organizationId = getString(formData, "organizationId");
@@ -100,9 +136,32 @@ export async function saveOutreachContact(formData: FormData) {
       },
       data,
     });
+    await createAuditLog({
+      action: "OUTREACH_CONTACT_UPDATED",
+      actorId: await getActorIdFromClerkUserId(userId),
+      entityId: contactId,
+      entityType: "OutreachContact",
+      metadata: {
+        firstName,
+        organizationId: organization.id,
+      },
+    });
   } else {
-    await prisma.outreachContact.create({
+    const contact = await prisma.outreachContact.create({
       data,
+      select: {
+        id: true,
+      },
+    });
+    await createAuditLog({
+      action: "OUTREACH_CONTACT_CREATED",
+      actorId: await getActorIdFromClerkUserId(userId),
+      entityId: contact.id,
+      entityType: "OutreachContact",
+      metadata: {
+        firstName,
+        organizationId: organization.id,
+      },
     });
   }
 
@@ -148,6 +207,7 @@ export async function saveOutreachTask(formData: FormData) {
               },
             },
             select: {
+              email: true,
               id: true,
             },
           })
@@ -201,6 +261,18 @@ export async function saveOutreachTask(formData: FormData) {
     status,
     title,
   };
+  const existingTask = taskId
+    ? await prisma.outreachTask.findUnique({
+        where: {
+          id: taskId,
+        },
+        select: {
+          assignedToId: true,
+          status: true,
+          title: true,
+        },
+      })
+    : null;
 
   if (taskId) {
     await prisma.outreachTask.update({
@@ -209,13 +281,78 @@ export async function saveOutreachTask(formData: FormData) {
       },
       data,
     });
+    const assignedChanged = existingTask?.assignedToId !== assignedTo?.id;
+    const shouldNotifyAssignee = assignedTo && assignedChanged;
+    const email = outreachTaskAssignedEmail(title);
+    const emailResult = shouldNotifyAssignee
+      ? await sendTransactionalEmail({
+          ...email,
+          to: assignedTo.email,
+        })
+      : null;
+
+    await Promise.all([
+      shouldNotifyAssignee
+        ? createNotifications([assignedTo.id], {
+            body: `${title} was assigned to you.`,
+            title: "Outreach task assigned",
+          })
+        : Promise.resolve(0),
+      createAuditLog({
+        action: "OUTREACH_TASK_UPDATED",
+        actorId: creator?.id ?? null,
+        entityId: taskId,
+        entityType: "OutreachTask",
+        metadata: {
+          emailSent: emailResult?.sent ?? false,
+          emailSkipped: emailResult?.skipped ?? true,
+          newAssignedToId: assignedTo?.id ?? null,
+          newStatus: status,
+          previousAssignedToId: existingTask?.assignedToId ?? null,
+          previousStatus: existingTask?.status ?? null,
+          title,
+        },
+      }),
+    ]);
   } else {
-    await prisma.outreachTask.create({
+    const task = await prisma.outreachTask.create({
       data: {
         ...data,
         createdById: creator?.id ?? null,
       },
+      select: {
+        id: true,
+      },
     });
+    const email = outreachTaskAssignedEmail(title);
+    const emailResult = assignedTo
+      ? await sendTransactionalEmail({
+          ...email,
+          to: assignedTo.email,
+        })
+      : null;
+
+    await Promise.all([
+      assignedTo
+        ? createNotifications([assignedTo.id], {
+            body: `${title} was assigned to you.`,
+            title: "Outreach task assigned",
+          })
+        : Promise.resolve(0),
+      createAuditLog({
+        action: "OUTREACH_TASK_CREATED",
+        actorId: creator?.id ?? null,
+        entityId: task.id,
+        entityType: "OutreachTask",
+        metadata: {
+          assignedToId: assignedTo?.id ?? null,
+          emailSent: emailResult?.sent ?? false,
+          emailSkipped: emailResult?.skipped ?? true,
+          status,
+          title,
+        },
+      }),
+    ]);
   }
 
   revalidateStaffCrmPaths();

@@ -83,6 +83,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       icon: LayoutDashboard,
       active: true,
     },
+    {
+      label: "Notifications",
+      href: "/dashboard/notifications",
+      icon: BellRing,
+    },
     { label: "Profile", href: "#", icon: GraduationCap },
     {
       label: "Opportunities",
@@ -110,6 +115,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       active: true,
     },
     {
+      label: "Notifications",
+      href: "/dashboard/notifications",
+      icon: BellRing,
+    },
+    {
       label: "Opportunities",
       href: "/dashboard/partner/opportunities",
       icon: BriefcaseBusiness,
@@ -130,6 +140,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       icon: LayoutDashboard,
       active: true,
     },
+    {
+      label: "Notifications",
+      href: "/dashboard/notifications",
+      icon: BellRing,
+    },
     { label: "Partners", href: "/dashboard/staff/partners", icon: Building2 },
     { label: "Contacts", href: "/dashboard/staff/contacts", icon: Users },
     { label: "Outreach", href: "/dashboard/staff/outreach", icon: MailCheck },
@@ -149,6 +164,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       href: "/dashboard/admin",
       icon: LayoutDashboard,
       active: true,
+    },
+    {
+      label: "Notifications",
+      href: "/dashboard/notifications",
+      icon: BellRing,
     },
     { label: "Users", href: "#", icon: Users },
     {
@@ -172,7 +192,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       href: "/dashboard/admin/placement-requests",
       icon: Handshake,
     },
-    { label: "Audit Logs", href: "#", icon: LockKeyhole },
+    {
+      label: "Audit Logs",
+      href: "/dashboard/admin/audit-logs",
+      icon: LockKeyhole,
+    },
     { label: "Settings", href: "#", icon: Settings },
   ],
 };
