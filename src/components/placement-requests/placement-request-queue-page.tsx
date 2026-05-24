@@ -12,6 +12,7 @@ import { Prisma } from "@/generated/prisma/client";
 import type { DashboardRole } from "@/components/dashboard/role-config";
 import type { PlacementRequestStatus } from "@/generated/prisma/enums";
 import { getAdminNavItems } from "@/lib/admin/navigation";
+import { getRecordCommentThread } from "@/lib/comments/record-comments";
 import { prisma } from "@/lib/db/prisma";
 import { assertPlacementQueueAccess } from "@/lib/placement-requests/authorization";
 import {
@@ -263,6 +264,15 @@ export async function PlacementRequestQueuePage({
         },
       }),
     ]);
+  const requestsWithThreads = await Promise.all(
+    requests.map(async (request) => ({
+      ...request,
+      commentThread: await getRecordCommentThread({
+        entityId: request.id,
+        entityType: "PLACEMENT_REQUEST",
+      }),
+    })),
+  );
   const redirectTo = buildRedirectTo({
     assignedStaffId,
     basePath: activeHref,
@@ -392,7 +402,7 @@ export async function PlacementRequestQueuePage({
 
         <PlacementRequestQueue
           redirectTo={redirectTo}
-          requests={requests as PlacementRequestQueueItem[]}
+          requests={requestsWithThreads as PlacementRequestQueueItem[]}
           staffUsers={staffUsers}
         />
       </div>

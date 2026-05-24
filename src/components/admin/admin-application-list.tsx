@@ -2,8 +2,14 @@ import { CalendarDays, ClipboardCheck, FileText, Search } from "lucide-react";
 
 import { updateAdminApplicationStatus } from "@/app/dashboard/admin/applications/actions";
 import { ApplicationStatusBadge } from "@/components/admin/application-status-badge";
+import { RecordCommentThread } from "@/components/comments/record-comment-thread";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import {
+  ApplicationOnboardingList,
+  type ApplicationOnboardingItemView,
+} from "@/components/onboarding/application-onboarding-list";
 import type { ApplicationStatus } from "@/generated/prisma/enums";
+import type { RecordCommentThread as RecordCommentThreadData } from "@/lib/comments/record-comments";
 
 export type AdminApplicationListItem = {
   id: string;
@@ -12,6 +18,8 @@ export type AdminApplicationListItem = {
   submittedAt: Date | null;
   createdAt: Date;
   reviewedAt: Date | null;
+  onboardingItems: ApplicationOnboardingItemView[];
+  commentThread: RecordCommentThreadData;
   resume: {
     fileName: string;
   } | null;
@@ -190,6 +198,22 @@ export function AdminApplicationList({
                 </p>
               ) : null}
             </form>
+
+            {application.status === "ACCEPTED" ? (
+              <ApplicationOnboardingList
+                applicationId={application.id}
+                items={application.onboardingItems}
+                mode="reviewer"
+                redirectTo={redirectTo}
+              />
+            ) : null}
+
+            <RecordCommentThread
+              entityId={application.id}
+              entityType="APPLICATION"
+              redirectTo={redirectTo}
+              thread={application.commentThread}
+            />
           </article>
         );
       })}

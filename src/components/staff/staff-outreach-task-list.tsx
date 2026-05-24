@@ -1,12 +1,14 @@
 import { CalendarDays, ListChecks, Search } from "lucide-react";
 
 import { saveOutreachTask } from "@/app/dashboard/staff/crm-actions";
+import { RecordCommentThread } from "@/components/comments/record-comment-thread";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import {
   OutreachTaskPriorityBadge,
   OutreachTaskStatusBadge,
 } from "@/components/staff/crm-badges";
 import type { OutreachTaskStatus } from "@/generated/prisma/enums";
+import type { RecordCommentThread as RecordCommentThreadData } from "@/lib/comments/record-comments";
 import {
   formatDateInput,
   formatEnumLabel,
@@ -73,6 +75,7 @@ export type StaffOutreachTaskItem = {
   priority: OutreachTaskPriority;
   status: OutreachTaskStatus;
   title: string;
+  commentThread?: RecordCommentThreadData;
 };
 
 type StaffOutreachTaskListProps = {
@@ -380,6 +383,15 @@ export function StaffOutreachTaskList({
               />
             </div>
           </details>
+
+          {task.commentThread ? (
+            <RecordCommentThread
+              entityId={task.id}
+              entityType="OUTREACH_TASK"
+              redirectTo={redirectTo}
+              thread={task.commentThread}
+            />
+          ) : null}
         </article>
       ))}
     </div>

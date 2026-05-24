@@ -2,9 +2,15 @@ import { ArrowRight, ClipboardCheck, FileText } from "lucide-react";
 import Link from "next/link";
 
 import { withdrawStudentApplication } from "@/app/dashboard/student/applications/actions";
+import { RecordCommentThread } from "@/components/comments/record-comment-thread";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import {
+  ApplicationOnboardingList,
+  type ApplicationOnboardingItemView,
+} from "@/components/onboarding/application-onboarding-list";
 import { StudentApplicationStatusBadge } from "@/components/student/student-application-status-badge";
 import type { ApplicationStatus } from "@/generated/prisma/enums";
+import type { RecordCommentThread as RecordCommentThreadData } from "@/lib/comments/record-comments";
 
 export type StudentApplicationListItem = {
   id: string;
@@ -22,6 +28,8 @@ export type StudentApplicationListItem = {
       name: string;
     };
   };
+  onboardingItems: ApplicationOnboardingItemView[];
+  commentThread: RecordCommentThreadData;
 };
 
 type StudentApplicationListProps = {
@@ -144,6 +152,22 @@ export function StudentApplicationList({
               </button>
             </form>
           ) : null}
+
+          {application.status === "ACCEPTED" ? (
+            <ApplicationOnboardingList
+              applicationId={application.id}
+              items={application.onboardingItems}
+              mode="student"
+              redirectTo="/dashboard/student/applications"
+            />
+          ) : null}
+
+          <RecordCommentThread
+            entityId={application.id}
+            entityType="APPLICATION"
+            redirectTo="/dashboard/student/applications"
+            thread={application.commentThread}
+          />
         </article>
       ))}
     </div>

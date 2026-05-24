@@ -6,12 +6,14 @@ import {
   updatePlacementRequestPriority,
   updatePlacementRequestStatus,
 } from "@/app/dashboard/placement-requests/actions";
+import { RecordCommentThread } from "@/components/comments/record-comment-thread";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { PlacementRequestStatusBadge } from "@/components/placement-requests/placement-request-status-badge";
 import type {
   OpportunityType,
   PlacementRequestStatus,
 } from "@/generated/prisma/enums";
+import type { RecordCommentThread as RecordCommentThreadData } from "@/lib/comments/record-comments";
 import {
   formatEnumLabel,
   placementRequestPriorityOptions,
@@ -54,6 +56,7 @@ export type PlacementRequestQueueItem = {
   title: string;
   updatedAt: Date;
   urgency: string | null;
+  commentThread: RecordCommentThreadData;
 };
 
 export type PlacementRequestStaffOption = {
@@ -345,6 +348,13 @@ export function PlacementRequestQueue({
               </button>
             </form>
           </div>
+
+          <RecordCommentThread
+            entityId={request.id}
+            entityType="PLACEMENT_REQUEST"
+            redirectTo={redirectTo}
+            thread={request.commentThread}
+          />
         </article>
       ))}
     </div>

@@ -8,13 +8,19 @@ import {
 } from "lucide-react";
 
 import { updatePartnerApplicationStatus } from "@/app/dashboard/partner/applicants/actions";
+import { RecordCommentThread } from "@/components/comments/record-comment-thread";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import {
+  ApplicationOnboardingList,
+  type ApplicationOnboardingItemView,
+} from "@/components/onboarding/application-onboarding-list";
 import { PartnerApplicantStatusBadge } from "@/components/partner/partner-applicant-status-badge";
 import { PartnerResumeDownloadButton } from "@/components/partner/partner-resume-download-button";
 import type {
   ApplicationStatus,
   OpportunityType,
 } from "@/generated/prisma/enums";
+import type { RecordCommentThread as RecordCommentThreadData } from "@/lib/comments/record-comments";
 
 export type PartnerApplicantListItem = {
   aiReview: {
@@ -31,6 +37,8 @@ export type PartnerApplicantListItem = {
   submittedAt: Date | null;
   createdAt: Date;
   reviewedAt: Date | null;
+  onboardingItems: ApplicationOnboardingItemView[];
+  commentThread: RecordCommentThreadData;
   resume: {
     fileName: string;
   } | null;
@@ -323,6 +331,22 @@ export function PartnerApplicantList({
                 />
               </div>
             </div>
+
+            {application.status === "ACCEPTED" ? (
+              <ApplicationOnboardingList
+                applicationId={application.id}
+                items={application.onboardingItems}
+                mode="reviewer"
+                redirectTo={redirectTo}
+              />
+            ) : null}
+
+            <RecordCommentThread
+              entityId={application.id}
+              entityType="APPLICATION"
+              redirectTo={redirectTo}
+              thread={application.commentThread}
+            />
 
             <form
               action={updatePartnerApplicationStatus}
