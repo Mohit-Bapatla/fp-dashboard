@@ -2,6 +2,7 @@ import {
   Archive,
   CheckCircle2,
   Edit3,
+  ExternalLink,
   Lock,
   Search,
   XCircle,
@@ -192,6 +193,16 @@ export function OpportunityList({
                 <Edit3 aria-hidden="true" className="h-4 w-4" />
                 <span className="sr-only">Edit opportunity</span>
               </a>
+              {opportunity.status === "PUBLISHED" ? (
+                <a
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                  href={`/opportunities/${opportunity.id}`}
+                  title="View public preview"
+                >
+                  <ExternalLink aria-hidden="true" className="h-4 w-4" />
+                  <span className="sr-only">View public preview</span>
+                </a>
+              ) : null}
               <StatusButton
                 action={publishOpportunity}
                 disabled={opportunity.status === "PUBLISHED"}

@@ -90,6 +90,12 @@ export function StudentOpportunityDetail({
         <ArrowLeft aria-hidden="true" className="h-4 w-4" />
         Back to opportunities
       </Link>
+      <Link
+        className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+        href={`/opportunities/${opportunity.id}`}
+      >
+        View public preview
+      </Link>
 
       <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
