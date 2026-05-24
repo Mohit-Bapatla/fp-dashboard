@@ -16,7 +16,7 @@ export function DashboardTopNav({ role, navItems }: DashboardTopNavProps) {
   const meta = roleMeta[role];
 
   return (
-    <header className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur">
+    <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="flex min-h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <div>
           <Link

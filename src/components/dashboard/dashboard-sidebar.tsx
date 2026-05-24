@@ -15,7 +15,7 @@ export function DashboardSidebar({ role, navItems }: DashboardSidebarProps) {
   const Icon = meta.icon;
 
   return (
-    <aside className="hidden border-r border-border bg-background/95 md:flex md:w-72 md:flex-col">
+    <aside className="hidden border-r border-border bg-background md:flex md:w-72 md:flex-col">
       <div className="border-b border-border p-6">
         <Link
           className="flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
@@ -45,7 +45,7 @@ export function DashboardSidebar({ role, navItems }: DashboardSidebarProps) {
           if (item.href === "#") {
             return (
               <span
-                className="flex cursor-default select-none items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground/40"
+                className="flex cursor-default select-none items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground/50"
                 key={item.label}
               >
                 <ItemIcon aria-hidden="true" className="h-4 w-4 shrink-0 opacity-40" />
@@ -59,14 +59,14 @@ export function DashboardSidebar({ role, navItems }: DashboardSidebarProps) {
               aria-current={item.active ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
-                item.active && "bg-primary/[0.08] text-foreground font-semibold",
+                item.active && "bg-primary/10 text-foreground font-semibold",
               )}
               href={item.href}
               key={item.label}
             >
               <ItemIcon
                 aria-hidden="true"
-                className={cn("h-4 w-4 shrink-0", item.active ? "text-primary" : "text-muted-foreground/70")}
+                className={cn("h-4 w-4 shrink-0", item.active ? "text-primary" : "text-muted-foreground/60")}
               />
               <span>{item.label}</span>
               {item.active && (
