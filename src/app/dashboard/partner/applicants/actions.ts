@@ -12,6 +12,10 @@ import { createNotifications } from "@/lib/notifications/notifications";
 import { ensureApplicationOnboardingItems } from "@/lib/onboarding/application-onboarding";
 import { getCurrentPartnerContext } from "@/lib/partner/context";
 import {
+  enforceRateLimit,
+  formatRateLimitMessage,
+} from "@/lib/security/rate-limit";
+import {
   createSupabaseAdminClient,
   resumeBucketName,
 } from "@/lib/storage/supabase-admin";
@@ -55,6 +59,18 @@ export async function updatePartnerApplicationStatus(formData: FormData) {
   const applicationId = getString(formData, "applicationId");
   const status = getString(formData, "status") as ApplicationStatus;
   const redirectTo = getSafeRedirectTo(formData);
+  const rateLimit = await enforceRateLimit({
+    action: "partner_mutation",
+    identifier: `user:${context.user.id}`,
+    limit: 100,
+    windowSeconds: 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    redirect(
+      `${redirectTo}?error=${encodeURIComponent(formatRateLimitMessage(rateLimit))}`,
+    );
+  }
 
   if (
     !applicationId ||

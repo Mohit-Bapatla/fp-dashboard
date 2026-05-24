@@ -63,8 +63,8 @@ export async function submitStudentApplication(
 
   const rateLimit = await enforceRateLimit({
     action: "application_submit",
-    identifier: user.id,
-    limit: 10,
+    identifier: `user:${user.id}`,
+    limit: 20,
     windowSeconds: 60 * 60,
   });
 

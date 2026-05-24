@@ -48,7 +48,7 @@ export async function uploadStudentResume(
 
   const rateLimit = await enforceRateLimit({
     action: "resume_upload",
-    identifier: context.profileId,
+    identifier: `user:${context.userId}`,
     limit: 5,
     windowSeconds: 60 * 60,
   });
@@ -264,7 +264,7 @@ export async function parseStudentResume(
 
   const rateLimit = await enforceRateLimit({
     action: "resume_parse",
-    identifier: context.profileId,
+    identifier: `user:${context.userId}`,
     limit: 10,
     windowSeconds: 60 * 60,
   });

@@ -14,6 +14,10 @@ import { applicationStatusEmail } from "@/lib/email/templates";
 import { sendTransactionalEmail } from "@/lib/email/resend";
 import { createNotifications } from "@/lib/notifications/notifications";
 import { ensureApplicationOnboardingItems } from "@/lib/onboarding/application-onboarding";
+import {
+  enforceRateLimit,
+  formatRateLimitMessage,
+} from "@/lib/security/rate-limit";
 
 const adminUpdateStatuses: ApplicationStatus[] = [
   "UNDER_REVIEW",
@@ -52,6 +56,18 @@ export async function updateAdminApplicationStatus(formData: FormData) {
   const applicationId = getString(formData, "applicationId");
   const status = getString(formData, "status") as ApplicationStatus;
   const redirectTo = getSafeRedirectTo(formData);
+  const rateLimit = await enforceRateLimit({
+    action: "admin_mutation",
+    identifier: `user:${userId}`,
+    limit: 100,
+    windowSeconds: 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    redirect(
+      `${redirectTo}?error=${encodeURIComponent(formatRateLimitMessage(rateLimit))}`,
+    );
+  }
 
   if (!applicationId || !adminUpdateStatuses.includes(status)) {
     redirect(redirectTo);

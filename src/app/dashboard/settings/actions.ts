@@ -6,6 +6,10 @@ import { revalidatePath } from "next/cache";
 import { getRoleFromSessionClaims } from "@/lib/auth/roles";
 import { syncCurrentUserFromClerk } from "@/lib/auth/user-sync";
 import { prisma } from "@/lib/db/prisma";
+import {
+  enforceRateLimit,
+  formatRateLimitMessage,
+} from "@/lib/security/rate-limit";
 
 export type AccountSettingsActionState = {
   error: string | null;
@@ -39,6 +43,20 @@ export async function updateAccountDisplayName(
   if (!firstName || !lastName) {
     return {
       error: "Enter both first and last name.",
+      success: null,
+    };
+  }
+
+  const rateLimit = await enforceRateLimit({
+    action: "profile_settings_update",
+    identifier: `user:${user.id}`,
+    limit: 60,
+    windowSeconds: 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    return {
+      error: formatRateLimitMessage(rateLimit),
       success: null,
     };
   }

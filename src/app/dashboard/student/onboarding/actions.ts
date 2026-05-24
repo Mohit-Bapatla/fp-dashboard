@@ -6,6 +6,10 @@ import { redirect } from "next/navigation";
 import { getRoleFromSessionClaims } from "@/lib/auth/roles";
 import { createAuditLog } from "@/lib/audit/audit-log";
 import { prisma } from "@/lib/db/prisma";
+import {
+  enforceRateLimit,
+  formatRateLimitMessage,
+} from "@/lib/security/rate-limit";
 import type { StudentOnboardingActionState } from "@/lib/student/onboarding-state";
 import { getOrCreateCurrentStudentUser } from "@/lib/student/profile";
 import { validateStudentProfileForm } from "@/lib/student/profile-validation";
@@ -36,6 +40,20 @@ export async function saveStudentProfile(
 
   const user = await getOrCreateCurrentStudentUser(userId);
   const hadProfile = Boolean(user.studentProfile);
+  const rateLimit = await enforceRateLimit({
+    action: "student_profile_update",
+    identifier: `user:${user.id}`,
+    limit: 60,
+    windowSeconds: 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    return {
+      fieldErrors: {},
+      formError: formatRateLimitMessage(rateLimit),
+      values: validation.values,
+    };
+  }
 
   await prisma.user.update({
     where: {

@@ -65,7 +65,7 @@ export async function previewCsvImport(
   const { userId } = await assertAdminAccess();
   const rateLimit = await enforceRateLimit({
     action: "csv_import_preview",
-    identifier: userId,
+    identifier: `user:${userId}`,
     limit: 20,
     windowSeconds: 15 * 60,
   });
@@ -117,7 +117,7 @@ export async function importCsvPreview(
   const { userId } = await assertAdminAccess();
   const rateLimit = await enforceRateLimit({
     action: "csv_import_commit",
-    identifier: userId,
+    identifier: `user:${userId}`,
     limit: 5,
     windowSeconds: 15 * 60,
   });

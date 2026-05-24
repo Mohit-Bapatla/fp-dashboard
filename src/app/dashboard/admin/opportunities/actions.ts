@@ -18,6 +18,10 @@ import {
 } from "@/lib/admin/opportunity-validation";
 import { prisma } from "@/lib/db/prisma";
 import { createNotifications } from "@/lib/notifications/notifications";
+import {
+  enforceRateLimit,
+  formatRateLimitMessage,
+} from "@/lib/security/rate-limit";
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -37,6 +41,12 @@ export async function saveOpportunity(
 ): Promise<OpportunityActionState> {
   const { userId } = await assertAdminAccess();
   const actorId = await getActorIdFromClerkUserId(userId);
+  const rateLimit = await enforceRateLimit({
+    action: "admin_mutation",
+    identifier: `user:${userId}`,
+    limit: 100,
+    windowSeconds: 60 * 60,
+  });
 
   const validation = validateOpportunityForm(formData);
 
@@ -44,6 +54,14 @@ export async function saveOpportunity(
     return {
       fieldErrors: validation.errors,
       formError: "Please fix the highlighted fields.",
+      values: validation.values,
+    };
+  }
+
+  if (!rateLimit.allowed) {
+    return {
+      fieldErrors: {},
+      formError: formatRateLimitMessage(rateLimit),
       values: validation.values,
     };
   }
@@ -152,6 +170,12 @@ export async function createPartnerOrganization(
 ): Promise<PartnerOrganizationActionState> {
   const { userId } = await assertAdminAccess();
   const actorId = await getActorIdFromClerkUserId(userId);
+  const rateLimit = await enforceRateLimit({
+    action: "admin_mutation",
+    identifier: `user:${userId}`,
+    limit: 100,
+    windowSeconds: 60 * 60,
+  });
 
   const validation = validatePartnerOrganizationForm(formData);
 
@@ -159,6 +183,14 @@ export async function createPartnerOrganization(
     return {
       fieldErrors: validation.errors,
       formError: "Please fix the highlighted fields.",
+      values: validation.values,
+    };
+  }
+
+  if (!rateLimit.allowed) {
+    return {
+      fieldErrors: {},
+      formError: formatRateLimitMessage(rateLimit),
       values: validation.values,
     };
   }
@@ -212,6 +244,18 @@ async function updateOpportunityStatus(
   const opportunityId = getString(formData, "opportunityId");
   const redirectTo =
     getString(formData, "redirectTo") || "/dashboard/admin/opportunities";
+  const rateLimit = await enforceRateLimit({
+    action: "admin_mutation",
+    identifier: `user:${userId}`,
+    limit: 100,
+    windowSeconds: 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    redirect(
+      `${redirectTo}?error=${encodeURIComponent(formatRateLimitMessage(rateLimit))}`,
+    );
+  }
 
   if (opportunityId) {
     const opportunity = await prisma.opportunity.findUnique({

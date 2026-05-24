@@ -28,7 +28,7 @@ export async function generateOutreachDraft(
   const { userId } = await assertPlacementQueueAccess();
   const rateLimit = await enforceRateLimit({
     action: "ai_outreach_draft",
-    identifier: userId,
+    identifier: `user:${userId}`,
     limit: 20,
     windowSeconds: 60 * 60,
   });

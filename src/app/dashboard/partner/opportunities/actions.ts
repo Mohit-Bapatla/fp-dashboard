@@ -12,6 +12,10 @@ import {
 } from "@/lib/notifications/notifications";
 import { getCurrentPartnerContext } from "@/lib/partner/context";
 import { validatePartnerOpportunityForm } from "@/lib/partner/opportunity-validation";
+import {
+  enforceRateLimit,
+  formatRateLimitMessage,
+} from "@/lib/security/rate-limit";
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -39,11 +43,25 @@ export async function savePartnerOpportunity(
 ): Promise<PartnerOpportunityActionState> {
   const context = await getCurrentPartnerContext();
   const validation = validatePartnerOpportunityForm(formData);
+  const rateLimit = await enforceRateLimit({
+    action: "partner_mutation",
+    identifier: `user:${context.user.id}`,
+    limit: 100,
+    windowSeconds: 60 * 60,
+  });
 
   if (!validation.success) {
     return {
       fieldErrors: validation.errors,
       formError: "Please fix the highlighted fields.",
+      values: validation.values,
+    };
+  }
+
+  if (!rateLimit.allowed) {
+    return {
+      fieldErrors: {},
+      formError: formatRateLimitMessage(rateLimit),
       values: validation.values,
     };
   }
@@ -154,9 +172,21 @@ export async function savePartnerOpportunity(
 export async function submitPartnerOpportunityForApproval(formData: FormData) {
   const context = await getCurrentPartnerContext();
   const opportunityId = getString(formData, "opportunityId");
+  const rateLimit = await enforceRateLimit({
+    action: "partner_mutation",
+    identifier: `user:${context.user.id}`,
+    limit: 100,
+    windowSeconds: 60 * 60,
+  });
 
   if (!opportunityId) {
     redirect("/dashboard/partner/opportunities");
+  }
+
+  if (!rateLimit.allowed) {
+    redirect(
+      `/dashboard/partner/opportunities?error=${encodeURIComponent(formatRateLimitMessage(rateLimit))}`,
+    );
   }
 
   const opportunity = await prisma.opportunity.findFirst({
@@ -219,6 +249,18 @@ async function updatePublishedPartnerOpportunityStatus(
   const opportunityId = getString(formData, "opportunityId");
   const redirectTo =
     getString(formData, "redirectTo") || "/dashboard/partner/opportunities";
+  const rateLimit = await enforceRateLimit({
+    action: "partner_mutation",
+    identifier: `user:${context.user.id}`,
+    limit: 100,
+    windowSeconds: 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    redirect(
+      `${redirectTo}?error=${encodeURIComponent(formatRateLimitMessage(rateLimit))}`,
+    );
+  }
 
   if (opportunityId) {
     const opportunity = await prisma.opportunity.findFirst({

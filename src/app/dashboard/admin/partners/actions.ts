@@ -11,6 +11,10 @@ import {
 import { assertAdminAccess } from "@/lib/admin/authorization";
 import { prisma } from "@/lib/db/prisma";
 import { createNotifications } from "@/lib/notifications/notifications";
+import {
+  enforceRateLimit,
+  formatRateLimitMessage,
+} from "@/lib/security/rate-limit";
 
 const partnerStatuses: PartnerStatus[] = [
   "NOT_CONTACTED",
@@ -48,13 +52,26 @@ function revalidatePartnerPaths() {
 
 export async function createAdminPartnerOrganization(formData: FormData) {
   const { userId } = await assertAdminAccess();
+  const redirectTo = getSafeRedirect(formData);
+  const rateLimit = await enforceRateLimit({
+    action: "admin_mutation",
+    identifier: `user:${userId}`,
+    limit: 100,
+    windowSeconds: 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    redirect(
+      `${redirectTo}?error=${encodeURIComponent(formatRateLimitMessage(rateLimit))}`,
+    );
+  }
+
   const actorId = await getActorIdFromClerkUserId(userId);
   const name = getString(formData, "name");
   const statusValue = getString(formData, "status") as PartnerStatus;
   const status = partnerStatuses.includes(statusValue)
     ? statusValue
     : "NOT_CONTACTED";
-  const redirectTo = getSafeRedirect(formData);
 
   if (!name) {
     redirect(`${redirectTo}?partnerError=missing-name`);
@@ -111,11 +128,24 @@ export async function createAdminPartnerOrganization(formData: FormData) {
 
 export async function linkPartnerUserToOrganization(formData: FormData) {
   const { userId } = await assertAdminAccess();
+  const redirectTo = getSafeRedirect(formData);
+  const rateLimit = await enforceRateLimit({
+    action: "admin_mutation",
+    identifier: `user:${userId}`,
+    limit: 100,
+    windowSeconds: 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    redirect(
+      `${redirectTo}?error=${encodeURIComponent(formatRateLimitMessage(rateLimit))}`,
+    );
+  }
+
   const actorId = await getActorIdFromClerkUserId(userId);
   const partnerUserId = getString(formData, "partnerUserId");
   const organizationId = getString(formData, "organizationId");
   const title = getString(formData, "title");
-  const redirectTo = getSafeRedirect(formData);
 
   if (!partnerUserId || !organizationId) {
     redirect(`${redirectTo}?linkError=missing-fields`);

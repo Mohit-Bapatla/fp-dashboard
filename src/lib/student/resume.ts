@@ -13,6 +13,7 @@ import { getOrCreateCurrentStudentUser } from "@/lib/student/profile";
 export type CurrentStudentResumeContext = {
   profileId: string;
   resume: Resume | null;
+  userId: string;
 };
 
 export async function getCurrentStudentResumeContext(): Promise<CurrentStudentResumeContext | null> {
@@ -44,6 +45,7 @@ export async function getCurrentStudentResumeContext(): Promise<CurrentStudentRe
   return {
     profileId: user.studentProfile.id,
     resume,
+    userId: user.id,
   };
 }
 

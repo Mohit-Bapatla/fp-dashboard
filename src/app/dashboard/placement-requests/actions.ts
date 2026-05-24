@@ -24,6 +24,10 @@ import {
   type StudentPlacementRequestActionState,
   validateStudentPlacementRequestForm,
 } from "@/lib/placement-requests/validation";
+import {
+  enforceRateLimit,
+  formatRateLimitMessage,
+} from "@/lib/security/rate-limit";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
 
@@ -75,6 +79,21 @@ export async function createStudentPlacementRequest(
 
   if (!user.studentProfile) {
     redirect("/dashboard/student/onboarding");
+  }
+
+  const rateLimit = await enforceRateLimit({
+    action: "placement_request_create",
+    identifier: `user:${user.id}`,
+    limit: 10,
+    windowSeconds: 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    return {
+      fieldErrors: {},
+      formError: formatRateLimitMessage(rateLimit),
+      values: validation.values,
+    };
   }
 
   const request = await prisma.placementRequest.create({

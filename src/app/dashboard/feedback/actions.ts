@@ -13,6 +13,10 @@ import { createAuditLog } from "@/lib/audit/audit-log";
 import { getRoleFromSessionClaims } from "@/lib/auth/roles";
 import { syncCurrentUserFromClerk } from "@/lib/auth/user-sync";
 import { prisma } from "@/lib/db/prisma";
+import {
+  enforceRateLimit,
+  formatRateLimitMessage,
+} from "@/lib/security/rate-limit";
 
 const feedbackTypes: FeedbackType[] = [
   "STUDENT_APPLICATION_EXPERIENCE",
@@ -187,6 +191,19 @@ export async function submitFeedback(formData: FormData) {
 
   if (!allowed) {
     redirect(redirectTo);
+  }
+
+  const rateLimit = await enforceRateLimit({
+    action: "feedback_submit",
+    identifier: `user:${user.id}`,
+    limit: 30,
+    windowSeconds: 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    redirect(
+      `${redirectTo}?error=${encodeURIComponent(formatRateLimitMessage(rateLimit))}`,
+    );
   }
 
   const feedback = await prisma.feedback.upsert({
