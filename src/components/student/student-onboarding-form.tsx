@@ -70,6 +70,27 @@ const gradeYearOptions = [
   "Other",
 ] as const;
 
+function getGradeYearControlValues(value: string) {
+  if (!value) {
+    return {
+      customValue: "",
+      selectedValue: "",
+    };
+  }
+
+  if (gradeYearOptions.some((option) => option === value)) {
+    return {
+      customValue: "",
+      selectedValue: value,
+    };
+  }
+
+  return {
+    customValue: value,
+    selectedValue: "Other",
+  };
+}
+
 const specialtySuggestions = [
   "Neuroscience",
   "Cardiology",
@@ -330,17 +351,19 @@ export function StudentOnboardingForm({
     initialState,
   );
   const [step, setStep] = useState(0);
+  const initialGradeYear = getGradeYearControlValues(state.values.gradeYear);
+  const [selectedGradeYear, setSelectedGradeYear] = useState(
+    initialGradeYear.selectedValue,
+  );
+  const [saveRequested, setSaveRequested] = useState(false);
   const progress = useMemo(
     () => Math.round(((step + 1) / steps.length) * 100),
     [step],
   );
-  const currentGradeYearIsLegacy =
-    state.values.gradeYear &&
-    !gradeYearOptions.some((option) => option === state.values.gradeYear);
+  const isSaving = saveRequested && isPending;
 
   return (
     <form
-      action={formAction}
       className="rounded-xl border border-border bg-background shadow-sm"
       onKeyDown={(event) => {
         if (
@@ -448,25 +471,57 @@ export function StudentOnboardingForm({
             required
             values={state.values}
           />
-          <SelectField
-            errors={state.fieldErrors}
-            label="Grade year"
-            name="gradeYear"
-            required
-            values={state.values}
-          >
-            <option value="">Choose grade year</option>
-            {gradeYearOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-            {currentGradeYearIsLegacy ? (
-              <option value={state.values.gradeYear}>
-                {state.values.gradeYear}
-              </option>
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-foreground">
+              Grade year <span className="text-primary">*</span>
+              <select
+                className={cn(
+                  "mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-primary",
+                  state.fieldErrors.gradeYear &&
+                    "border-red-400 focus:border-red-500",
+                )}
+                name="gradeYear"
+                onChange={(event) => setSelectedGradeYear(event.target.value)}
+                value={selectedGradeYear}
+              >
+                <option value="">Choose grade year</option>
+                {gradeYearOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              {state.fieldErrors.gradeYear ? (
+                <span className="mt-1 block text-xs text-red-600">
+                  {state.fieldErrors.gradeYear}
+                </span>
+              ) : null}
+            </label>
+            {selectedGradeYear === "Other" ? (
+              <label className="block text-sm font-medium text-foreground">
+                Tell us your academic stage{" "}
+                <span className="text-primary">*</span>
+                <input
+                  className={cn(
+                    "mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-primary",
+                    state.fieldErrors.gradeYearCustom &&
+                      "border-red-400 focus:border-red-500",
+                  )}
+                  defaultValue={
+                    state.values.gradeYearCustom || initialGradeYear.customValue
+                  }
+                  name="gradeYearCustom"
+                  placeholder="Example: Dual-enrollment senior, post-bacc applicant"
+                  type="text"
+                />
+                {state.fieldErrors.gradeYearCustom ? (
+                  <span className="mt-1 block text-xs text-red-600">
+                    {state.fieldErrors.gradeYearCustom}
+                  </span>
+                ) : null}
+              </label>
             ) : null}
-          </SelectField>
+          </div>
         </section>
 
         <section
@@ -613,7 +668,7 @@ export function StudentOnboardingForm({
       <div className="flex flex-col justify-between gap-3 border-t border-border p-6 sm:flex-row">
         <button
           className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={step === 0 || isPending}
+          disabled={step === 0 || isSaving}
           onClick={() => setStep((current) => Math.max(current - 1, 0))}
           type="button"
         >
@@ -624,10 +679,12 @@ export function StudentOnboardingForm({
         {step < steps.length - 1 ? (
           <button
             className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={isPending}
-            onClick={() =>
-              setStep((current) => Math.min(current + 1, steps.length - 1))
-            }
+            disabled={isSaving}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              setStep((current) => Math.min(current + 1, steps.length - 1));
+            }}
             type="button"
           >
             Continue
@@ -636,10 +693,12 @@ export function StudentOnboardingForm({
         ) : (
           <button
             className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={isPending}
+            disabled={isSaving}
+            formAction={formAction}
+            onClick={() => setSaveRequested(true)}
             type="submit"
           >
-            {isPending ? (
+            {isSaving ? (
               <>
                 <Save aria-hidden="true" className="h-4 w-4" />
                 Saving

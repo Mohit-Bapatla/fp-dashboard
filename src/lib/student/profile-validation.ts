@@ -15,6 +15,7 @@ export type StudentProfileFormValues = {
   lastName: string;
   school: string;
   gradeYear: string;
+  gradeYearCustom: string;
   city: string;
   state: string;
   country: string;
@@ -69,6 +70,7 @@ export const emptyStudentProfileFormValues: StudentProfileFormValues = {
   lastName: "",
   school: "",
   gradeYear: "",
+  gradeYearCustom: "",
   city: "",
   state: "",
   country: "",
@@ -95,6 +97,20 @@ const requiredFields = [
   "interestedSpecialties",
   "availability",
   "careerGoals",
+] as const;
+
+const gradeYearOptions = [
+  "High school freshman",
+  "High school sophomore",
+  "High school junior",
+  "High school senior",
+  "College freshman",
+  "College sophomore",
+  "College junior",
+  "College senior",
+  "Graduate student",
+  "Medical student",
+  "Gap year / post-baccalaureate",
 ] as const;
 
 function getString(formData: FormData, key: keyof StudentProfileFormValues) {
@@ -177,6 +193,7 @@ export function valuesFromFormData(
     lastName: getString(formData, "lastName"),
     school: getString(formData, "school"),
     gradeYear: getString(formData, "gradeYear"),
+    gradeYearCustom: getString(formData, "gradeYearCustom"),
     city: getString(formData, "city"),
     state: getString(formData, "state"),
     country: getString(formData, "country"),
@@ -209,6 +226,20 @@ export function validateStudentProfileForm(
     errors.opportunityTypes = "Choose at least one opportunity type.";
   }
 
+  if (values.gradeYear === "Other" && !values.gradeYearCustom) {
+    errors.gradeYearCustom = "Tell us your academic stage.";
+  }
+
+  if (
+    values.gradeYear &&
+    values.gradeYear !== "Other" &&
+    !gradeYearOptions.includes(
+      values.gradeYear as (typeof gradeYearOptions)[number],
+    )
+  ) {
+    errors.gradeYear = "Choose a listed grade year or select Other.";
+  }
+
   for (const field of ["linkedinUrl", "githubUrl", "portfolioUrl"] as const) {
     if (!validateOptionalUrl(values[field])) {
       errors[field] = "Enter a valid URL starting with http:// or https://.";
@@ -230,7 +261,10 @@ export function validateStudentProfileForm(
       firstName: values.firstName,
       lastName: values.lastName,
       school: values.school,
-      gradeYear: values.gradeYear,
+      gradeYear:
+        values.gradeYear === "Other"
+          ? values.gradeYearCustom
+          : values.gradeYear,
       city: values.city,
       state: values.state,
       country: values.country,

@@ -16,6 +16,35 @@ function listToText(value: string[]) {
   return value.join(", ");
 }
 
+const gradeYearOptions = new Set([
+  "High school freshman",
+  "High school sophomore",
+  "High school junior",
+  "High school senior",
+  "College freshman",
+  "College sophomore",
+  "College junior",
+  "College senior",
+  "Graduate student",
+  "Medical student",
+  "Gap year / post-baccalaureate",
+  "Other",
+]);
+
+function getGradeYearValues(value: string | null | undefined) {
+  if (!value || gradeYearOptions.has(value)) {
+    return {
+      gradeYear: value ?? "",
+      gradeYearCustom: "",
+    };
+  }
+
+  return {
+    gradeYear: "Other",
+    gradeYearCustom: value,
+  };
+}
+
 export default async function StudentOnboardingPage() {
   const { redirectToSignIn, sessionClaims, userId } = await auth();
 
@@ -29,13 +58,15 @@ export default async function StudentOnboardingPage() {
 
   const user = await getOrCreateCurrentStudentUser(userId);
   const profile = user.studentProfile;
+  const gradeYearValues = getGradeYearValues(profile?.gradeYear);
   const initialState: StudentOnboardingActionState = {
     ...initialStudentOnboardingActionState,
     values: {
       firstName: user.firstName ?? "",
       lastName: user.lastName ?? "",
       school: profile?.school ?? "",
-      gradeYear: profile?.gradeYear ?? "",
+      gradeYear: gradeYearValues.gradeYear,
+      gradeYearCustom: gradeYearValues.gradeYearCustom,
       city: profile?.city ?? "",
       state: profile?.state ?? "",
       country: profile?.country ?? "",

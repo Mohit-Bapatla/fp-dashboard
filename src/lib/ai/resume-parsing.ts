@@ -11,6 +11,7 @@ export type ParsedResumeData = {
   certifications: string[];
   education: string[];
   experience: string[];
+  projects: string[];
   skills: string[];
   summary: string | null;
   text: string;
@@ -59,12 +60,22 @@ const commonSkillTerms = [
   "patient care",
   "clinical research",
   "research",
-  "data analysis",
-  "data entry",
-  "excel",
+  "Data Analysis",
+  "Data Entry",
+  "Excel",
   "microsoft excel",
   "google sheets",
-  "python",
+  "SQL",
+  "pandas",
+  "NumPy",
+  "scikit-learn",
+  "SHAP",
+  "FastAPI",
+  "Streamlit",
+  "Git/GitHub",
+  "Machine Learning",
+  "Model Evaluation",
+  "Python",
   "r programming",
   "javascript",
   "typescript",
@@ -98,13 +109,7 @@ const sectionHeadings = {
     "training",
     "licenses and certifications",
   ],
-  education: [
-    "education",
-    "academic background",
-    "academic history",
-    "university",
-    "college",
-  ],
+  education: ["education", "academic background", "academic history"],
   experience: [
     "experience",
     "professional experience",
@@ -116,6 +121,7 @@ const sectionHeadings = {
     "leadership experience",
     "activities",
   ],
+  projects: ["projects", "selected projects", "technical projects"],
   skills: [
     "skills",
     "core competencies",
@@ -142,13 +148,13 @@ function normalizeResumeText(value: string) {
   const withNormalizedBreaks = value
     .replace(/\u00a0/g, " ")
     .replace(/\r/g, "\n")
-    .replace(/[|·]/g, " ")
+    .replace(/[|\u00b7]/g, " ")
     .replace(/[\u2022\u25cf\u25aa\u25e6]/g, "\n")
     .replace(/\t+/g, " ")
     .replace(/[ \f\v]+/g, " ")
     .replace(
-      /([a-z0-9)])\s+(Education|Experience|Skills|Certifications|Certificates|Licenses|Projects|Summary|Objective)\s*:?/gi,
-      "$1\n$2:",
+      /([a-z0-9)])\s+(Technical Skills|Education|Experience|Certifications|Certificates|Licenses|Projects|Summary|Objective)\s*:?/gi,
+      "$1\n$2\n",
     )
     .replace(/\n{3,}/g, "\n\n")
     .trim();
@@ -242,7 +248,7 @@ function parseHeadingLine(line: string) {
       }
 
       const inlinePattern = new RegExp(
-        `^${escapeRegExp(heading)}\\s*[:\\-\\u2013\\u2014]?\\s+(.+)$`,
+        `^${escapeRegExp(heading)}\\s*[:\\-\\u2013\\u2014]?\\s*(.+)$`,
         "i",
       );
       const match = compactLine.match(inlinePattern);
@@ -278,6 +284,39 @@ function extractSection(lines: string[], target: keyof typeof sectionHeadings) {
       matches.push(line);
     }
   });
+
+  return uniqueStrings(matches);
+}
+
+function extractEducationSection(lines: string[]) {
+  const matches: string[] = [];
+  let collecting = false;
+
+  for (const line of lines) {
+    const heading = parseHeadingLine(line);
+
+    if (heading) {
+      if (collecting && heading.key !== "education") {
+        break;
+      }
+
+      collecting = heading.key === "education";
+      if (collecting && heading.remainder) {
+        matches.push(heading.remainder);
+      }
+      continue;
+    }
+
+    if (!collecting) {
+      continue;
+    }
+
+    if (isDateRangeLine(line)) {
+      break;
+    }
+
+    matches.push(line);
+  }
 
   return uniqueStrings(matches);
 }
@@ -327,7 +366,8 @@ function extractSummarySection(lines: string[]) {
 function splitPotentialSkills(values: string[]) {
   return values.flatMap((value) =>
     value
-      .split(/[,;|/]| {2,}/)
+      .replace(/^[A-Za-z][A-Za-z /&()+.#-]{1,40}:\s*/, "")
+      .split(/[,;|]| {2,}/)
       .map((item) => item.trim())
       .filter(Boolean),
   );
@@ -344,6 +384,114 @@ function skillsFromKnownTerms(text: string) {
 
     return pattern.test(text);
   });
+}
+
+function isDateRangeLine(line: string) {
+  return /\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)?\s*(?:19|20)\d{2}\s*(?:-|\u2013|\u2014|to)\s*(?:present|current|(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)?\s*(?:19|20)\d{2})\b/i.test(
+    line,
+  );
+}
+
+function extractDateRange(line: string) {
+  return (
+    line
+      .match(
+        /\b(?:(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+)?(?:19|20)\d{2}\s*(?:-|\u2013|\u2014|to)\s*(?:present|current|(?:(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+)?(?:19|20)\d{2})\b/i,
+      )
+      ?.at(0)
+      ?.replace(/\s*(?:-|\u2013|\u2014|to)\s*/i, " - ") ?? null
+  );
+}
+
+function isSectionBoundary(line: string) {
+  return Boolean(
+    parseHeadingLine(line) || summaryHeadings.includes(normalizeHeading(line)),
+  );
+}
+
+function isAchievementLine(line: string) {
+  return /^(built|created|developed|led|managed|designed|implemented|scaled|analyzed|optimized|launched|coordinated|conducted|improved|supported|collaborated)\b/i.test(
+    line,
+  );
+}
+
+function extractRoleFirstExperience(lines: string[]) {
+  const entries: string[] = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+
+    if (!isDateRangeLine(line) || isSectionBoundary(line)) {
+      continue;
+    }
+
+    const dateRange = extractDateRange(line);
+    const title = cleanText(line.replace(dateRange ?? "", ""));
+
+    if (!title || title.length > 90) {
+      continue;
+    }
+
+    const organizationLine = lines[index + 1] ?? "";
+    const hasOrganization =
+      organizationLine &&
+      !isDateRangeLine(organizationLine) &&
+      !isSectionBoundary(organizationLine) &&
+      organizationLine.length <= 120;
+    const achievements: string[] = [];
+
+    for (
+      let cursor = index + (hasOrganization ? 2 : 1);
+      cursor < lines.length;
+      cursor += 1
+    ) {
+      const candidate = lines[cursor];
+
+      if (isDateRangeLine(candidate) || isSectionBoundary(candidate)) {
+        break;
+      }
+
+      if (isAchievementLine(candidate)) {
+        achievements.push(candidate);
+      }
+
+      if (achievements.length >= 2) {
+        break;
+      }
+    }
+
+    entries.push(
+      cleanText(
+        [
+          title,
+          hasOrganization ? `at ${organizationLine}` : null,
+          dateRange ? `(${dateRange})` : null,
+          achievements.length ? `- ${achievements.join(" ")}` : null,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      ),
+    );
+  }
+
+  return uniqueStrings(entries);
+}
+
+function extractProjectNames(lines: string[]) {
+  const projectLines = extractSection(lines, "projects");
+  const actionStarter =
+    /^(built|created|developed|designed|implemented|trained|used|integrated|analyzed|visualized|deployed|optimized)\b/i;
+
+  return uniqueStrings(
+    projectLines.filter((line) => {
+      return (
+        line.length <= 100 &&
+        !line.includes(":") &&
+        !isAchievementLine(line) &&
+        !actionStarter.test(line)
+      );
+    }),
+  );
 }
 
 function extractEducationFallback(lines: string[]) {
@@ -369,7 +517,7 @@ function extractExperienceFallback(lines: string[]) {
         line.length >= 12 &&
         line.length <= 220 &&
         rolePattern.test(line) &&
-        (datePattern.test(line) || /[-–—]/.test(line))
+        (datePattern.test(line) || /[-\u2013\u2014]/.test(line))
       );
     }),
   );
@@ -410,8 +558,10 @@ function deterministicParse(text: string): ParsedResumeData {
     ...splitPotentialSkills(skillSection),
     ...skillsFromKnownTerms(cleaned),
   ]);
-  const education = extractSection(lines, "education");
+  const education = extractEducationSection(lines);
   const experience = extractSection(lines, "experience");
+  const inferredExperience = extractRoleFirstExperience(lines);
+  const projects = extractProjectNames(lines);
   const certifications = extractSection(lines, "certifications");
   const contact = extractContactSummary(lines);
   const explicitSummary = extractSummarySection(lines);
@@ -434,13 +584,22 @@ function deterministicParse(text: string): ParsedResumeData {
       ? certifications
       : extractCertificationFallback(lines),
     education: education.length ? education : extractEducationFallback(lines),
-    experience: experience.length
-      ? experience
-      : extractExperienceFallback(lines),
+    experience: uniqueStrings([
+      ...(experience.length ? experience : inferredExperience),
+      ...(experience.length || inferredExperience.length
+        ? []
+        : extractExperienceFallback(lines)),
+      ...projects.map((project) => `Project: ${project}`),
+    ]),
+    projects,
     skills,
     summary,
     text: normalizedText,
   };
+}
+
+export function parseResumeTextDeterministically(text: string) {
+  return deterministicParse(text);
 }
 
 async function extractPdfText(bytes: Buffer): Promise<string> {
@@ -561,8 +720,14 @@ export async function parseResume(resumeId: string, studentProfileId: string) {
       aiResult?.education.length ? aiResult.education : fallback.education,
     ),
     experience: uniqueStrings(
-      aiResult?.experience.length ? aiResult.experience : fallback.experience,
+      aiResult?.experience.length
+        ? [
+            ...aiResult.experience,
+            ...fallback.projects.map((project) => `Project: ${project}`),
+          ]
+        : fallback.experience,
     ),
+    projects: fallback.projects,
     skills: uniqueSkills(
       aiResult?.skills.length ? aiResult.skills : fallback.skills,
     ),

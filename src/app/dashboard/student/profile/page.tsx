@@ -15,10 +15,40 @@ function listToText(value: string[]) {
   return value.join(", ");
 }
 
+const gradeYearOptions = new Set([
+  "High school freshman",
+  "High school sophomore",
+  "High school junior",
+  "High school senior",
+  "College freshman",
+  "College sophomore",
+  "College junior",
+  "College senior",
+  "Graduate student",
+  "Medical student",
+  "Gap year / post-baccalaureate",
+  "Other",
+]);
+
+function getGradeYearValues(value: string | null | undefined) {
+  if (!value || gradeYearOptions.has(value)) {
+    return {
+      gradeYear: value ?? "",
+      gradeYearCustom: "",
+    };
+  }
+
+  return {
+    gradeYear: "Other",
+    gradeYearCustom: value,
+  };
+}
+
 export default async function StudentProfilePage() {
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
   const profile = user.studentProfile;
+  const gradeYearValues = getGradeYearValues(profile?.gradeYear);
   const resume = profile
     ? await prisma.resume.findFirst({
         where: {
@@ -35,7 +65,8 @@ export default async function StudentProfilePage() {
       firstName: user.firstName ?? "",
       lastName: user.lastName ?? "",
       school: profile?.school ?? "",
-      gradeYear: profile?.gradeYear ?? "",
+      gradeYear: gradeYearValues.gradeYear,
+      gradeYearCustom: gradeYearValues.gradeYearCustom,
       city: profile?.city ?? "",
       state: profile?.state ?? "",
       country: profile?.country ?? "",
