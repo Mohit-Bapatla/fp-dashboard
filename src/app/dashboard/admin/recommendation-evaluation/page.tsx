@@ -6,6 +6,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { assertAdminAccess } from "@/lib/admin/authorization";
 import { getAdminNavItems } from "@/lib/admin/navigation";
 import { prisma } from "@/lib/db/prisma";
+import { getEmbeddingCoverage } from "@/lib/matching/embedding-refresh";
 
 function getRate(numerator: number, denominator: number) {
   if (denominator === 0) {
@@ -34,6 +35,7 @@ export default async function AdminRecommendationEvaluationPage() {
     scoreAverage,
     scoreEvents,
     applicationEvents,
+    embeddingCoverage,
     eventsBySource,
   ] = await Promise.all([
     prisma.recommendationEvent.count({
@@ -89,6 +91,7 @@ export default async function AdminRecommendationEvaluationPage() {
         matchScore: true,
       },
     }),
+    getEmbeddingCoverage(),
     prisma.recommendationEvent.groupBy({
       by: ["source"],
       _count: {
@@ -177,6 +180,11 @@ export default async function AdminRecommendationEvaluationPage() {
             helper={`${searchEvents} search-result events tracked.`}
             label="Average match score"
             value={averageScore}
+          />
+          <StatCard
+            helper={`${embeddingCoverage.missing} missing and ${embeddingCoverage.stale} stale embedding records.`}
+            label="Embedding coverage"
+            value={`${embeddingCoverage.upToDate}/${embeddingCoverage.total}`}
           />
         </section>
 

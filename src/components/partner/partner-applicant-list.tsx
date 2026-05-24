@@ -25,6 +25,7 @@ import type {
   OpportunityType,
 } from "@/generated/prisma/enums";
 import type { RecordCommentThread as RecordCommentThreadData } from "@/lib/comments/record-comments";
+import { getApplicantFitExplanation } from "@/lib/matching/explanations";
 
 export type PartnerApplicantListItem = {
   aiReview: {
@@ -194,6 +195,12 @@ export function PartnerApplicantList({
       {applications.map((application) => {
         const name = getStudentName(application);
         const statusUpdateAllowed = canUpdateStatus(application.status);
+        const fitExplanation = getApplicantFitExplanation({
+          gaps: application.aiReview.gaps,
+          interviewQuestions: application.aiReview.interviewQuestions,
+          matchReasons: application.aiReview.matchReasons,
+          strengths: application.aiReview.strengths,
+        });
 
         return (
           <article
@@ -309,7 +316,7 @@ export function PartnerApplicantList({
                     Applicant review assist
                   </p>
                   <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    AI assists review; humans make final decisions.
+                    {fitExplanation.disclaimer}
                   </p>
                 </div>
                 <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
@@ -321,18 +328,18 @@ export function PartnerApplicantList({
               </p>
               <div className="mt-4 grid gap-4 lg:grid-cols-3">
                 <ReviewList
-                  items={application.aiReview.strengths}
+                  items={fitExplanation.strengths}
                   title="Strengths"
                 />
                 <ReviewList
                   items={[
-                    ...application.aiReview.matchReasons,
-                    ...application.aiReview.gaps,
+                    ...fitExplanation.fitReasons,
+                    ...fitExplanation.possibleGaps,
                   ]}
                   title="Explanation and gaps"
                 />
                 <ReviewList
-                  items={application.aiReview.interviewQuestions}
+                  items={fitExplanation.suggestedQuestions}
                   title="Suggested questions"
                 />
               </div>

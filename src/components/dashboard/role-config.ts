@@ -173,6 +173,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       href: "/dashboard/staff/automations",
       icon: Workflow,
     },
+    {
+      label: "Embeddings",
+      href: "/dashboard/staff/embeddings",
+      icon: DatabaseZap,
+    },
     { label: "Opportunities", href: "#", icon: BriefcaseBusiness },
     { label: "Analytics", href: "#", icon: BarChart3 },
     { label: "Settings", href: "#", icon: Settings },

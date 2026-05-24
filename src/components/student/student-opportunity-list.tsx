@@ -28,6 +28,7 @@ export type StudentOpportunityListItem = {
     name: string;
   };
   match?: MatchScoreResult;
+  vectorSimilarity?: number;
 };
 
 type StudentOpportunityListProps = {
@@ -106,6 +107,12 @@ export function StudentOpportunityList({
                 {opportunity.match ? (
                   <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
                     {opportunity.match.score}% fit
+                  </span>
+                ) : null}
+                {opportunity.vectorSimilarity &&
+                opportunity.vectorSimilarity > 0 ? (
+                  <span className="rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                    Semantic boost
                   </span>
                 ) : null}
               </div>

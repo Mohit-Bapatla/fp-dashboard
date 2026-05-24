@@ -19,6 +19,7 @@ import {
   TrackedRecommendationLink,
 } from "@/components/student/recommendation-event-tracker";
 import { prisma } from "@/lib/db/prisma";
+import { getRecommendationExplanation } from "@/lib/matching/explanations";
 import { getRecommendedOpportunities } from "@/lib/matching/recommendations";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getStudentProfileCompletion } from "@/lib/student/profile-completion";
@@ -186,39 +187,58 @@ export default async function StudentDashboardPage() {
                     }),
                   )}
                 />
-                {recommendedOpportunities.map(({ match, opportunity }) => (
-                  <article
-                    className="rounded-lg border border-border bg-background p-5 shadow-sm"
-                    key={opportunity.id}
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <p className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                        {match.score}% fit
-                      </p>
-                      <p className="text-xs font-medium text-muted-foreground">
-                        {opportunity.organization.name}
-                      </p>
-                    </div>
-                    <h3 className="mt-4 text-base font-semibold text-foreground">
-                      {opportunity.title}
-                    </h3>
-                    <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
-                      {match.reasons.slice(0, 2).map((reason) => (
-                        <li key={reason}>{reason}</li>
-                      ))}
-                    </ul>
-                    <TrackedRecommendationLink
-                      className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
-                      href={`/dashboard/student/opportunities/${opportunity.id}?source=recommendation`}
-                      matchScore={match.score}
-                      opportunityId={opportunity.id}
-                      source="student_dashboard_recommendation"
+                {recommendedOpportunities.map(
+                  ({ match, opportunity, vectorSimilarity }) => (
+                    <article
+                      className="rounded-lg border border-border bg-background p-5 shadow-sm"
+                      key={opportunity.id}
                     >
-                      View details
-                      <ArrowRight aria-hidden="true" className="h-4 w-4" />
-                    </TrackedRecommendationLink>
-                  </article>
-                ))}
+                      <div className="flex items-center justify-between gap-4">
+                        <p className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                          {match.score}% fit
+                        </p>
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {opportunity.organization.name}
+                        </p>
+                      </div>
+                      {vectorSimilarity > 0 ? (
+                        <p className="mt-3 text-xs font-medium text-muted-foreground">
+                          Semantic similarity is helping rank this
+                          recommendation.
+                        </p>
+                      ) : null}
+                      <h3 className="mt-4 text-base font-semibold text-foreground">
+                        {opportunity.title}
+                      </h3>
+                      <p className="mt-2 text-xs font-medium text-muted-foreground">
+                        Why recommended
+                      </p>
+                      <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
+                        {getRecommendationExplanation(match)
+                          .whyRecommended.slice(0, 2)
+                          .map((reason) => (
+                            <li key={reason}>{reason}</li>
+                          ))}
+                      </ul>
+                      <p className="mt-3 text-xs font-medium text-muted-foreground">
+                        Improve fit:{" "}
+                        {getRecommendationExplanation(match).improvementTips.at(
+                          0,
+                        )}
+                      </p>
+                      <TrackedRecommendationLink
+                        className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+                        href={`/dashboard/student/opportunities/${opportunity.id}?source=recommendation`}
+                        matchScore={match.score}
+                        opportunityId={opportunity.id}
+                        source="student_dashboard_recommendation"
+                      >
+                        View details
+                        <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                      </TrackedRecommendationLink>
+                    </article>
+                  ),
+                )}
               </div>
             ) : (
               <div className="rounded-lg border border-dashed border-border bg-background p-5 text-sm leading-6 text-muted-foreground">

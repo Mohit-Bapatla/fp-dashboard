@@ -134,6 +134,13 @@ enum RecommendationEventType {
   SEARCH_RESULTS
 }
 
+enum EmbeddingEntityType {
+  OPPORTUNITY
+  STUDENT_PROFILE
+  RESUME
+  PARTNER_ORGANIZATION
+}
+
 model User {
   id                         String             @id @default(cuid())
   clerkUserId                String             @unique
@@ -614,4 +621,22 @@ model DataQualityAcknowledgement {
   @@index([entityType, entityId])
   @@index([issueKey])
   @@index([createdAt])
+}
+
+model EmbeddingRecord {
+  id          String              @id @default(cuid())
+  entityType  EmbeddingEntityType
+  entityId    String
+  embedding   Json
+  contentHash String
+  model       String
+  dimensions  Int
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@unique([entityType, entityId])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([contentHash])
+  @@index([updatedAt])
 }

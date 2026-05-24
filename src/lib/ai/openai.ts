@@ -3,6 +3,7 @@ import "server-only";
 import OpenAI from "openai";
 
 const defaultModel = "gpt-4.1-mini";
+const defaultEmbeddingModel = "text-embedding-3-small";
 
 let client: OpenAI | null = null;
 
@@ -22,6 +23,10 @@ export function getOpenAiClient() {
   });
 
   return client;
+}
+
+export function getOpenAiEmbeddingModel() {
+  return defaultEmbeddingModel;
 }
 
 export async function createStructuredJsonResponse<T>({

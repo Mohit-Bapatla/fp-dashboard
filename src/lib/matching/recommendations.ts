@@ -3,6 +3,11 @@ import "server-only";
 import { prisma } from "@/lib/db/prisma";
 import { createStructuredJsonResponse } from "@/lib/ai/openai";
 import { getOpportunityMatchScore } from "@/lib/matching/match-score";
+import {
+  cosineSimilarity,
+  parseEmbedding,
+  similarityToBoost,
+} from "@/lib/matching/vector-similarity";
 
 type PolishedReasons = {
   reasons: string[];
@@ -69,6 +74,7 @@ export async function getRecommendedOpportunities(studentProfileId: string) {
         },
         select: {
           extractedSkills: true,
+          id: true,
         },
         take: 1,
       },
@@ -108,6 +114,55 @@ export async function getRecommendedOpportunities(studentProfileId: string) {
     },
   });
   const resume = profile.resumes.at(0) ?? null;
+  const [profileEmbedding, resumeEmbedding, opportunityEmbeddings] =
+    await Promise.all([
+      prisma.embeddingRecord.findUnique({
+        where: {
+          entityType_entityId: {
+            entityId: studentProfileId,
+            entityType: "STUDENT_PROFILE",
+          },
+        },
+        select: {
+          embedding: true,
+        },
+      }),
+      resume
+        ? prisma.embeddingRecord.findUnique({
+            where: {
+              entityType_entityId: {
+                entityId: resume.id,
+                entityType: "RESUME",
+              },
+            },
+            select: {
+              embedding: true,
+            },
+          })
+        : Promise.resolve(null),
+      prisma.embeddingRecord.findMany({
+        where: {
+          entityId: {
+            in: opportunities.map((opportunity) => opportunity.id),
+          },
+          entityType: "OPPORTUNITY",
+        },
+        select: {
+          embedding: true,
+          entityId: true,
+        },
+      }),
+    ]);
+  const studentVector =
+    parseEmbedding(resumeEmbedding?.embedding).length > 0
+      ? parseEmbedding(resumeEmbedding?.embedding)
+      : parseEmbedding(profileEmbedding?.embedding);
+  const opportunityEmbeddingById = new Map(
+    opportunityEmbeddings.map((record) => [
+      record.entityId,
+      parseEmbedding(record.embedding),
+    ]),
+  );
   const ranked = opportunities
     .map((opportunity) => ({
       match: getOpportunityMatchScore({
@@ -116,9 +171,28 @@ export async function getRecommendedOpportunities(studentProfileId: string) {
         resume,
       }),
       opportunity,
+      vectorSimilarity: cosineSimilarity(
+        studentVector,
+        opportunityEmbeddingById.get(opportunity.id) ?? [],
+      ),
     }))
     .sort((first, second) => {
-      if (second.match.score !== first.match.score) {
+      const scoreDifference = second.match.score - first.match.score;
+
+      if (Math.abs(scoreDifference) > 10) {
+        return scoreDifference;
+      }
+
+      const boostedDifference =
+        second.match.score +
+        similarityToBoost(second.vectorSimilarity, 8) -
+        (first.match.score + similarityToBoost(first.vectorSimilarity, 8));
+
+      if (boostedDifference !== 0) {
+        return boostedDifference;
+      }
+
+      if (scoreDifference !== 0) {
         return second.match.score - first.match.score;
       }
 
@@ -144,6 +218,7 @@ export async function getRecommendedOpportunities(studentProfileId: string) {
         ...item.match,
         reasons: await polishReasons(item.match.reasons),
       },
+      vectorSimilarity: item.vectorSimilarity,
     })),
   );
 }

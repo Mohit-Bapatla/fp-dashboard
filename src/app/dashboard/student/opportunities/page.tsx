@@ -7,7 +7,13 @@ import { StudentOpportunityFilters } from "@/components/student/student-opportun
 import { StudentOpportunityList } from "@/components/student/student-opportunity-list";
 import { RecommendationEventTracker } from "@/components/student/recommendation-event-tracker";
 import { Prisma } from "@/generated/prisma/client";
+import { createEmbeddingForText } from "@/lib/ai/embeddings";
 import { getOpportunityMatchScore } from "@/lib/matching/match-score";
+import {
+  cosineSimilarity,
+  parseEmbedding,
+  similarityToBoost,
+} from "@/lib/matching/vector-similarity";
 import {
   buildSemanticOpportunityWhere,
   getSemanticOpportunityScore,
@@ -187,6 +193,31 @@ export default async function StudentOpportunitiesPage({
         })
       : Promise.resolve(null),
   ]);
+  const [queryEmbedding, opportunityEmbeddings] = await Promise.all([
+    effectiveFilters.q
+      ? createEmbeddingForText(effectiveFilters.q)
+      : Promise.resolve(null),
+    prisma.embeddingRecord.findMany({
+      where: {
+        entityId: {
+          in: opportunities.map((opportunity) => opportunity.id),
+        },
+        entityType: "OPPORTUNITY",
+      },
+      select: {
+        embedding: true,
+        entityId: true,
+      },
+    }),
+  ]);
+  const queryVector =
+    queryEmbedding?.available === true ? queryEmbedding.embedding : [];
+  const opportunityEmbeddingById = new Map(
+    opportunityEmbeddings.map((record) => [
+      record.entityId,
+      parseEmbedding(record.embedding),
+    ]),
+  );
   const opportunitiesWithMatches = opportunities.map((opportunity) => ({
     ...opportunity,
     match: getOpportunityMatchScore({
@@ -195,18 +226,29 @@ export default async function StudentOpportunitiesPage({
       resume,
     }),
     semanticScore: getSemanticOpportunityScore(opportunity, effectiveFilters.q),
+    vectorSimilarity: cosineSimilarity(
+      queryVector,
+      opportunityEmbeddingById.get(opportunity.id) ?? [],
+    ),
   }));
   const visibleOpportunities =
     effectiveFilters.sort === "best-fit"
       ? [...opportunitiesWithMatches].sort(
           (first, second) =>
             second.match.score +
-            second.semanticScore -
-            (first.match.score + first.semanticScore),
+            second.semanticScore +
+            similarityToBoost(second.vectorSimilarity, 8) -
+            (first.match.score +
+              first.semanticScore +
+              similarityToBoost(first.vectorSimilarity, 8)),
         )
       : effectiveFilters.q
         ? [...opportunitiesWithMatches].sort(
-            (first, second) => second.semanticScore - first.semanticScore,
+            (first, second) =>
+              second.semanticScore +
+              similarityToBoost(second.vectorSimilarity, 8) -
+              (first.semanticScore +
+                similarityToBoost(first.vectorSimilarity, 8)),
           )
         : opportunitiesWithMatches;
 

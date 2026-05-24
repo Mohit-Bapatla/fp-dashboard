@@ -9,7 +9,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { MatchExplanationPanel } from "@/components/matching/match-explanation-panel";
 import type { OpportunityType } from "@/generated/prisma/enums";
+import type { MatchExplanation } from "@/lib/matching/explanations";
 import type { MatchScoreResult } from "@/lib/matching/match-score";
 
 export type StudentOpportunityDetailData = {
@@ -33,6 +35,15 @@ export type StudentOpportunityDetailData = {
     website: string | null;
     description: string | null;
   };
+};
+
+export type SimilarOpportunityData = {
+  id: string;
+  organizationName: string;
+  similarity: number;
+  specialty: string | null;
+  title: string;
+  type: OpportunityType;
 };
 
 export type StudentOpportunityApplyState =
@@ -74,13 +85,17 @@ function fieldValue(value: string | null) {
 
 export function StudentOpportunityDetail({
   applyState,
+  explanation,
   match,
   opportunity,
+  similarOpportunities,
   source,
 }: {
   applyState: StudentOpportunityApplyState;
+  explanation: MatchExplanation | null;
   match: MatchScoreResult | null;
   opportunity: StudentOpportunityDetailData;
+  similarOpportunities: SimilarOpportunityData[];
   source?: string;
 }) {
   return (
@@ -169,17 +184,22 @@ export function StudentOpportunityDetail({
       </section>
 
       {match ? (
-        <section className="grid gap-4 lg:grid-cols-2">
-          <MatchPanel
-            empty="Add more profile and resume details to improve matching."
-            items={match.reasons}
-            title="Why this may fit"
-          />
-          <MatchPanel
-            empty="No major gaps detected from available profile and resume data."
-            items={match.gaps}
-            title="Possible gaps"
-          />
+        <section className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <MatchPanel
+              empty="Add more profile and resume details to improve matching."
+              items={match.reasons}
+              title="Why this may fit"
+            />
+            <MatchPanel
+              empty="No major gaps detected from available profile and resume data."
+              items={match.gaps}
+              title="Possible gaps"
+            />
+          </div>
+          {explanation ? (
+            <MatchExplanationPanel explanation={explanation} />
+          ) : null}
         </section>
       ) : null}
 
@@ -244,6 +264,35 @@ export function StudentOpportunityDetail({
           </section>
         </aside>
       </section>
+
+      {similarOpportunities.length > 0 ? (
+        <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground">
+            Similar published opportunities
+          </h2>
+          <div className="mt-5 grid gap-4 lg:grid-cols-3">
+            {similarOpportunities.map((similar) => (
+              <Link
+                className="rounded-lg border border-border bg-muted/20 p-4 transition hover:bg-muted"
+                href={`/dashboard/student/opportunities/${similar.id}`}
+                key={similar.id}
+              >
+                <p className="text-sm font-semibold text-foreground">
+                  {similar.title}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {similar.organizationName}
+                </p>
+                <p className="mt-3 text-xs font-medium text-muted-foreground">
+                  {formatEnumLabel(similar.type)} |{" "}
+                  {similar.specialty ?? "No specialty"} |{" "}
+                  {Math.round(similar.similarity * 100)}% semantic similarity
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
