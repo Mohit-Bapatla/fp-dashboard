@@ -1,26 +1,5 @@
 # Project Roadmap
 
-## Current Phase
+This file is retained for older links. The current roadmap lives in [roadmap.md](roadmap.md).
 
-Foundation setup for FP Dashboard.
-
-## Planned Modules
-
-- Student dashboard
-- Partner dashboard
-- Staff dashboard
-- Admin dashboard
-- Opportunity board
-- Applications
-- Placement requests
-- Outreach CRM
-- Resume parsing
-- Match scoring
-- Analytics
-
-## Near-Term Priorities
-
-- Finalize product requirements for the first dashboard slice.
-- Choose authentication provider.
-- Define the PostgreSQL and Prisma data model.
-- Establish deployment environments on Vercel.
+Summary: stages 0-50 are complete for the internal beta plan, and the next work should focus on beta validation, legal/privacy review, deployment hardening, and workflow polish.

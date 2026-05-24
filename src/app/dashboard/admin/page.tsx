@@ -1,70 +1,372 @@
-import { BriefcaseBusiness, Plus } from "lucide-react";
+import {
+  BarChart3,
+  BriefcaseBusiness,
+  Building2,
+  ClipboardCheck,
+  DatabaseZap,
+  FileClock,
+  FileUp,
+  GraduationCap,
+  LifeBuoy,
+  Plus,
+  Rocket,
+  Target,
+} from "lucide-react";
+import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { roleNavigation } from "@/components/dashboard/role-config";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { assertAdminAccess } from "@/lib/admin/authorization";
+import { getAdminNavItems } from "@/lib/admin/navigation";
 import { prisma } from "@/lib/db/prisma";
 
 export default async function AdminDashboardPage() {
   await assertAdminAccess();
 
-  const [userCount, studentCount, partnerCount, opportunityCount, draftCount] =
-    await Promise.all([
-      prisma.user.count(),
-      prisma.user.count({
-        where: {
-          role: "STUDENT",
+  const [
+    studentCount,
+    partnerCount,
+    opportunityCount,
+    publishedOpportunityCount,
+    applicationCount,
+    placementRequestCount,
+    applicationsNeedingReviewCount,
+    draftCount,
+    recentApplications,
+    recentPartners,
+    recentOpportunities,
+  ] = await Promise.all([
+    prisma.user.count({
+      where: {
+        role: "STUDENT",
+      },
+    }),
+    prisma.partnerOrganization.count(),
+    prisma.opportunity.count(),
+    prisma.opportunity.count({
+      where: {
+        status: "PUBLISHED",
+      },
+    }),
+    prisma.application.count(),
+    prisma.placementRequest.count(),
+    prisma.application.count({
+      where: {
+        status: {
+          in: ["SUBMITTED", "UNDER_REVIEW"],
         },
-      }),
-      prisma.partnerOrganization.count(),
-      prisma.opportunity.count(),
-      prisma.opportunity.count({
-        where: {
-          status: "DRAFT",
+      },
+    }),
+    prisma.opportunity.count({
+      where: {
+        status: "DRAFT",
+      },
+    }),
+    prisma.application.findMany({
+      orderBy: [
+        {
+          submittedAt: "desc",
         },
-      }),
-    ]);
+        {
+          createdAt: "desc",
+        },
+      ],
+      take: 5,
+      select: {
+        id: true,
+        status: true,
+        opportunity: {
+          select: {
+            title: true,
+            organization: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        studentProfile: {
+          select: {
+            user: {
+              select: {
+                email: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+    prisma.partnerOrganization.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 5,
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        createdAt: true,
+        _count: {
+          select: {
+            opportunities: true,
+          },
+        },
+      },
+    }),
+    prisma.opportunity.findMany({
+      orderBy: {
+        updatedAt: "desc",
+      },
+      take: 5,
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        organization: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    }),
+  ]);
 
   return (
-    <DashboardShell navItems={roleNavigation.admin} role="admin">
+    <DashboardShell
+      navItems={getAdminNavItems("/dashboard/admin")}
+      role="admin"
+    >
       <div className="space-y-8">
-        <header className="rounded-xl border border-border bg-background p-6 shadow-sm">
-          <RoleBadge className="mb-5" role="admin" />
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
-            Platform workspace
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
-            Admin Dashboard
-          </h1>
-          <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
-            Oversee users, partner organizations, opportunity records, and
-            platform operations for the Future Physicians dashboard.
-          </p>
+        <header className="flex flex-col gap-5 rounded-xl border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <RoleBadge className="mb-5" role="admin" />
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
+              Platform workspace
+            </p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
+              Admin Dashboard
+            </h1>
+            <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
+              Oversee students, partner organizations, opportunities,
+              applications, and platform operating queues for FP Dashboard.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              href="/dashboard/admin/applications"
+            >
+              Review applications
+            </Link>
+            <Link
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              href="/dashboard/admin/opportunities/new"
+            >
+              <Plus aria-hidden="true" className="h-4 w-4" />
+              New opportunity
+            </Link>
+          </div>
         </header>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <StatCard
-            helper="Database users connected to Clerk identities."
-            label="Total users"
-            value={userCount.toString()}
-          />
-          <StatCard
-            helper="Student role records currently in the system."
+            helper="User records currently assigned the STUDENT role."
             label="Students"
             value={studentCount.toString()}
           />
           <StatCard
-            helper="Partner organizations available for outreach and listings."
+            helper="Partner organization records available for opportunities."
             label="Partners"
             value={partnerCount.toString()}
           />
           <StatCard
-            helper="Published and draft opportunities across all partner organizations."
+            helper="All admin and partner-created opportunity records."
             label="Opportunities"
             value={opportunityCount.toString()}
+          />
+          <StatCard
+            helper="Opportunities visible to student browsing and applications."
+            label="Published"
+            value={publishedOpportunityCount.toString()}
+          />
+          <StatCard
+            helper="All submitted or historical student application records."
+            label="Applications"
+            value={applicationCount.toString()}
+          />
+          <StatCard
+            helper="Personalized student placement requests in the queue."
+            label="Placement requests"
+            value={placementRequestCount.toString()}
+          />
+          <StatCard
+            helper="Submitted or under-review applications needing attention."
+            label="Needs review"
+            value={applicationsNeedingReviewCount.toString()}
+          />
+        </section>
+
+        <section className="grid gap-4 xl:grid-cols-3">
+          <AdminOverviewPanel
+            href="/dashboard/admin/students"
+            icon={GraduationCap}
+            title="Students"
+          >
+            <p className="text-sm leading-6 text-muted-foreground">
+              View profile completion, resume status, and application counts for
+              student accounts.
+            </p>
+          </AdminOverviewPanel>
+          <AdminOverviewPanel
+            href="/dashboard/admin/partners"
+            icon={Building2}
+            title="Partners"
+          >
+            <p className="text-sm leading-6 text-muted-foreground">
+              Review partner organization status, members, opportunities, and
+              application volume.
+            </p>
+          </AdminOverviewPanel>
+          <AdminOverviewPanel
+            href="/dashboard/admin/applications"
+            icon={ClipboardCheck}
+            title="Applications"
+          >
+            <p className="text-sm leading-6 text-muted-foreground">
+              Update safe application statuses and inspect application summaries
+              across the platform.
+            </p>
+          </AdminOverviewPanel>
+          <AdminOverviewPanel
+            href="/dashboard/admin/placement-requests"
+            icon={FileClock}
+            title="Placement Requests"
+          >
+            <p className="text-sm leading-6 text-muted-foreground">
+              Monitor personalized request progress, assignment, priority, and
+              internal placement notes.
+            </p>
+          </AdminOverviewPanel>
+          <AdminOverviewPanel
+            href="/dashboard/admin/analytics"
+            icon={BarChart3}
+            title="Analytics"
+          >
+            <p className="text-sm leading-6 text-muted-foreground">
+              Review operational counts by status across students, partners,
+              opportunities, applications, placement requests, and outreach.
+            </p>
+          </AdminOverviewPanel>
+          <AdminOverviewPanel
+            href="/dashboard/admin/impact"
+            icon={Target}
+            title="Impact"
+          >
+            <p className="text-sm leading-6 text-muted-foreground">
+              Review aggregate-only impact metrics, status breakdowns, verified
+              service hours, recommendations, and interview activity.
+            </p>
+          </AdminOverviewPanel>
+          <AdminOverviewPanel
+            href="/dashboard/admin/launch"
+            icon={Rocket}
+            title="Launch"
+          >
+            <p className="text-sm leading-6 text-muted-foreground">
+              Verify internal launch readiness, demo users, deployment setup,
+              and old workflow replacement steps.
+            </p>
+          </AdminOverviewPanel>
+          <AdminOverviewPanel
+            href="/dashboard/support"
+            icon={LifeBuoy}
+            title="Support"
+          >
+            <p className="text-sm leading-6 text-muted-foreground">
+              Capture beta issues with role, URL, steps to reproduce, expected
+              behavior, and screenshots.
+            </p>
+          </AdminOverviewPanel>
+        </section>
+
+        <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-muted text-primary">
+                <Rocket aria-hidden="true" className="h-5 w-5" />
+              </div>
+              <h2 className="mt-5 text-lg font-semibold text-foreground">
+                Launch readiness and workflow migration
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Use the launch checklist, CSV imports, data quality tools,
+                analytics, and demo guide before replacing manual
+                Forms/Sheets-based operations.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+                href="/dashboard/admin/data-imports"
+              >
+                <FileUp aria-hidden="true" className="h-4 w-4" />
+                Imports
+              </Link>
+              <Link
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+                href="/dashboard/admin/data-quality"
+              >
+                <DatabaseZap aria-hidden="true" className="h-4 w-4" />
+                Data quality
+              </Link>
+              <Link
+                className="inline-flex min-h-10 items-center justify-center rounded-md bg-foreground px-4 text-sm font-medium text-background shadow-sm transition hover:bg-foreground/90"
+                href="/dashboard/admin/launch"
+              >
+                Launch checklist
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-4 xl:grid-cols-3">
+          <RecentList
+            empty="Recent applications will appear after students apply."
+            href="/dashboard/admin/applications"
+            items={recentApplications.map((application) => ({
+              id: application.id,
+              title: getApplicationStudentName(application),
+              subtitle: `${application.opportunity.title} | ${application.opportunity.organization.name}`,
+              meta: formatEnumLabel(application.status),
+            }))}
+            title="Recent applications"
+          />
+          <RecentList
+            empty="Recent partners will appear after organizations are created."
+            href="/dashboard/admin/partners"
+            items={recentPartners.map((partner) => ({
+              id: partner.id,
+              title: partner.name,
+              subtitle: `${formatEnumLabel(partner.status)} | ${partner._count.opportunities} opportunities`,
+              meta: formatDate(partner.createdAt),
+            }))}
+            title="Recent partners"
+          />
+          <RecentList
+            empty="Recent opportunities will appear after records are created."
+            href="/dashboard/admin/opportunities"
+            items={recentOpportunities.map((opportunity) => ({
+              id: opportunity.id,
+              title: opportunity.title,
+              subtitle: opportunity.organization.name,
+              meta: formatEnumLabel(opportunity.status),
+            }))}
+            title="Recent opportunities"
           />
         </section>
 
@@ -88,29 +390,138 @@ export default async function AdminDashboardPage() {
               )}
             </div>
             <div className="flex flex-wrap gap-3">
-              <a
-                className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              <Link
+                className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 href="/dashboard/admin/opportunities"
               >
                 View opportunities
-              </a>
-              <a
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              </Link>
+              <Link
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 href="/dashboard/admin/opportunities/new"
               >
                 <Plus aria-hidden="true" className="h-4 w-4" />
                 New opportunity
-              </a>
+              </Link>
             </div>
           </div>
         </section>
 
         <EmptyState
-          description="User management, audit log review, and platform settings will become available in future releases."
+          description="Advanced cohorts, funnels, and monitoring remain staged for later admin work."
           icon={BriefcaseBusiness}
           title="More admin tools coming soon"
         />
       </div>
     </DashboardShell>
+  );
+}
+
+type RecentItem = {
+  id: string;
+  title: string;
+  subtitle: string;
+  meta: string;
+};
+
+function formatDate(value: Date) {
+  return new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+  }).format(value);
+}
+
+function formatEnumLabel(value: string) {
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function getApplicationStudentName(application: {
+  studentProfile: {
+    user: {
+      email: string;
+      firstName: string | null;
+      lastName: string | null;
+    };
+  };
+}) {
+  const { email, firstName, lastName } = application.studentProfile.user;
+  const name = [firstName, lastName].filter(Boolean).join(" ");
+
+  return name || email;
+}
+
+function AdminOverviewPanel({
+  children,
+  href,
+  icon: Icon,
+  title,
+}: {
+  children: ReactNode;
+  href: string;
+  icon: typeof BriefcaseBusiness;
+  title: string;
+}) {
+  return (
+    <article className="rounded-lg border border-border bg-background p-5 shadow-sm">
+      <div className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-muted text-primary">
+        <Icon aria-hidden="true" className="h-5 w-5" />
+      </div>
+      <h2 className="mt-5 text-lg font-semibold text-foreground">{title}</h2>
+      <div className="mt-2">{children}</div>
+      <Link
+        className="mt-5 inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+        href={href}
+      >
+        Open {title.toLowerCase()}
+      </Link>
+    </article>
+  );
+}
+
+function RecentList({
+  empty,
+  href,
+  items,
+  title,
+}: {
+  empty: string;
+  href: string;
+  items: RecentItem[];
+  title: string;
+}) {
+  return (
+    <article className="rounded-lg border border-border bg-background p-5 shadow-sm">
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+        <Link
+          className="text-sm font-medium text-primary transition hover:opacity-80"
+          href={href}
+        >
+          View all
+        </Link>
+      </div>
+      {items.length > 0 ? (
+        <div className="mt-5 divide-y divide-border">
+          {items.map((item) => (
+            <div className="py-3" key={item.id}>
+              <p className="text-sm font-semibold text-foreground">
+                {item.title}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {item.subtitle}
+              </p>
+              <p className="mt-1 text-xs font-medium text-muted-foreground">
+                {item.meta}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-5 text-sm leading-6 text-muted-foreground">{empty}</p>
+      )}
+    </article>
   );
 }

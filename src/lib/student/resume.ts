@@ -2,7 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 import type { Resume } from "@/generated/prisma/client";
-import { getAppRole } from "@/lib/auth/roles";
+import { getRoleFromSessionClaims } from "@/lib/auth/roles";
 import { prisma } from "@/lib/db/prisma";
 import {
   createSupabaseAdminClient,
@@ -22,7 +22,7 @@ export async function getCurrentStudentResumeContext(): Promise<CurrentStudentRe
     return redirectToSignIn();
   }
 
-  if (getAppRole(sessionClaims?.metadata?.role) !== "STUDENT") {
+  if (getRoleFromSessionClaims(sessionClaims) !== "STUDENT") {
     redirect("/dashboard");
   }
 

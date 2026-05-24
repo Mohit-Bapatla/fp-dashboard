@@ -1,8 +1,8 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
-import { getAppRole } from "@/lib/auth/roles";
-import { prisma } from "@/lib/db/prisma";
+import { getRoleFromSessionClaims } from "@/lib/auth/roles";
+import { syncCurrentUserFromClerk } from "@/lib/auth/user-sync";
 
 export async function assertPartnerAccess() {
   const { redirectToSignIn, sessionClaims, userId } = await auth();
@@ -11,38 +11,28 @@ export async function assertPartnerAccess() {
     return redirectToSignIn();
   }
 
-  if (getAppRole(sessionClaims?.metadata?.role) !== "PARTNER") {
+  const role = getRoleFromSessionClaims(sessionClaims);
+
+  if (role !== "PARTNER") {
     redirect("/dashboard");
   }
 
+  await syncCurrentUserFromClerk({
+    clerkUserId: userId,
+    role,
+  });
+
   return {
+    role,
     userId,
   };
 }
 
 export async function getOrCreateCurrentPartnerUser(clerkUserId: string) {
-  const clerkUser = await currentUser();
-  const email =
-    clerkUser?.primaryEmailAddress?.emailAddress ??
-    clerkUser?.emailAddresses.at(0)?.emailAddress ??
-    `${clerkUserId}@example.invalid`;
+  const { sessionClaims } = await auth();
 
-  return prisma.user.upsert({
-    where: {
-      clerkUserId,
-    },
-    update: {
-      email,
-      firstName: clerkUser?.firstName ?? undefined,
-      lastName: clerkUser?.lastName ?? undefined,
-      role: "PARTNER",
-    },
-    create: {
-      clerkUserId,
-      email,
-      firstName: clerkUser?.firstName ?? null,
-      lastName: clerkUser?.lastName ?? null,
-      role: "PARTNER",
-    },
+  return syncCurrentUserFromClerk({
+    clerkUserId,
+    role: getRoleFromSessionClaims(sessionClaims),
   });
 }

@@ -5,13 +5,26 @@ import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { StudentOpportunityFilters } from "@/components/student/student-opportunity-filters";
 import { StudentOpportunityList } from "@/components/student/student-opportunity-list";
+import { RecommendationEventTracker } from "@/components/student/recommendation-event-tracker";
 import { Prisma } from "@/generated/prisma/client";
+import { createEmbeddingForText } from "@/lib/ai/embeddings";
+import { getOpportunityMatchScore } from "@/lib/matching/match-score";
+import {
+  cosineSimilarity,
+  parseEmbedding,
+  similarityToBoost,
+} from "@/lib/matching/vector-similarity";
+import {
+  buildSemanticOpportunityWhere,
+  getSemanticOpportunityScore,
+} from "@/lib/student/semantic-opportunity-search";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import {
   getStudentOpportunityFilters,
   type StudentOpportunityFilters as StudentOpportunityFiltersType,
 } from "@/lib/student/opportunity-filters";
+import { getCurrentStudentProfile } from "@/lib/student/profile";
 import { prisma } from "@/lib/db/prisma";
 
 type StudentOpportunitiesPageProps = {
@@ -56,35 +69,7 @@ function buildWhere(filters: StudentOpportunityFiltersType) {
   };
 
   if (filters.q) {
-    where.OR = [
-      {
-        title: {
-          contains: filters.q,
-        },
-      },
-      {
-        description: {
-          contains: filters.q,
-        },
-      },
-      {
-        specialty: {
-          contains: filters.q,
-        },
-      },
-      {
-        location: {
-          contains: filters.q,
-        },
-      },
-      {
-        organization: {
-          name: {
-            contains: filters.q,
-          },
-        },
-      },
-    ];
+    Object.assign(where, buildSemanticOpportunityWhere(filters.q));
   }
 
   if (filters.type) {
@@ -138,10 +123,12 @@ function buildOrderBy(filters: StudentOpportunityFiltersType) {
 export default async function StudentOpportunitiesPage({
   searchParams,
 }: StudentOpportunitiesPageProps) {
-  await assertStudentAccess();
+  const { userId } = await assertStudentAccess();
 
   const params = await searchParams;
   const filters = getStudentOpportunityFilters(params);
+  const user = await getCurrentStudentProfile(userId);
+  const profile = user.studentProfile;
   const filterSource = await prisma.opportunity.findMany({
     where: {
       status: "PUBLISHED",
@@ -161,7 +148,7 @@ export default async function StudentOpportunitiesPage({
   };
   const effectiveFilters = getEffectiveFilters(filters, options);
   const where = buildWhere(effectiveFilters);
-  const [opportunities, publishedCount] = await Promise.all([
+  const [opportunities, publishedCount, resume] = await Promise.all([
     prisma.opportunity.findMany({
       where,
       orderBy: buildOrderBy(effectiveFilters),
@@ -177,6 +164,7 @@ export default async function StudentOpportunitiesPage({
         deadline: true,
         capacity: true,
         eligibilityRequirements: true,
+        applicationInstructions: true,
         publishedAt: true,
         createdAt: true,
         organization: {
@@ -191,7 +179,78 @@ export default async function StudentOpportunitiesPage({
         status: "PUBLISHED",
       },
     }),
+    profile
+      ? prisma.resume.findFirst({
+          where: {
+            studentProfileId: profile.id,
+          },
+          orderBy: {
+            updatedAt: "desc",
+          },
+          select: {
+            extractedSkills: true,
+          },
+        })
+      : Promise.resolve(null),
   ]);
+  const [queryEmbedding, opportunityEmbeddings] = await Promise.all([
+    effectiveFilters.q
+      ? createEmbeddingForText(effectiveFilters.q)
+      : Promise.resolve(null),
+    prisma.embeddingRecord.findMany({
+      where: {
+        entityId: {
+          in: opportunities.map((opportunity) => opportunity.id),
+        },
+        entityType: "OPPORTUNITY",
+      },
+      select: {
+        embedding: true,
+        entityId: true,
+      },
+    }),
+  ]);
+  const queryVector =
+    queryEmbedding?.available === true ? queryEmbedding.embedding : [];
+  const opportunityEmbeddingById = new Map(
+    opportunityEmbeddings.map((record) => [
+      record.entityId,
+      parseEmbedding(record.embedding),
+    ]),
+  );
+  const opportunitiesWithMatches = opportunities.map((opportunity) => ({
+    ...opportunity,
+    match: getOpportunityMatchScore({
+      opportunity,
+      profile,
+      resume,
+    }),
+    semanticScore: getSemanticOpportunityScore(opportunity, effectiveFilters.q),
+    vectorSimilarity: cosineSimilarity(
+      queryVector,
+      opportunityEmbeddingById.get(opportunity.id) ?? [],
+    ),
+  }));
+  const visibleOpportunities =
+    effectiveFilters.sort === "best-fit"
+      ? [...opportunitiesWithMatches].sort(
+          (first, second) =>
+            second.match.score +
+            second.semanticScore +
+            similarityToBoost(second.vectorSimilarity, 8) -
+            (first.match.score +
+              first.semanticScore +
+              similarityToBoost(first.vectorSimilarity, 8)),
+        )
+      : effectiveFilters.q
+        ? [...opportunitiesWithMatches].sort(
+            (first, second) =>
+              second.semanticScore +
+              similarityToBoost(second.vectorSimilarity, 8) -
+              (first.semanticScore +
+                similarityToBoost(first.vectorSimilarity, 8)),
+          )
+        : opportunitiesWithMatches;
 
   return (
     <DashboardShell
@@ -235,12 +294,20 @@ export default async function StudentOpportunitiesPage({
           />
           <StatCard
             helper={
-              effectiveFilters.sort === "deadline"
-                ? "Sorted by earliest deadline."
-                : "Sorted by recently published listings."
+              effectiveFilters.sort === "best-fit"
+                ? "Sorted by strongest deterministic fit."
+                : effectiveFilters.sort === "deadline"
+                  ? "Sorted by earliest deadline."
+                  : "Sorted by recently published listings."
             }
             label="Sort"
-            value={effectiveFilters.sort === "deadline" ? "Deadline" : "Recent"}
+            value={
+              effectiveFilters.sort === "best-fit"
+                ? "Best fit"
+                : effectiveFilters.sort === "deadline"
+                  ? "Deadline"
+                  : "Recent"
+            }
           />
         </section>
 
@@ -249,9 +316,22 @@ export default async function StudentOpportunitiesPage({
           options={options}
         />
 
+        {effectiveFilters.q ? (
+          <RecommendationEventTracker
+            events={[
+              {
+                eventType: "SEARCH_RESULTS",
+                resultCount: visibleOpportunities.length,
+                searchQuery: effectiveFilters.q,
+                source: "student_opportunity_board",
+              },
+            ]}
+          />
+        ) : null}
+
         <StudentOpportunityList
           hasPublishedOpportunities={publishedCount > 0}
-          opportunities={opportunities}
+          opportunities={visibleOpportunities}
         />
       </div>
     </DashboardShell>

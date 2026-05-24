@@ -28,6 +28,12 @@ export function StudentOpportunityFilters({
   filters,
   options,
 }: StudentOpportunityFiltersProps) {
+  const examples = [
+    "remote cardiology research",
+    "Dallas shadowing for beginners",
+    "virtual public health volunteering",
+  ];
+
   return (
     <section className="rounded-xl border border-border bg-background p-5 shadow-sm">
       <form className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_repeat(5,minmax(0,0.8fr))_120px] lg:items-end">
@@ -37,7 +43,7 @@ export function StudentOpportunityFilters({
             className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus:border-primary"
             defaultValue={filters.q}
             name="q"
-            placeholder="Search title, specialty, location, or partner"
+            placeholder="Try remote cardiology research"
           />
         </label>
 
@@ -101,6 +107,7 @@ export function StudentOpportunityFilters({
         <SelectField label="Sort" name="sort" value={filters.sort}>
           <option value="recent">Recently added</option>
           <option value="deadline">Deadline</option>
+          <option value="best-fit">Best fit</option>
         </SelectField>
 
         <div className="flex gap-3 lg:col-span-full">
@@ -118,6 +125,18 @@ export function StudentOpportunityFilters({
           </Link>
         </div>
       </form>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <span className="text-sm font-medium text-muted-foreground">Try:</span>
+        {examples.map((example) => (
+          <Link
+            className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            href={`/dashboard/student/opportunities?q=${encodeURIComponent(example)}`}
+            key={example}
+          >
+            {example}
+          </Link>
+        ))}
+      </div>
     </section>
   );
 }

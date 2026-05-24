@@ -2,9 +2,23 @@ import { ArrowRight, ClipboardCheck, FileText } from "lucide-react";
 import Link from "next/link";
 
 import { withdrawStudentApplication } from "@/app/dashboard/student/applications/actions";
+import { RecordCommentThread } from "@/components/comments/record-comment-thread";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import {
+  FeedbackForm,
+  type ExistingFeedback,
+} from "@/components/feedback/feedback-form";
+import { InterviewRequestPanel } from "@/components/interviews/interview-request-panel";
+import {
+  ApplicationOnboardingList,
+  type ApplicationOnboardingItemView,
+} from "@/components/onboarding/application-onboarding-list";
+import { ServiceHourPanel } from "@/components/service-hours/service-hour-panel";
 import { StudentApplicationStatusBadge } from "@/components/student/student-application-status-badge";
 import type { ApplicationStatus } from "@/generated/prisma/enums";
+import type { RecordCommentThread as RecordCommentThreadData } from "@/lib/comments/record-comments";
+import type { InterviewRequestView } from "@/lib/interviews/interviews";
+import type { ServiceHourRecordView } from "@/lib/service-hours/service-hours";
 
 export type StudentApplicationListItem = {
   id: string;
@@ -22,6 +36,11 @@ export type StudentApplicationListItem = {
       name: string;
     };
   };
+  onboardingItems: ApplicationOnboardingItemView[];
+  interviewRequests: InterviewRequestView[];
+  serviceHourRecords: ServiceHourRecordView[];
+  commentThread: RecordCommentThreadData;
+  feedback: ExistingFeedback;
 };
 
 type StudentApplicationListProps = {
@@ -141,6 +160,51 @@ export function StudentApplicationList({
               </button>
             </form>
           ) : null}
+
+          {application.status === "ACCEPTED" ? (
+            <div className="mt-5 space-y-5">
+              <ApplicationOnboardingList
+                applicationId={application.id}
+                items={application.onboardingItems}
+                mode="student"
+                redirectTo="/dashboard/student/applications"
+              />
+              <ServiceHourPanel
+                applicationId={application.id}
+                mode="student"
+                records={application.serviceHourRecords}
+                redirectTo="/dashboard/student/applications"
+              />
+            </div>
+          ) : null}
+
+          <div className="mt-5">
+            <InterviewRequestPanel
+              applicationId={application.id}
+              interviewRequests={application.interviewRequests}
+              mode="student"
+              redirectTo="/dashboard/student/applications"
+            />
+          </div>
+
+          <RecordCommentThread
+            entityId={application.id}
+            entityType="APPLICATION"
+            redirectTo="/dashboard/student/applications"
+            thread={application.commentThread}
+          />
+
+          <div className="mt-5">
+            <FeedbackForm
+              description="Rate your application experience and share anything that would make the process clearer."
+              entityId={application.id}
+              entityType="APPLICATION"
+              existingFeedback={application.feedback}
+              feedbackType="STUDENT_APPLICATION_EXPERIENCE"
+              redirectTo="/dashboard/student/applications"
+              title="Application feedback"
+            />
+          </div>
         </article>
       ))}
     </div>

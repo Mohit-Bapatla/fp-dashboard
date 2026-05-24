@@ -2,7 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 
+import { createAuditLog } from "@/lib/audit/audit-log";
+import { parseResume } from "@/lib/ai/resume-parsing";
 import { prisma } from "@/lib/db/prisma";
+import {
+  enforceRateLimit,
+  formatRateLimitMessage,
+} from "@/lib/security/rate-limit";
 import {
   createResumeSignedUrl,
   getCurrentStudentResumeContext,
@@ -36,6 +42,20 @@ export async function uploadStudentResume(
   if (!context) {
     return {
       error: "Complete student onboarding before uploading a resume.",
+      success: null,
+    };
+  }
+
+  const rateLimit = await enforceRateLimit({
+    action: "resume_upload",
+    identifier: context.profileId,
+    limit: 5,
+    windowSeconds: 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    return {
+      error: formatRateLimitMessage(rateLimit),
       success: null,
     };
   }
@@ -76,29 +96,57 @@ export async function uploadStudentResume(
   }
 
   const oldPath = context.resume?.fileUrl ?? null;
+  const profile = await prisma.studentProfile.findUnique({
+    where: {
+      id: context.profileId,
+    },
+    select: {
+      userId: true,
+    },
+  });
+  let resumeId: string;
 
   try {
     if (context.resume) {
-      await prisma.resume.update({
+      const resume = await prisma.resume.update({
         where: {
           id: context.resume.id,
         },
         data: {
           fileName: resumeFile.name,
+          extractedCertifications: [],
+          extractedEducation: [],
+          extractedExperience: [],
+          extractedSkills: [],
           fileUrl: newPath,
           parseStatus: "NOT_STARTED",
+          parsedSummary: null,
           parsedText: null,
         },
+        select: {
+          id: true,
+        },
       });
+      resumeId = resume.id;
     } else {
-      await prisma.resume.create({
+      const resume = await prisma.resume.create({
         data: {
+          extractedCertifications: [],
+          extractedEducation: [],
+          extractedExperience: [],
+          extractedSkills: [],
           studentProfileId: context.profileId,
           fileName: resumeFile.name,
           fileUrl: newPath,
           parseStatus: "NOT_STARTED",
+          parsedSummary: null,
+          parsedText: null,
+        },
+        select: {
+          id: true,
         },
       });
+      resumeId = resume.id;
     }
   } catch {
     await supabase.storage.from(resumeBucketName).remove([newPath]);
@@ -112,6 +160,17 @@ export async function uploadStudentResume(
   if (oldPath) {
     await supabase.storage.from(resumeBucketName).remove([oldPath]);
   }
+
+  await createAuditLog({
+    action: context.resume ? "RESUME_REPLACED" : "RESUME_UPLOADED",
+    actorId: profile?.userId ?? null,
+    entityId: resumeId,
+    entityType: "Resume",
+    metadata: {
+      fileName: resumeFile.name,
+      studentProfileId: context.profileId,
+    },
+  });
 
   revalidatePath("/dashboard/student");
 
@@ -155,12 +214,121 @@ export async function deleteStudentResume(
       id: context.resume.id,
     },
   });
+  const profile = await prisma.studentProfile.findUnique({
+    where: {
+      id: context.profileId,
+    },
+    select: {
+      userId: true,
+    },
+  });
+
+  await createAuditLog({
+    action: "RESUME_DELETED",
+    actorId: profile?.userId ?? null,
+    entityId: context.resume.id,
+    entityType: "Resume",
+    metadata: {
+      fileName: context.resume.fileName,
+      studentProfileId: context.profileId,
+    },
+  });
 
   revalidatePath("/dashboard/student");
 
   return {
     error: null,
     success: "Resume deleted.",
+  };
+}
+
+export async function parseStudentResume(
+  _previousState: ResumeActionState,
+  formData: FormData,
+): Promise<ResumeActionState> {
+  const context = await getCurrentStudentResumeContext();
+  const resumeId = formData.get("resumeId");
+
+  if (
+    !context?.resume ||
+    typeof resumeId !== "string" ||
+    context.resume.id !== resumeId
+  ) {
+    return {
+      error: "Resume was not found.",
+      success: null,
+    };
+  }
+
+  const rateLimit = await enforceRateLimit({
+    action: "resume_parse",
+    identifier: context.profileId,
+    limit: 10,
+    windowSeconds: 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    return {
+      error: formatRateLimitMessage(rateLimit),
+      success: null,
+    };
+  }
+
+  await prisma.resume.update({
+    where: {
+      id: context.resume.id,
+    },
+    data: {
+      parseStatus: "PROCESSING",
+    },
+  });
+
+  try {
+    const parsedResume = await parseResume(
+      context.resume.id,
+      context.profileId,
+    );
+
+    await prisma.resume.update({
+      where: {
+        id: context.resume.id,
+      },
+      data: {
+        extractedCertifications: parsedResume.certifications,
+        extractedEducation: parsedResume.education,
+        extractedExperience: parsedResume.experience,
+        extractedSkills: parsedResume.skills,
+        parsedSummary: parsedResume.summary,
+        parsedText: parsedResume.text,
+        parseStatus: "COMPLETED",
+      },
+    });
+  } catch (error) {
+    await prisma.resume.update({
+      where: {
+        id: context.resume.id,
+      },
+      data: {
+        parseStatus: "FAILED",
+      },
+    });
+
+    revalidatePath("/dashboard/student");
+
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "Resume parsing failed. Please retry, or upload a clearer DOCX resume.",
+      success: null,
+    };
+  }
+
+  revalidatePath("/dashboard/student");
+
+  return {
+    error: null,
+    success: "Resume parsed.",
   };
 }
 

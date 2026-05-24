@@ -1,9 +1,13 @@
 import { auth } from "@clerk/nextjs/server";
 import {
   ArrowRight,
+  BellRing,
   ClipboardCheck,
+  FileClock,
   GraduationCap,
+  LifeBuoy,
   MapPin,
+  Rocket,
   Target,
   UserRound,
 } from "lucide-react";
@@ -13,7 +17,13 @@ import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { StudentResumeManager } from "@/components/student/student-resume-manager";
+import {
+  RecommendationEventTracker,
+  TrackedRecommendationLink,
+} from "@/components/student/recommendation-event-tracker";
 import { prisma } from "@/lib/db/prisma";
+import { getRecommendationExplanation } from "@/lib/matching/explanations";
+import { getRecommendedOpportunities } from "@/lib/matching/recommendations";
 import { cn } from "@/lib/utils";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getStudentProfileCompletion } from "@/lib/student/profile-completion";
@@ -29,7 +39,17 @@ export default async function StudentDashboardPage() {
   const user = await getCurrentStudentProfile(userId);
   const profile = user.studentProfile;
   const completion = getStudentProfileCompletion(profile);
-  const [resume, applicationCount, activeApplicationCount] = profile
+  const [
+    resume,
+    applicationCount,
+    activeApplicationCount,
+    acceptedApplicationCount,
+    rejectedApplicationCount,
+    withdrawnApplicationCount,
+    placementRequestCount,
+    verifiedServiceHours,
+    certificateCount,
+  ] = profile
     ? await Promise.all([
         prisma.resume.findFirst({
           where: {
@@ -52,8 +72,51 @@ export default async function StudentDashboardPage() {
             },
           },
         }),
+        prisma.application.count({
+          where: {
+            studentProfileId: profile.id,
+            status: "ACCEPTED",
+          },
+        }),
+        prisma.application.count({
+          where: {
+            studentProfileId: profile.id,
+            status: "REJECTED",
+          },
+        }),
+        prisma.application.count({
+          where: {
+            studentProfileId: profile.id,
+            status: "WITHDRAWN",
+          },
+        }),
+        prisma.placementRequest.count({
+          where: {
+            studentProfileId: profile.id,
+          },
+        }),
+        prisma.serviceHourRecord.aggregate({
+          where: {
+            studentProfileId: profile.id,
+            verificationStatus: "VERIFIED",
+          },
+          _sum: {
+            hours: true,
+          },
+        }),
+        prisma.serviceHourRecord.count({
+          where: {
+            studentProfileId: profile.id,
+            certificateStatus: {
+              in: ["APPROVED", "ISSUED"],
+            },
+          },
+        }),
       ])
-    : [null, 0, 0];
+    : [null, 0, 0, 0, 0, 0, 0, { _sum: { hours: 0 } }, 0];
+  const recommendedOpportunities = profile
+    ? await getRecommendedOpportunities(profile.id)
+    : [];
 
   return (
     <DashboardShell
@@ -94,14 +157,24 @@ export default async function StudentDashboardPage() {
             value={`${completion.percent}%`}
           />
           <StatCard
-            helper={`${activeApplicationCount} active ${activeApplicationCount === 1 ? "application" : "applications"} in progress or accepted.`}
-            label="Applications"
+            helper="All applications submitted from your student profile."
+            label="Applications submitted"
             value={applicationCount.toString()}
           />
           <StatCard
-            helper="Placement requests will appear here in a later workflow stage."
+            helper="Applications still submitted, under review, interviewing, or accepted."
+            label="Active applications"
+            value={activeApplicationCount.toString()}
+          />
+          <StatCard
+            helper="Personalized requests submitted to the placement team."
             label="Placement requests"
-            value="0"
+            value={placementRequestCount.toString()}
+          />
+          <StatCard
+            helper={`${rejectedApplicationCount} rejected and ${withdrawnApplicationCount} withdrawn.`}
+            label="Accepted"
+            value={acceptedApplicationCount.toString()}
           />
           <StatCard
             helper={
@@ -111,6 +184,16 @@ export default async function StudentDashboardPage() {
             }
             label="Resume status"
             value={resume ? "Ready" : "Missing"}
+          />
+          <StatCard
+            helper="Verified hours from accepted opportunities."
+            label="Service hours"
+            value={(verifiedServiceHours._sum.hours ?? 0).toString()}
+          />
+          <StatCard
+            helper="Approved or issued certificate records."
+            label="Certificates"
+            value={certificateCount.toString()}
           />
         </section>
 
@@ -135,6 +218,91 @@ export default async function StudentDashboardPage() {
             message="Ready to apply — browse open opportunities and submit your first application."
           />
         )}
+
+        {profile ? (
+          <section className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold text-foreground">
+                Recommended opportunities
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Personalized suggestions use your profile, parsed resume data,
+                and deterministic match scoring.
+              </p>
+            </div>
+            {recommendedOpportunities.length > 0 ? (
+              <div className="grid gap-4 lg:grid-cols-3">
+                <RecommendationEventTracker
+                  events={recommendedOpportunities.map(
+                    ({ match, opportunity }) => ({
+                      eventType: "IMPRESSION",
+                      matchScore: match.score,
+                      opportunityId: opportunity.id,
+                      source: "student_dashboard_recommendation",
+                    }),
+                  )}
+                />
+                {recommendedOpportunities.map(
+                  ({ match, opportunity, vectorSimilarity }) => (
+                    <article
+                      className="rounded-lg border border-border bg-background p-5 shadow-sm"
+                      key={opportunity.id}
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <p className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                          {match.score}% fit
+                        </p>
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {opportunity.organization.name}
+                        </p>
+                      </div>
+                      {vectorSimilarity > 0 ? (
+                        <p className="mt-3 text-xs font-medium text-muted-foreground">
+                          Semantic similarity is helping rank this
+                          recommendation.
+                        </p>
+                      ) : null}
+                      <h3 className="mt-4 text-base font-semibold text-foreground">
+                        {opportunity.title}
+                      </h3>
+                      <p className="mt-2 text-xs font-medium text-muted-foreground">
+                        Why recommended
+                      </p>
+                      <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
+                        {getRecommendationExplanation(match)
+                          .whyRecommended.slice(0, 2)
+                          .map((reason) => (
+                            <li key={reason}>{reason}</li>
+                          ))}
+                      </ul>
+                      <p className="mt-3 text-xs font-medium text-muted-foreground">
+                        Improve fit:{" "}
+                        {getRecommendationExplanation(match).improvementTips.at(
+                          0,
+                        )}
+                      </p>
+                      <TrackedRecommendationLink
+                        className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+                        href={`/dashboard/student/opportunities/${opportunity.id}?source=recommendation`}
+                        matchScore={match.score}
+                        opportunityId={opportunity.id}
+                        source="student_dashboard_recommendation"
+                      >
+                        View details
+                        <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                      </TrackedRecommendationLink>
+                    </article>
+                  ),
+                )}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-border bg-background p-5 text-sm leading-6 text-muted-foreground">
+                Recommendations will appear after published opportunities are
+                available and your profile is complete enough to compare.
+              </div>
+            )}
+          </section>
+        ) : null}
 
         {profile ? (
           <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
@@ -237,8 +405,14 @@ export default async function StudentDashboardPage() {
             resume={
               resume
                 ? {
+                    extractedCertifications: resume.extractedCertifications,
+                    extractedEducation: resume.extractedEducation,
+                    extractedExperience: resume.extractedExperience,
+                    extractedSkills: resume.extractedSkills,
                     id: resume.id,
                     fileName: resume.fileName,
+                    parsedSummary: resume.parsedSummary,
+                    parseStatus: resume.parseStatus,
                     updatedAt: resume.updatedAt,
                   }
                 : null
@@ -263,6 +437,49 @@ export default async function StudentDashboardPage() {
               View applications
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </Link>
+          </article>
+          <article className="rounded-lg border border-border bg-background p-6 shadow-sm">
+            <FileClock aria-hidden="true" className="h-5 w-5 text-primary" />
+            <h2 className="mt-4 text-base font-semibold text-foreground">
+              Can&apos;t find an opportunity?
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Submit a personalized placement request when the opportunity board
+              does not have the right fit for your goals or availability.
+            </p>
+            <Link
+              className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+              href="/dashboard/student/placement-requests"
+            >
+              View placement requests
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+          </article>
+          <article className="rounded-lg border border-border bg-background p-6 shadow-sm">
+            <Rocket aria-hidden="true" className="h-5 w-5 text-primary" />
+            <h2 className="mt-4 text-base font-semibold text-foreground">
+              Student beta guide
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Review the beta checklist for profile setup, resume upload,
+              opportunity browsing, applications, notifications, and feedback.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+                href="/dashboard/student/beta"
+              >
+                <BellRing aria-hidden="true" className="h-4 w-4" />
+                Beta guide
+              </Link>
+              <Link
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+                href="/dashboard/support"
+              >
+                <LifeBuoy aria-hidden="true" className="h-4 w-4" />
+                Support
+              </Link>
+            </div>
           </article>
         </section>
       </div>

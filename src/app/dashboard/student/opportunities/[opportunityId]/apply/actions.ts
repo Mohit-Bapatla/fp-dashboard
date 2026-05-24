@@ -1,7 +1,23 @@
 "use server";
 
 import { Prisma } from "@/generated/prisma/client";
+import { createAuditLog } from "@/lib/audit/audit-log";
 import { prisma } from "@/lib/db/prisma";
+import {
+  applicationSubmittedReviewerEmail,
+  applicationSubmittedStudentEmail,
+} from "@/lib/email/templates";
+import { sendTransactionalEmail } from "@/lib/email/resend";
+import {
+  createNotifications,
+  getUsersByRoles,
+} from "@/lib/notifications/notifications";
+import { getOpportunityMatchScore } from "@/lib/matching/match-score";
+import { recordRecommendationEvents } from "@/lib/matching/recommendation-events";
+import {
+  enforceRateLimit,
+  formatRateLimitMessage,
+} from "@/lib/security/rate-limit";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import type { StudentApplicationActionState } from "@/lib/student/application-validation";
 import { validateStudentApplicationForm } from "@/lib/student/application-validation";
@@ -20,6 +36,7 @@ export async function submitStudentApplication(
 ): Promise<StudentApplicationActionState> {
   const { userId } = await assertStudentAccess();
   const opportunityId = getString(formData, "opportunityId");
+  const recommendationSource = getString(formData, "recommendationSource");
   const validation = validateStudentApplicationForm(formData);
 
   if (!validation.success) {
@@ -44,6 +61,21 @@ export async function submitStudentApplication(
     redirect("/dashboard/student/onboarding");
   }
 
+  const rateLimit = await enforceRateLimit({
+    action: "application_submit",
+    identifier: user.id,
+    limit: 10,
+    windowSeconds: 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    return {
+      fieldErrors: {},
+      formError: formatRateLimitMessage(rateLimit),
+      values: validation.values,
+    };
+  }
+
   const [opportunity, resume, existingApplication] = await Promise.all([
     prisma.opportunity.findFirst({
       where: {
@@ -51,7 +83,29 @@ export async function submitStudentApplication(
         status: "PUBLISHED",
       },
       select: {
+        description: true,
+        eligibilityRequirements: true,
         id: true,
+        location: true,
+        remoteType: true,
+        specialty: true,
+        title: true,
+        type: true,
+        organization: {
+          select: {
+            members: {
+              select: {
+                user: {
+                  select: {
+                    email: true,
+                    id: true,
+                  },
+                },
+              },
+            },
+            name: true,
+          },
+        },
       },
     }),
     prisma.resume.findFirst({
@@ -60,6 +114,7 @@ export async function submitStudentApplication(
         studentProfileId: user.studentProfile.id,
       },
       select: {
+        extractedSkills: true,
         id: true,
       },
     }),
@@ -100,8 +155,10 @@ export async function submitStudentApplication(
     );
   }
 
+  let applicationId: string;
+
   try {
-    await prisma.application.create({
+    const application = await prisma.application.create({
       data: {
         studentProfileId: user.studentProfile.id,
         opportunityId,
@@ -110,7 +167,12 @@ export async function submitStudentApplication(
         statement: validation.data.statement,
         submittedAt: new Date(),
       },
+      select: {
+        id: true,
+      },
     });
+
+    applicationId = application.id;
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -127,6 +189,79 @@ export async function submitStudentApplication(
       values: validation.values,
     };
   }
+
+  const studentName =
+    [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
+  const adminUsers = await getUsersByRoles(["ADMIN", "SUPER_ADMIN"]);
+  const reviewerUsers = [
+    ...opportunity.organization.members.map((member) => member.user),
+    ...adminUsers,
+  ];
+  const studentEmail = applicationSubmittedStudentEmail({
+    opportunityTitle: opportunity.title,
+    organizationName: opportunity.organization.name,
+    studentName,
+  });
+  const reviewerEmail = applicationSubmittedReviewerEmail({
+    opportunityTitle: opportunity.title,
+    organizationName: opportunity.organization.name,
+    studentName,
+  });
+  const [studentEmailResult, reviewerEmailResult] = await Promise.all([
+    sendTransactionalEmail({
+      ...studentEmail,
+      to: user.email,
+    }),
+    sendTransactionalEmail({
+      ...reviewerEmail,
+      to: reviewerUsers.map((reviewer) => reviewer.email),
+    }),
+    createNotifications(
+      reviewerUsers.map((reviewer) => reviewer.id),
+      {
+        body: `${studentName} applied for ${opportunity.title}.`,
+        title: "New application submitted",
+      },
+    ),
+  ]);
+
+  await createAuditLog({
+    action: "APPLICATION_SUBMITTED",
+    actorId: user.id,
+    entityId: applicationId,
+    entityType: "Application",
+    metadata: {
+      opportunityId,
+      opportunityTitle: opportunity.title,
+      reviewerEmailSent: reviewerEmailResult.sent,
+      reviewerEmailSkipped: reviewerEmailResult.skipped,
+      studentEmailSent: studentEmailResult.sent,
+      studentEmailSkipped: studentEmailResult.skipped,
+      studentProfileId: user.studentProfile.id,
+    },
+  });
+
+  const match = getOpportunityMatchScore({
+    opportunity,
+    profile: user.studentProfile,
+    resume,
+  });
+
+  await recordRecommendationEvents({
+    events: [
+      {
+        applicationId,
+        eventType: "APPLICATION",
+        matchScore: match.score,
+        opportunityId,
+        source:
+          recommendationSource === "recommendation"
+            ? "student_dashboard_recommendation"
+            : "student_application_submit",
+      },
+    ],
+    userId: user.id,
+  });
 
   redirect(`/dashboard/student/opportunities/${opportunityId}/apply?success=1`);
 }

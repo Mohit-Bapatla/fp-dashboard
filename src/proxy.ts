@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 
 import {
   canAccessDashboardPath,
-  getAppRole,
   getDashboardPathForRole,
+  getRoleFromSessionClaims,
 } from "./lib/auth/roles";
 
 const isDashboardRoute = createRouteMatcher(["/dashboard(.*)"]);
@@ -20,7 +20,7 @@ export default clerkMiddleware(async (auth, req) => {
     return redirectToSignIn({ returnBackUrl: req.url });
   }
 
-  const role = getAppRole(sessionClaims?.metadata?.role);
+  const role = getRoleFromSessionClaims(sessionClaims);
   const dashboardPath = getDashboardPathForRole(role);
   const { pathname } = req.nextUrl;
 

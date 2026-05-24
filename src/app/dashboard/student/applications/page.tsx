@@ -7,6 +7,7 @@ import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { StudentApplicationList } from "@/components/student/student-application-list";
 import type { ApplicationStatus } from "@/generated/prisma/enums";
+import { getRecordCommentThread } from "@/lib/comments/record-comments";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
@@ -153,6 +154,63 @@ export default async function StudentApplicationsPage({
               fileName: true,
             },
           },
+          onboardingItems: {
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              completedAt: true,
+              description: true,
+              id: true,
+              required: true,
+              reviewedAt: true,
+              reviewerNotes: true,
+              status: true,
+              studentNotes: true,
+              submittedAt: true,
+              title: true,
+            },
+          },
+          interviewRequests: {
+            orderBy: {
+              createdAt: "desc",
+            },
+            select: {
+              id: true,
+              location: true,
+              meetingLink: true,
+              notes: true,
+              selectedSlotId: true,
+              status: true,
+              studentResponseNotes: true,
+              proposedSlots: {
+                orderBy: {
+                  startsAt: "asc",
+                },
+                select: {
+                  endsAt: true,
+                  id: true,
+                  selected: true,
+                  startsAt: true,
+                },
+              },
+            },
+          },
+          serviceHourRecords: {
+            orderBy: {
+              updatedAt: "desc",
+            },
+            select: {
+              certificateNotes: true,
+              certificateStatus: true,
+              description: true,
+              hours: true,
+              id: true,
+              verificationNotes: true,
+              verificationStatus: true,
+              verifiedAt: true,
+            },
+          },
           opportunity: {
             select: {
               id: true,
@@ -188,6 +246,35 @@ export default async function StudentApplicationsPage({
         },
       }),
     ]);
+  const feedbackByApplicationId = new Map(
+    (
+      await prisma.feedback.findMany({
+        where: {
+          authorId: user.id,
+          entityId: {
+            in: applications.map((application) => application.id),
+          },
+          entityType: "APPLICATION",
+          feedbackType: "STUDENT_APPLICATION_EXPERIENCE",
+        },
+        select: {
+          entityId: true,
+          notes: true,
+          rating: true,
+        },
+      })
+    ).map((feedback) => [feedback.entityId, feedback]),
+  );
+  const applicationsWithThreads = await Promise.all(
+    applications.map(async (application) => ({
+      ...application,
+      feedback: feedbackByApplicationId.get(application.id) ?? null,
+      commentThread: await getRecordCommentThread({
+        entityId: application.id,
+        entityType: "APPLICATION",
+      }),
+    })),
+  );
 
   return (
     <DashboardShell
@@ -282,7 +369,7 @@ export default async function StudentApplicationsPage({
         </section>
 
         <StudentApplicationList
-          applications={applications}
+          applications={applicationsWithThreads}
           hasAnyApplications={totalCount > 0}
         />
       </div>

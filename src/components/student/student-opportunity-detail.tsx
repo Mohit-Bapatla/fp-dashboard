@@ -9,7 +9,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { MatchExplanationPanel } from "@/components/matching/match-explanation-panel";
 import type { OpportunityType } from "@/generated/prisma/enums";
+import type { MatchExplanation } from "@/lib/matching/explanations";
+import type { MatchScoreResult } from "@/lib/matching/match-score";
 
 export type StudentOpportunityDetailData = {
   id: string;
@@ -32,6 +35,15 @@ export type StudentOpportunityDetailData = {
     website: string | null;
     description: string | null;
   };
+};
+
+export type SimilarOpportunityData = {
+  id: string;
+  organizationName: string;
+  similarity: number;
+  specialty: string | null;
+  title: string;
+  type: OpportunityType;
 };
 
 export type StudentOpportunityApplyState =
@@ -73,10 +85,18 @@ function fieldValue(value: string | null) {
 
 export function StudentOpportunityDetail({
   applyState,
+  explanation,
+  match,
   opportunity,
+  similarOpportunities,
+  source,
 }: {
   applyState: StudentOpportunityApplyState;
+  explanation: MatchExplanation | null;
+  match: MatchScoreResult | null;
   opportunity: StudentOpportunityDetailData;
+  similarOpportunities: SimilarOpportunityData[];
+  source?: string;
 }) {
   return (
     <div className="space-y-8">
@@ -86,6 +106,12 @@ export function StudentOpportunityDetail({
       >
         <ArrowLeft aria-hidden="true" className="h-4 w-4" />
         Back to opportunities
+      </Link>
+      <Link
+        className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+        href={`/opportunities/${opportunity.id}`}
+      >
+        View public preview
       </Link>
 
       <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
@@ -98,6 +124,11 @@ export function StudentOpportunityDetail({
               <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
                 Published
               </span>
+              {match ? (
+                <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                  {match.score}% fit
+                </span>
+              ) : null}
             </div>
             <h1 className="mt-4 max-w-4xl text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
               {opportunity.title}
@@ -108,6 +139,7 @@ export function StudentOpportunityDetail({
           </div>
           <ApplyCallToAction
             opportunityId={opportunity.id}
+            source={source}
             state={applyState}
           />
         </div>
@@ -150,6 +182,26 @@ export function StudentOpportunityDetail({
           />
         </div>
       </section>
+
+      {match ? (
+        <section className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <MatchPanel
+              empty="Add more profile and resume details to improve matching."
+              items={match.reasons}
+              title="Why this may fit"
+            />
+            <MatchPanel
+              empty="No major gaps detected from available profile and resume data."
+              items={match.gaps}
+              title="Possible gaps"
+            />
+          </div>
+          {explanation ? (
+            <MatchExplanationPanel explanation={explanation} />
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <article className="divide-y divide-border rounded-xl border border-border bg-background shadow-sm">
@@ -218,15 +270,71 @@ export function StudentOpportunityDetail({
           </section>
         </aside>
       </section>
+
+      {similarOpportunities.length > 0 ? (
+        <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground">
+            Similar published opportunities
+          </h2>
+          <div className="mt-5 grid gap-4 lg:grid-cols-3">
+            {similarOpportunities.map((similar) => (
+              <Link
+                className="rounded-lg border border-border bg-muted/20 p-4 transition hover:bg-muted"
+                href={`/dashboard/student/opportunities/${similar.id}`}
+                key={similar.id}
+              >
+                <p className="text-sm font-semibold text-foreground">
+                  {similar.title}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {similar.organizationName}
+                </p>
+                <p className="mt-3 text-xs font-medium text-muted-foreground">
+                  {formatEnumLabel(similar.type)} |{" "}
+                  {similar.specialty ?? "No specialty"} |{" "}
+                  {Math.round(similar.similarity * 100)}% semantic similarity
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
+  );
+}
+
+function MatchPanel({
+  empty,
+  items,
+  title,
+}: {
+  empty: string;
+  items: string[];
+  title: string;
+}) {
+  return (
+    <article className="rounded-lg border border-border bg-background p-5 shadow-sm">
+      <h2 className="text-base font-semibold text-foreground">{title}</h2>
+      {items.length > 0 ? (
+        <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
+          {items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">{empty}</p>
+      )}
+    </article>
   );
 }
 
 function ApplyCallToAction({
   opportunityId,
+  source,
   state,
 }: {
   opportunityId: string;
+  source?: string;
   state: StudentOpportunityApplyState;
 }) {
   if (state.kind === "alreadyApplied") {
@@ -278,7 +386,9 @@ function ApplyCallToAction({
   return (
     <Link
       className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-      href={`/dashboard/student/opportunities/${opportunityId}/apply`}
+      href={`/dashboard/student/opportunities/${opportunityId}/apply${
+        source === "recommendation" ? "?source=recommendation" : ""
+      }`}
     >
       Apply now
     </Link>

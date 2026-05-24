@@ -1,14 +1,21 @@
-import { Building2, Handshake } from "lucide-react";
+import {
+  BarChart3,
+  Building2,
+  Handshake,
+  LifeBuoy,
+  Rocket,
+} from "lucide-react";
+import Link from "next/link";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { roleNavigation } from "@/components/dashboard/role-config";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { PartnerDashboardSummary } from "@/components/partner/partner-dashboard-summary";
 import { PartnerOpportunityList } from "@/components/partner/partner-opportunity-list";
 import { prisma } from "@/lib/db/prisma";
 import { getCurrentPartnerContext } from "@/lib/partner/context";
+import { getPartnerNavItems } from "@/lib/partner/navigation";
 
 export default async function PartnerDashboardPage() {
   const context = await getCurrentPartnerContext();
@@ -16,7 +23,10 @@ export default async function PartnerDashboardPage() {
 
   if (organizationIds.length === 0 || !primaryOrganization) {
     return (
-      <DashboardShell navItems={roleNavigation.partner} role="partner">
+      <DashboardShell
+        navItems={getPartnerNavItems("/dashboard/partner")}
+        role="partner"
+      >
         <div className="space-y-8">
           <header className="rounded-xl border border-border bg-background p-6 shadow-sm">
             <RoleBadge className="mb-5" role="partner" />
@@ -115,7 +125,10 @@ export default async function PartnerDashboardPage() {
   ]);
 
   return (
-    <DashboardShell navItems={roleNavigation.partner} role="partner">
+    <DashboardShell
+      navItems={getPartnerNavItems("/dashboard/partner")}
+      role="partner"
+    >
       <div className="space-y-8">
         <header className="flex flex-col gap-5 rounded-xl border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start lg:justify-between">
           <div>
@@ -166,6 +179,85 @@ export default async function PartnerDashboardPage() {
           organization={primaryOrganization}
           organizationCount={organizationIds.length}
         />
+
+        <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-muted text-primary">
+                <BarChart3 aria-hidden="true" className="h-5 w-5" />
+              </div>
+              <h2 className="mt-5 text-lg font-semibold text-foreground">
+                Organization analytics
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Review application volume, applicant statuses, and opportunity
+                pipeline counts for your linked organizations.
+              </p>
+            </div>
+            <Link
+              className="inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+              href="/dashboard/partner/analytics"
+            >
+              Open analytics
+            </Link>
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-muted text-primary">
+                <Handshake aria-hidden="true" className="h-5 w-5" />
+              </div>
+              <h2 className="mt-5 text-lg font-semibold text-foreground">
+                Partner success
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Track applicant pipeline, interviews, service hours, and
+                candidate quality feedback for your organization.
+              </p>
+            </div>
+            <Link
+              className="inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+              href="/dashboard/partner/success"
+            >
+              Open success dashboard
+            </Link>
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-muted text-primary">
+                <Rocket aria-hidden="true" className="h-5 w-5" />
+              </div>
+              <h2 className="mt-5 text-lg font-semibold text-foreground">
+                Partner beta readiness
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Review the partner beta checklist, then use support to report
+                blocker details with role, URL, steps, and expected behavior.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+                href="/dashboard/partner/beta"
+              >
+                <Rocket aria-hidden="true" className="h-4 w-4" />
+                Beta guide
+              </Link>
+              <Link
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+                href="/dashboard/support"
+              >
+                <LifeBuoy aria-hidden="true" className="h-4 w-4" />
+                Support
+              </Link>
+            </div>
+          </div>
+        </section>
 
         <section className="space-y-4">
           <div>

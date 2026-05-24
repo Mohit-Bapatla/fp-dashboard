@@ -1,7 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
-import { getAppRole } from "@/lib/auth/roles";
+import { getRoleFromSessionClaims } from "@/lib/auth/roles";
+import { syncCurrentUserFromClerk } from "@/lib/auth/user-sync";
 
 export async function assertStudentAccess() {
   const { redirectToSignIn, sessionClaims, userId } = await auth();
@@ -10,11 +11,19 @@ export async function assertStudentAccess() {
     return redirectToSignIn();
   }
 
-  if (getAppRole(sessionClaims?.metadata?.role) !== "STUDENT") {
+  const role = getRoleFromSessionClaims(sessionClaims);
+
+  if (role !== "STUDENT") {
     redirect("/dashboard");
   }
 
+  await syncCurrentUserFromClerk({
+    clerkUserId: userId,
+    role,
+  });
+
   return {
+    role,
     userId,
   };
 }
