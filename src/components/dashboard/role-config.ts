@@ -52,7 +52,7 @@ export const roleMeta: Record<
   student: {
     label: "Student",
     eyebrow: "Learner workspace",
-    accent: "teal",
+    accent: "blue",
     icon: GraduationCap,
   },
   partner: {

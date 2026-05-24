@@ -9,7 +9,7 @@ type RoleBadgeProps = {
 
 const badgeStyles: Record<DashboardRole, string> = {
   student:
-    "border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-200",
+    "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200",
   partner:
     "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200",
   staff:
