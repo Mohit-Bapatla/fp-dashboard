@@ -10,7 +10,11 @@ export const studentOpportunityTypeOptions = [
   "PROGRAM",
 ] as const satisfies readonly OpportunityType[];
 
-export const studentOpportunitySortOptions = ["recent", "deadline"] as const;
+export const studentOpportunitySortOptions = [
+  "recent",
+  "deadline",
+  "best-fit",
+] as const;
 
 export type StudentOpportunitySort =
   (typeof studentOpportunitySortOptions)[number];
