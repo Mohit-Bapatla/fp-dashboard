@@ -182,8 +182,16 @@ export default async function StaffOutreachPage({
               assignees, notes, and optional placement request links.
             </p>
           </div>
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-primary">
-            <MailCheck aria-hidden="true" className="h-6 w-6" />
+          <div className="flex flex-wrap gap-3">
+            <Link
+              className="inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+              href="/dashboard/staff/outreach/assistant"
+            >
+              Open assistant
+            </Link>
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-primary">
+              <MailCheck aria-hidden="true" className="h-6 w-6" />
+            </div>
           </div>
         </header>
 

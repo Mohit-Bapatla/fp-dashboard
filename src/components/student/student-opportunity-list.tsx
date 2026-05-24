@@ -74,7 +74,7 @@ export function StudentOpportunityList({
       <EmptyState
         description={
           hasPublishedOpportunities
-            ? "Try clearing filters or searching for another specialty, location, or partner."
+            ? "Try a broader phrase like remote research, Dallas shadowing, or virtual volunteering. You can also clear specialty, format, location, or paid-status filters."
             : "Published opportunities will appear here when the Future Physicians team opens listings for students."
         }
         icon={BriefcaseBusiness}

@@ -7,6 +7,10 @@ import { StudentOpportunityFilters } from "@/components/student/student-opportun
 import { StudentOpportunityList } from "@/components/student/student-opportunity-list";
 import { Prisma } from "@/generated/prisma/client";
 import { getOpportunityMatchScore } from "@/lib/matching/match-score";
+import {
+  buildSemanticOpportunityWhere,
+  getSemanticOpportunityScore,
+} from "@/lib/student/semantic-opportunity-search";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import {
@@ -58,35 +62,7 @@ function buildWhere(filters: StudentOpportunityFiltersType) {
   };
 
   if (filters.q) {
-    where.OR = [
-      {
-        title: {
-          contains: filters.q,
-        },
-      },
-      {
-        description: {
-          contains: filters.q,
-        },
-      },
-      {
-        specialty: {
-          contains: filters.q,
-        },
-      },
-      {
-        location: {
-          contains: filters.q,
-        },
-      },
-      {
-        organization: {
-          name: {
-            contains: filters.q,
-          },
-        },
-      },
-    ];
+    Object.assign(where, buildSemanticOpportunityWhere(filters.q));
   }
 
   if (filters.type) {
@@ -181,6 +157,7 @@ export default async function StudentOpportunitiesPage({
         deadline: true,
         capacity: true,
         eligibilityRequirements: true,
+        applicationInstructions: true,
         publishedAt: true,
         createdAt: true,
         organization: {
@@ -216,13 +193,21 @@ export default async function StudentOpportunitiesPage({
       profile,
       resume,
     }),
+    semanticScore: getSemanticOpportunityScore(opportunity, effectiveFilters.q),
   }));
   const visibleOpportunities =
     effectiveFilters.sort === "best-fit"
       ? [...opportunitiesWithMatches].sort(
-          (first, second) => second.match.score - first.match.score,
+          (first, second) =>
+            second.match.score +
+            second.semanticScore -
+            (first.match.score + first.semanticScore),
         )
-      : opportunitiesWithMatches;
+      : effectiveFilters.q
+        ? [...opportunitiesWithMatches].sort(
+            (first, second) => second.semanticScore - first.semanticScore,
+          )
+        : opportunitiesWithMatches;
 
   return (
     <DashboardShell
