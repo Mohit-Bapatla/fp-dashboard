@@ -1,10 +1,12 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
+  BadgeDollarSign,
   BellRing,
   Bookmark,
   BriefcaseBusiness,
   Building2,
+  CalendarDays,
   ClipboardCheck,
   DatabaseZap,
   FileUp,
@@ -110,6 +112,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       href: "/dashboard/student/placement-requests",
       icon: FileClock,
     },
+    {
+      label: "Events",
+      href: "/dashboard/student/events",
+      icon: CalendarDays,
+    },
     { label: "Saved", href: "#", icon: Bookmark },
     { label: "Settings", href: "#", icon: Settings },
   ],
@@ -175,6 +182,21 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       icon: FileClock,
     },
     {
+      label: "Events",
+      href: "/dashboard/staff/events",
+      icon: CalendarDays,
+    },
+    {
+      label: "Sponsors",
+      href: "/dashboard/staff/sponsors",
+      icon: Building2,
+    },
+    {
+      label: "Sponsorships",
+      href: "/dashboard/staff/sponsorships",
+      icon: BadgeDollarSign,
+    },
+    {
       label: "Automations",
       href: "/dashboard/staff/automations",
       icon: Workflow,
@@ -221,6 +243,16 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       label: "Service Hours",
       href: "/dashboard/admin/service-hours",
       icon: Medal,
+    },
+    {
+      label: "Events",
+      href: "/dashboard/admin/events",
+      icon: CalendarDays,
+    },
+    {
+      label: "Sponsorships",
+      href: "/dashboard/admin/sponsorships",
+      icon: BadgeDollarSign,
     },
     {
       label: "Placement Requests",

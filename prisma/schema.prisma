@@ -116,6 +116,82 @@ enum CertificateStatus {
   REVOKED
 }
 
+enum ProgramEventType {
+  SEMINAR
+  WORKSHOP
+  PANEL
+  VOLUNTEERING
+  NETWORKING
+  FUNDRAISER
+  OTHER
+}
+
+enum ProgramEventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELED
+  COMPLETED
+  ARCHIVED
+}
+
+enum EventRegistrationStatus {
+  REGISTERED
+  WAITLISTED
+  CANCELED
+  ATTENDED
+  NO_SHOW
+}
+
+enum SponsorStatus {
+  PROSPECT
+  CONTACTED
+  IN_DISCUSSION
+  COMMITTED
+  ACTIVE
+  DECLINED
+  PAUSED
+  PAST
+}
+
+enum SponsorshipCampaignStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+  ARCHIVED
+}
+
+enum SponsorshipCommitmentStatus {
+  PLEDGED
+  COMMITTED
+  RECEIVED
+  CANCELED
+  DECLINED
+}
+
+enum SponsorDeliverableType {
+  LOGO_PLACEMENT
+  EVENT_MENTION
+  NEWSLETTER_MENTION
+  SOCIAL_POST
+  THANK_YOU_EMAIL
+  OTHER
+}
+
+enum SponsorDeliverableStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  WAIVED
+}
+
+enum SponsorInteractionType {
+  NOTE
+  EMAIL
+  CALL
+  MEETING
+  FOLLOW_UP
+}
+
 enum RecordCommentEntityType {
   APPLICATION
   PLACEMENT_REQUEST
@@ -194,6 +270,9 @@ model User {
   interviewRequestsCanceled InterviewRequest[]  @relation("InterviewRequestCanceler")
   serviceHoursVerified      ServiceHourRecord[] @relation("ServiceHourVerifier")
   certificatesApproved      ServiceHourRecord[] @relation("CertificateApprover")
+  programEventsCreated      ProgramEvent[]      @relation("ProgramEventCreator")
+  eventRegistrationsCheckedIn EventRegistration[] @relation("EventRegistrationCheckIn")
+  sponsorInteractionsAuthored SponsorInteraction[] @relation("SponsorInteractionAuthor")
   createdAt                  DateTime           @default(now())
   updatedAt                  DateTime           @updatedAt
 
@@ -229,6 +308,7 @@ model StudentProfile {
   placementRequests   PlacementRequest[]
   adminNotes          AdminNote[]
   serviceHourRecords  ServiceHourRecord[]
+  eventRegistrations  EventRegistration[]
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
@@ -529,6 +609,174 @@ model ServiceHourRecord {
   @@index([verifiedById])
   @@index([approvedById])
   @@index([createdAt])
+}
+
+model ProgramEvent {
+  id                    String              @id @default(cuid())
+  title                 String
+  description           String?
+  eventType             ProgramEventType    @default(OTHER)
+  startAt               DateTime
+  endAt                 DateTime?
+  location              String?
+  virtualLink           String?
+  capacity              Int?
+  registrationDeadline  DateTime?
+  status                ProgramEventStatus  @default(DRAFT)
+  speakerNames          String[]            @default([])
+  createdById           String?
+  createdBy             User?               @relation("ProgramEventCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  registrations         EventRegistration[]
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@index([status])
+  @@index([eventType])
+  @@index([startAt])
+  @@index([registrationDeadline])
+  @@index([createdById])
+}
+
+model EventRegistration {
+  id                String                  @id @default(cuid())
+  eventId           String
+  event             ProgramEvent            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  studentProfileId  String
+  studentProfile    StudentProfile          @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  status            EventRegistrationStatus @default(REGISTERED)
+  attendedAt        DateTime?
+  checkedInById     String?
+  checkedInBy       User?                   @relation("EventRegistrationCheckIn", fields: [checkedInById], references: [id], onDelete: SetNull)
+  certificateStatus CertificateStatus        @default(NOT_REQUESTED)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  @@unique([eventId, studentProfileId])
+  @@index([eventId])
+  @@index([studentProfileId])
+  @@index([status])
+  @@index([checkedInById])
+  @@index([createdAt])
+}
+
+model SponsorOrganization {
+  id             String                  @id @default(cuid())
+  name           String                  @unique
+  status         SponsorStatus           @default(PROSPECT)
+  website        String?
+  description    String?
+  location       String?
+  contactEmail   String?
+  donationUrl    String?
+  contacts       SponsorContact[]
+  commitments    SponsorshipCommitment[]
+  interactions   SponsorInteraction[]
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  @@index([status])
+  @@index([contactEmail])
+  @@index([createdAt])
+}
+
+model SponsorContact {
+  id                    String              @id @default(cuid())
+  sponsorOrganizationId String
+  sponsorOrganization   SponsorOrganization @relation(fields: [sponsorOrganizationId], references: [id], onDelete: Cascade)
+  firstName             String
+  lastName              String?
+  email                 String?
+  phone                 String?
+  title                 String?
+  notes                 String?
+  lastContactedAt       DateTime?
+  nextFollowUpAt        DateTime?
+  interactions          SponsorInteraction[]
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@index([sponsorOrganizationId])
+  @@index([email])
+  @@index([nextFollowUpAt])
+}
+
+model SponsorshipCampaign {
+  id             String                    @id @default(cuid())
+  name           String
+  description    String?
+  goalAmountCents Int?
+  startAt        DateTime?
+  endAt          DateTime?
+  status         SponsorshipCampaignStatus @default(DRAFT)
+  commitments    SponsorshipCommitment[]
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+
+  @@index([status])
+  @@index([startAt])
+  @@index([endAt])
+  @@index([createdAt])
+}
+
+model SponsorshipCommitment {
+  id                    String                      @id @default(cuid())
+  sponsorOrganizationId String
+  sponsorOrganization   SponsorOrganization         @relation(fields: [sponsorOrganizationId], references: [id], onDelete: Cascade)
+  campaignId            String?
+  campaign              SponsorshipCampaign?        @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  amountCents           Int?
+  status                SponsorshipCommitmentStatus @default(PLEDGED)
+  committedAt           DateTime?
+  receivedAt            DateTime?
+  notes                 String?
+  deliverables          SponsorDeliverable[]
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
+
+  @@index([sponsorOrganizationId])
+  @@index([campaignId])
+  @@index([status])
+  @@index([committedAt])
+  @@index([receivedAt])
+}
+
+model SponsorDeliverable {
+  id           String                   @id @default(cuid())
+  commitmentId String
+  commitment   SponsorshipCommitment    @relation(fields: [commitmentId], references: [id], onDelete: Cascade)
+  type         SponsorDeliverableType
+  status       SponsorDeliverableStatus @default(TODO)
+  dueAt        DateTime?
+  completedAt  DateTime?
+  notes        String?
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+
+  @@index([commitmentId])
+  @@index([type])
+  @@index([status])
+  @@index([dueAt])
+}
+
+model SponsorInteraction {
+  id                    String                 @id @default(cuid())
+  sponsorOrganizationId String
+  sponsorOrganization   SponsorOrganization    @relation(fields: [sponsorOrganizationId], references: [id], onDelete: Cascade)
+  contactId             String?
+  contact               SponsorContact?        @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  authorId              String?
+  author                User?                  @relation("SponsorInteractionAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  type                  SponsorInteractionType @default(NOTE)
+  body                  String
+  occurredAt            DateTime               @default(now())
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  @@index([sponsorOrganizationId])
+  @@index([contactId])
+  @@index([authorId])
+  @@index([type])
+  @@index([occurredAt])
 }
 
 model PlacementRequest {
