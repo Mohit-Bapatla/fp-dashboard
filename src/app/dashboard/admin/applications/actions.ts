@@ -13,6 +13,7 @@ import { prisma } from "@/lib/db/prisma";
 import { applicationStatusEmail } from "@/lib/email/templates";
 import { sendTransactionalEmail } from "@/lib/email/resend";
 import { createNotifications } from "@/lib/notifications/notifications";
+import { ensureApplicationOnboardingItems } from "@/lib/onboarding/application-onboarding";
 
 const adminUpdateStatuses: ApplicationStatus[] = [
   "UNDER_REVIEW",
@@ -125,6 +126,10 @@ export async function updateAdminApplicationStatus(formData: FormData) {
         source: "admin",
       },
     });
+
+    if (status === "ACCEPTED") {
+      await ensureApplicationOnboardingItems(application.id);
+    }
   }
 
   revalidateApplicationStatusPaths();

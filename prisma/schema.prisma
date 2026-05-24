@@ -84,6 +84,33 @@ enum ResumeParseStatus {
   FAILED
 }
 
+enum ApplicationOnboardingItemStatus {
+  NOT_STARTED
+  SUBMITTED
+  APPROVED
+  NEEDS_CHANGES
+  WAIVED
+}
+
+enum RecordCommentEntityType {
+  APPLICATION
+  PLACEMENT_REQUEST
+  OUTREACH_TASK
+}
+
+enum RecordCommentVisibility {
+  INTERNAL
+  PARTNER_VISIBLE
+  STUDENT_VISIBLE
+}
+
+enum PartnerVerificationStatus {
+  UNVERIFIED
+  IN_REVIEW
+  VERIFIED
+  SUSPENDED
+}
+
 model User {
   id                         String             @id @default(cuid())
   clerkUserId                String             @unique
@@ -101,6 +128,10 @@ model User {
   adminNotesAuthored         AdminNote[]         @relation("AdminNoteAuthor")
   adminNotesAbout            AdminNote[]         @relation("AdminNoteUser")
   auditLogs                  AuditLog[]          @relation("AuditLogActor")
+  recordComments             RecordComment[]     @relation("RecordCommentAuthor")
+  onboardingItemsReviewed    ApplicationOnboardingItem[] @relation("OnboardingItemReviewer")
+  verifiedPartnerOrganizations PartnerOrganization[] @relation("PartnerVerifier")
+  moderatedOpportunities     Opportunity[]       @relation("OpportunityModerator")
   createdAt                  DateTime           @default(now())
   updatedAt                  DateTime           @updatedAt
 
@@ -178,6 +209,12 @@ model PartnerOrganization {
   contactEmail      String?
   lastContactedAt   DateTime?
   nextFollowUpAt    DateTime?
+  verificationStatus PartnerVerificationStatus @default(UNVERIFIED)
+  verificationChecklist String[]           @default([])
+  verificationNotes String?
+  verifiedAt        DateTime?
+  verifiedById      String?
+  verifiedBy        User?                  @relation("PartnerVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
   members           PartnerMember[]
   opportunities     Opportunity[]
   placementRequests PlacementRequest[]
@@ -188,6 +225,7 @@ model PartnerOrganization {
   updatedAt         DateTime           @updatedAt
 
   @@index([status])
+  @@index([verificationStatus])
   @@index([nextFollowUpAt])
   @@index([createdAt])
 }
@@ -227,6 +265,11 @@ model Opportunity {
   startsAt          DateTime?
   endsAt            DateTime?
   publishedAt       DateTime?
+  moderationFlags   String[]           @default([])
+  moderationNotes   String?
+  moderatedAt       DateTime?
+  moderatedById     String?
+  moderatedBy       User?              @relation("OpportunityModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
   applications      Application[]
   placementRequests PlacementRequest[]
   adminNotes        AdminNote[]
@@ -236,6 +279,7 @@ model Opportunity {
   @@index([organizationId])
   @@index([type])
   @@index([status])
+  @@index([moderatedById])
   @@index([createdAt])
 }
 
@@ -251,12 +295,55 @@ model Application {
   statement        String?
   submittedAt      DateTime?
   reviewedAt       DateTime?
+  onboardingItems   ApplicationOnboardingItem[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
   @@unique([studentProfileId, opportunityId])
   @@index([resumeId])
   @@index([status])
+  @@index([createdAt])
+}
+
+model ApplicationOnboardingItem {
+  id            String                          @id @default(cuid())
+  applicationId String
+  application   Application                     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?
+  status        ApplicationOnboardingItemStatus @default(NOT_STARTED)
+  required      Boolean                         @default(true)
+  studentNotes  String?
+  reviewerNotes String?
+  dueAt         DateTime?
+  submittedAt   DateTime?
+  completedAt   DateTime?
+  reviewedAt    DateTime?
+  reviewerId    String?
+  reviewer      User?                           @relation("OnboardingItemReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  createdAt     DateTime                        @default(now())
+  updatedAt     DateTime                        @updatedAt
+
+  @@unique([applicationId, title])
+  @@index([applicationId])
+  @@index([status])
+  @@index([reviewerId])
+}
+
+model RecordComment {
+  id         String                  @id @default(cuid())
+  entityType RecordCommentEntityType
+  entityId   String
+  authorId   String?
+  author     User?                   @relation("RecordCommentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  visibility RecordCommentVisibility @default(INTERNAL)
+  body       String
+  createdAt  DateTime                @default(now())
+  updatedAt  DateTime                @updatedAt
+
+  @@index([authorId])
+  @@index([entityType, entityId])
+  @@index([visibility])
   @@index([createdAt])
 }
 

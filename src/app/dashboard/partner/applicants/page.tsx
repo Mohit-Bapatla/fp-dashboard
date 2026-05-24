@@ -7,6 +7,7 @@ import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { PartnerApplicantList } from "@/components/partner/partner-applicant-list";
 import type { ApplicationStatus } from "@/generated/prisma/enums";
+import { getRecordCommentThread } from "@/lib/comments/record-comments";
 import { prisma } from "@/lib/db/prisma";
 import { getApplicantSummary } from "@/lib/matching/applicant-summary";
 import { getCurrentPartnerContext } from "@/lib/partner/context";
@@ -153,6 +154,23 @@ export default async function PartnerApplicantsPage({
         submittedAt: true,
         createdAt: true,
         reviewedAt: true,
+        onboardingItems: {
+          orderBy: {
+            createdAt: "asc",
+          },
+          select: {
+            completedAt: true,
+            description: true,
+            id: true,
+            required: true,
+            reviewedAt: true,
+            reviewerNotes: true,
+            status: true,
+            studentNotes: true,
+            submittedAt: true,
+            title: true,
+          },
+        },
         resume: {
           select: {
             extractedCertifications: true,
@@ -265,6 +283,10 @@ export default async function PartnerApplicantsPage({
               }
             : null,
           statement: application.statement,
+        }),
+        commentThread: await getRecordCommentThread({
+          entityId: application.id,
+          entityType: "APPLICATION",
         }),
       })),
     )

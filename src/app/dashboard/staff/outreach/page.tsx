@@ -11,6 +11,7 @@ import {
 } from "@/components/staff/staff-outreach-task-list";
 import { Prisma } from "@/generated/prisma/client";
 import type { OutreachTaskStatus } from "@/generated/prisma/enums";
+import { getRecordCommentThread } from "@/lib/comments/record-comments";
 import { prisma } from "@/lib/db/prisma";
 import { assertPlacementQueueAccess } from "@/lib/placement-requests/authorization";
 import {
@@ -161,6 +162,15 @@ export default async function StaffOutreachPage({
   const redirectTo = redirectParams.toString()
     ? `/dashboard/staff/outreach?${redirectParams}`
     : "/dashboard/staff/outreach";
+  const tasksWithThreads = await Promise.all(
+    tasks.map(async (task) => ({
+      ...task,
+      commentThread: await getRecordCommentThread({
+        entityId: task.id,
+        entityType: "OUTREACH_TASK",
+      }),
+    })),
+  );
 
   return (
     <DashboardShell
@@ -301,7 +311,7 @@ export default async function StaffOutreachPage({
           placementRequests={placementRequests}
           redirectTo={redirectTo}
           staffUsers={staffUsers}
-          tasks={tasks as StaffOutreachTaskItem[]}
+          tasks={tasksWithThreads as StaffOutreachTaskItem[]}
         />
       </div>
     </DashboardShell>

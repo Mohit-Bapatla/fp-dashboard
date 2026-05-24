@@ -217,6 +217,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       href: "/dashboard/admin/audit-logs",
       icon: LockKeyhole,
     },
+    {
+      label: "Moderation",
+      href: "/dashboard/admin/moderation",
+      icon: ShieldCheck,
+    },
     { label: "Settings", href: "#", icon: Settings },
   ],
 };

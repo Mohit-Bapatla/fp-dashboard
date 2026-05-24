@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db/prisma";
 import { applicationStatusEmail } from "@/lib/email/templates";
 import { sendTransactionalEmail } from "@/lib/email/resend";
 import { createNotifications } from "@/lib/notifications/notifications";
+import { ensureApplicationOnboardingItems } from "@/lib/onboarding/application-onboarding";
 import { getCurrentPartnerContext } from "@/lib/partner/context";
 import {
   createSupabaseAdminClient,
@@ -136,6 +137,10 @@ export async function updatePartnerApplicationStatus(formData: FormData) {
         source: "partner",
       },
     });
+
+    if (status === "ACCEPTED") {
+      await ensureApplicationOnboardingItems(application.id);
+    }
   }
 
   revalidateApplicantReviewPaths();

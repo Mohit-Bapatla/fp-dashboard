@@ -9,6 +9,7 @@ import { Prisma } from "@/generated/prisma/client";
 import type { ApplicationStatus } from "@/generated/prisma/enums";
 import { assertAdminAccess } from "@/lib/admin/authorization";
 import { getAdminNavItems } from "@/lib/admin/navigation";
+import { getRecordCommentThread } from "@/lib/comments/record-comments";
 import { prisma } from "@/lib/db/prisma";
 
 type AdminApplicationsPageProps = {
@@ -207,6 +208,23 @@ export default async function AdminApplicationsPage({
           submittedAt: true,
           createdAt: true,
           reviewedAt: true,
+          onboardingItems: {
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              completedAt: true,
+              description: true,
+              id: true,
+              required: true,
+              reviewedAt: true,
+              reviewerNotes: true,
+              status: true,
+              studentNotes: true,
+              submittedAt: true,
+              title: true,
+            },
+          },
           resume: {
             select: {
               fileName: true,
@@ -251,6 +269,15 @@ export default async function AdminApplicationsPage({
         },
       }),
     ]);
+  const applicationsWithThreads = await Promise.all(
+    applications.map(async (application) => ({
+      ...application,
+      commentThread: await getRecordCommentThread({
+        entityId: application.id,
+        entityType: "APPLICATION",
+      }),
+    })),
+  );
   const redirectTo = buildRedirectTo({
     organizationId,
     opportunityId,
@@ -378,7 +405,7 @@ export default async function AdminApplicationsPage({
         </section>
 
         <AdminApplicationList
-          applications={applications}
+          applications={applicationsWithThreads}
           redirectTo={redirectTo}
         />
       </div>

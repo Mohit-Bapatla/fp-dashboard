@@ -7,6 +7,7 @@ import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { StudentApplicationList } from "@/components/student/student-application-list";
 import type { ApplicationStatus } from "@/generated/prisma/enums";
+import { getRecordCommentThread } from "@/lib/comments/record-comments";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
@@ -147,6 +148,23 @@ export default async function StudentApplicationsPage({
               fileName: true,
             },
           },
+          onboardingItems: {
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              completedAt: true,
+              description: true,
+              id: true,
+              required: true,
+              reviewedAt: true,
+              reviewerNotes: true,
+              status: true,
+              studentNotes: true,
+              submittedAt: true,
+              title: true,
+            },
+          },
           opportunity: {
             select: {
               id: true,
@@ -182,6 +200,15 @@ export default async function StudentApplicationsPage({
         },
       }),
     ]);
+  const applicationsWithThreads = await Promise.all(
+    applications.map(async (application) => ({
+      ...application,
+      commentThread: await getRecordCommentThread({
+        entityId: application.id,
+        entityType: "APPLICATION",
+      }),
+    })),
+  );
 
   return (
     <DashboardShell
@@ -276,7 +303,7 @@ export default async function StudentApplicationsPage({
         </section>
 
         <StudentApplicationList
-          applications={applications}
+          applications={applicationsWithThreads}
           hasAnyApplications={totalCount > 0}
         />
       </div>
