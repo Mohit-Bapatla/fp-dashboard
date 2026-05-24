@@ -165,6 +165,46 @@ export default async function StudentApplicationsPage({
               title: true,
             },
           },
+          interviewRequests: {
+            orderBy: {
+              createdAt: "desc",
+            },
+            select: {
+              id: true,
+              location: true,
+              meetingLink: true,
+              notes: true,
+              selectedSlotId: true,
+              status: true,
+              studentResponseNotes: true,
+              proposedSlots: {
+                orderBy: {
+                  startsAt: "asc",
+                },
+                select: {
+                  endsAt: true,
+                  id: true,
+                  selected: true,
+                  startsAt: true,
+                },
+              },
+            },
+          },
+          serviceHourRecords: {
+            orderBy: {
+              updatedAt: "desc",
+            },
+            select: {
+              certificateNotes: true,
+              certificateStatus: true,
+              description: true,
+              hours: true,
+              id: true,
+              verificationNotes: true,
+              verificationStatus: true,
+              verifiedAt: true,
+            },
+          },
           opportunity: {
             select: {
               id: true,

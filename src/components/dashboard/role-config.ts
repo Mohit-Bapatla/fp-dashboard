@@ -16,6 +16,7 @@ import {
   LockKeyhole,
   MailCheck,
   MessageSquareText,
+  Medal,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -140,6 +141,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       href: "/dashboard/partner/analytics",
       icon: BarChart3,
     },
+    {
+      label: "Success",
+      href: "/dashboard/partner/success",
+      icon: Medal,
+    },
     { label: "Settings", href: "#", icon: Settings },
   ],
   staff: [
@@ -210,6 +216,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       label: "Applications",
       href: "/dashboard/admin/applications",
       icon: ClipboardCheck,
+    },
+    {
+      label: "Service Hours",
+      href: "/dashboard/admin/service-hours",
+      icon: Medal,
     },
     {
       label: "Placement Requests",

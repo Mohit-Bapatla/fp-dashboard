@@ -8,13 +8,17 @@ import {
   FeedbackForm,
   type ExistingFeedback,
 } from "@/components/feedback/feedback-form";
+import { InterviewRequestPanel } from "@/components/interviews/interview-request-panel";
 import {
   ApplicationOnboardingList,
   type ApplicationOnboardingItemView,
 } from "@/components/onboarding/application-onboarding-list";
+import { ServiceHourPanel } from "@/components/service-hours/service-hour-panel";
 import { StudentApplicationStatusBadge } from "@/components/student/student-application-status-badge";
 import type { ApplicationStatus } from "@/generated/prisma/enums";
 import type { RecordCommentThread as RecordCommentThreadData } from "@/lib/comments/record-comments";
+import type { InterviewRequestView } from "@/lib/interviews/interviews";
+import type { ServiceHourRecordView } from "@/lib/service-hours/service-hours";
 
 export type StudentApplicationListItem = {
   id: string;
@@ -33,6 +37,8 @@ export type StudentApplicationListItem = {
     };
   };
   onboardingItems: ApplicationOnboardingItemView[];
+  interviewRequests: InterviewRequestView[];
+  serviceHourRecords: ServiceHourRecordView[];
   commentThread: RecordCommentThreadData;
   feedback: ExistingFeedback;
 };
@@ -159,13 +165,30 @@ export function StudentApplicationList({
           ) : null}
 
           {application.status === "ACCEPTED" ? (
-            <ApplicationOnboardingList
+            <div className="mt-5 space-y-5">
+              <ApplicationOnboardingList
+                applicationId={application.id}
+                items={application.onboardingItems}
+                mode="student"
+                redirectTo="/dashboard/student/applications"
+              />
+              <ServiceHourPanel
+                applicationId={application.id}
+                mode="student"
+                records={application.serviceHourRecords}
+                redirectTo="/dashboard/student/applications"
+              />
+            </div>
+          ) : null}
+
+          <div className="mt-5">
+            <InterviewRequestPanel
               applicationId={application.id}
-              items={application.onboardingItems}
+              interviewRequests={application.interviewRequests}
               mode="student"
               redirectTo="/dashboard/student/applications"
             />
-          ) : null}
+          </div>
 
           <RecordCommentThread
             entityId={application.id}

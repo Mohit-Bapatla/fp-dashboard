@@ -194,6 +194,29 @@ export default async function PartnerDashboardPage() {
           </div>
         </section>
 
+        <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-muted text-primary">
+                <Handshake aria-hidden="true" className="h-5 w-5" />
+              </div>
+              <h2 className="mt-5 text-lg font-semibold text-foreground">
+                Partner success
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Track applicant pipeline, interviews, service hours, and
+                candidate quality feedback for your organization.
+              </p>
+            </div>
+            <Link
+              className="inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+              href="/dashboard/partner/success"
+            >
+              Open success dashboard
+            </Link>
+          </div>
+        </section>
+
         <section className="space-y-4">
           <div>
             <h2 className="text-xl font-semibold text-foreground">

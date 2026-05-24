@@ -43,6 +43,8 @@ export default async function StudentDashboardPage() {
     rejectedApplicationCount,
     withdrawnApplicationCount,
     placementRequestCount,
+    verifiedServiceHours,
+    certificateCount,
   ] = profile
     ? await Promise.all([
         prisma.resume.findFirst({
@@ -89,8 +91,25 @@ export default async function StudentDashboardPage() {
             studentProfileId: profile.id,
           },
         }),
+        prisma.serviceHourRecord.aggregate({
+          where: {
+            studentProfileId: profile.id,
+            verificationStatus: "VERIFIED",
+          },
+          _sum: {
+            hours: true,
+          },
+        }),
+        prisma.serviceHourRecord.count({
+          where: {
+            studentProfileId: profile.id,
+            certificateStatus: {
+              in: ["APPROVED", "ISSUED"],
+            },
+          },
+        }),
       ])
-    : [null, 0, 0, 0, 0, 0, 0];
+    : [null, 0, 0, 0, 0, 0, 0, { _sum: { hours: 0 } }, 0];
   const recommendedOpportunities = profile
     ? await getRecommendedOpportunities(profile.id)
     : [];
@@ -161,6 +180,16 @@ export default async function StudentDashboardPage() {
             }
             label="Resume status"
             value={resume ? "Ready" : "Missing"}
+          />
+          <StatCard
+            helper="Verified hours from accepted opportunities."
+            label="Service hours"
+            value={(verifiedServiceHours._sum.hours ?? 0).toString()}
+          />
+          <StatCard
+            helper="Approved or issued certificate records."
+            label="Certificates"
+            value={certificateCount.toString()}
           />
         </section>
 

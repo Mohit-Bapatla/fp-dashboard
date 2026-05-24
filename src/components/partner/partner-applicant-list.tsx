@@ -14,18 +14,22 @@ import {
   FeedbackForm,
   type ExistingFeedback,
 } from "@/components/feedback/feedback-form";
+import { InterviewRequestPanel } from "@/components/interviews/interview-request-panel";
 import {
   ApplicationOnboardingList,
   type ApplicationOnboardingItemView,
 } from "@/components/onboarding/application-onboarding-list";
 import { PartnerApplicantStatusBadge } from "@/components/partner/partner-applicant-status-badge";
 import { PartnerResumeDownloadButton } from "@/components/partner/partner-resume-download-button";
+import { ServiceHourPanel } from "@/components/service-hours/service-hour-panel";
 import type {
   ApplicationStatus,
   OpportunityType,
 } from "@/generated/prisma/enums";
 import type { RecordCommentThread as RecordCommentThreadData } from "@/lib/comments/record-comments";
+import type { InterviewRequestView } from "@/lib/interviews/interviews";
 import { getApplicantFitExplanation } from "@/lib/matching/explanations";
+import type { ServiceHourRecordView } from "@/lib/service-hours/service-hours";
 
 export type PartnerApplicantListItem = {
   aiReview: {
@@ -44,6 +48,8 @@ export type PartnerApplicantListItem = {
   submittedAt: Date | null;
   createdAt: Date;
   reviewedAt: Date | null;
+  interviewRequests: InterviewRequestView[];
+  serviceHourRecords: ServiceHourRecordView[];
   onboardingItems: ApplicationOnboardingItemView[];
   commentThread: RecordCommentThreadData;
   resume: {
@@ -346,13 +352,30 @@ export function PartnerApplicantList({
             </div>
 
             {application.status === "ACCEPTED" ? (
-              <ApplicationOnboardingList
+              <div className="mt-5 space-y-5">
+                <ApplicationOnboardingList
+                  applicationId={application.id}
+                  items={application.onboardingItems}
+                  mode="reviewer"
+                  redirectTo={redirectTo}
+                />
+                <ServiceHourPanel
+                  applicationId={application.id}
+                  mode="partner"
+                  records={application.serviceHourRecords}
+                  redirectTo={redirectTo}
+                />
+              </div>
+            ) : null}
+
+            <div className="mt-5">
+              <InterviewRequestPanel
                 applicationId={application.id}
-                items={application.onboardingItems}
-                mode="reviewer"
+                interviewRequests={application.interviewRequests}
+                mode="partner"
                 redirectTo={redirectTo}
               />
-            ) : null}
+            </div>
 
             <RecordCommentThread
               entityId={application.id}

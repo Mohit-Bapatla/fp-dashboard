@@ -225,6 +225,31 @@ export default async function AdminApplicationsPage({
               title: true,
             },
           },
+          interviewRequests: {
+            orderBy: {
+              createdAt: "desc",
+            },
+            select: {
+              id: true,
+              location: true,
+              meetingLink: true,
+              notes: true,
+              selectedSlotId: true,
+              status: true,
+              studentResponseNotes: true,
+              proposedSlots: {
+                orderBy: {
+                  startsAt: "asc",
+                },
+                select: {
+                  endsAt: true,
+                  id: true,
+                  selected: true,
+                  startsAt: true,
+                },
+              },
+            },
+          },
           resume: {
             select: {
               fileName: true,

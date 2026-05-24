@@ -8,8 +8,10 @@ import {
   ApplicationOnboardingList,
   type ApplicationOnboardingItemView,
 } from "@/components/onboarding/application-onboarding-list";
+import { InterviewRequestPanel } from "@/components/interviews/interview-request-panel";
 import type { ApplicationStatus } from "@/generated/prisma/enums";
 import type { RecordCommentThread as RecordCommentThreadData } from "@/lib/comments/record-comments";
+import type { InterviewRequestView } from "@/lib/interviews/interviews";
 
 export type AdminApplicationListItem = {
   id: string;
@@ -19,6 +21,7 @@ export type AdminApplicationListItem = {
   createdAt: Date;
   reviewedAt: Date | null;
   onboardingItems: ApplicationOnboardingItemView[];
+  interviewRequests: InterviewRequestView[];
   commentThread: RecordCommentThreadData;
   resume: {
     fileName: string;
@@ -198,6 +201,15 @@ export function AdminApplicationList({
                 </p>
               ) : null}
             </form>
+
+            <div className="mt-5">
+              <InterviewRequestPanel
+                applicationId={application.id}
+                interviewRequests={application.interviewRequests}
+                mode="readonly"
+                redirectTo={redirectTo}
+              />
+            </div>
 
             {application.status === "ACCEPTED" ? (
               <ApplicationOnboardingList

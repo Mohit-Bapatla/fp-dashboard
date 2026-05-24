@@ -92,6 +92,30 @@ enum ApplicationOnboardingItemStatus {
   WAIVED
 }
 
+enum InterviewRequestStatus {
+  REQUESTED
+  STUDENT_RESPONDED
+  SCHEDULED
+  DECLINED
+  CANCELED
+  COMPLETED
+}
+
+enum ServiceHourVerificationStatus {
+  PENDING
+  VERIFIED
+  CHANGES_REQUESTED
+  REJECTED
+}
+
+enum CertificateStatus {
+  NOT_REQUESTED
+  PENDING_APPROVAL
+  APPROVED
+  ISSUED
+  REVOKED
+}
+
 enum RecordCommentEntityType {
   APPLICATION
   PLACEMENT_REQUEST
@@ -166,6 +190,10 @@ model User {
   feedbackAuthored          Feedback[]          @relation("FeedbackAuthor")
   recommendationEvents      RecommendationEvent[] @relation("RecommendationEventUser")
   dataQualityAcknowledgements DataQualityAcknowledgement[] @relation("DataQualityAcknowledgementUser")
+  interviewRequestsCreated  InterviewRequest[]  @relation("InterviewRequestCreator")
+  interviewRequestsCanceled InterviewRequest[]  @relation("InterviewRequestCanceler")
+  serviceHoursVerified      ServiceHourRecord[] @relation("ServiceHourVerifier")
+  certificatesApproved      ServiceHourRecord[] @relation("CertificateApprover")
   createdAt                  DateTime           @default(now())
   updatedAt                  DateTime           @updatedAt
 
@@ -200,6 +228,7 @@ model StudentProfile {
   applications        Application[]
   placementRequests   PlacementRequest[]
   adminNotes          AdminNote[]
+  serviceHourRecords  ServiceHourRecord[]
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
@@ -287,6 +316,7 @@ model PartnerOrganization {
   outreachContacts  OutreachContact[]
   outreachTasks     OutreachTask[]
   adminNotes        AdminNote[]
+  serviceHourRecords ServiceHourRecord[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -340,6 +370,7 @@ model Opportunity {
   placementRequests PlacementRequest[]
   adminNotes        AdminNote[]
   recommendationEvents RecommendationEvent[]
+  serviceHourRecords ServiceHourRecord[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -364,6 +395,8 @@ model Application {
   reviewedAt       DateTime?
   onboardingItems   ApplicationOnboardingItem[]
   recommendationEvents RecommendationEvent[]
+  interviewRequests InterviewRequest[]
+  serviceHourRecords ServiceHourRecord[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
@@ -398,6 +431,53 @@ model ApplicationOnboardingItem {
   @@index([reviewerId])
 }
 
+model InterviewRequest {
+  id             String                 @id @default(cuid())
+  applicationId  String
+  application    Application            @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  status         InterviewRequestStatus @default(REQUESTED)
+  meetingLink    String?
+  location       String?
+  notes          String?
+  studentResponseNotes String?
+  selectedSlotId String?
+  selectedSlot   ProposedInterviewSlot? @relation("SelectedInterviewSlot", fields: [selectedSlotId], references: [id], onDelete: SetNull)
+  createdById    String?
+  createdBy      User?                  @relation("InterviewRequestCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  canceledById   String?
+  canceledBy     User?                  @relation("InterviewRequestCanceler", fields: [canceledById], references: [id], onDelete: SetNull)
+  respondedAt    DateTime?
+  scheduledAt    DateTime?
+  canceledAt     DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  proposedSlots  ProposedInterviewSlot[] @relation("InterviewRequestSlots")
+
+  @@index([applicationId])
+  @@index([status])
+  @@index([selectedSlotId])
+  @@index([createdById])
+  @@index([canceledById])
+  @@index([createdAt])
+}
+
+model ProposedInterviewSlot {
+  id                 String            @id @default(cuid())
+  interviewRequestId String
+  interviewRequest   InterviewRequest  @relation("InterviewRequestSlots", fields: [interviewRequestId], references: [id], onDelete: Cascade)
+  selectedFor        InterviewRequest[] @relation("SelectedInterviewSlot")
+  startsAt           DateTime
+  endsAt             DateTime
+  selected           Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@index([interviewRequestId])
+  @@index([startsAt])
+  @@index([selected])
+}
+
 model RecordComment {
   id         String                  @id @default(cuid())
   entityType RecordCommentEntityType
@@ -412,6 +492,42 @@ model RecordComment {
   @@index([authorId])
   @@index([entityType, entityId])
   @@index([visibility])
+  @@index([createdAt])
+}
+
+model ServiceHourRecord {
+  id                    String                        @id @default(cuid())
+  applicationId          String
+  application            Application                   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  studentProfileId       String
+  studentProfile         StudentProfile                @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  opportunityId          String
+  opportunity            Opportunity                   @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  partnerOrganizationId  String
+  partnerOrganization    PartnerOrganization           @relation(fields: [partnerOrganizationId], references: [id], onDelete: Cascade)
+  hours                  Float
+  description            String?
+  verificationStatus     ServiceHourVerificationStatus @default(PENDING)
+  verifiedById           String?
+  verifiedBy             User?                         @relation("ServiceHourVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  verifiedAt             DateTime?
+  verificationNotes      String?
+  certificateStatus      CertificateStatus             @default(NOT_REQUESTED)
+  approvedById           String?
+  approvedBy             User?                         @relation("CertificateApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt             DateTime?
+  certificateNotes       String?
+  createdAt              DateTime                      @default(now())
+  updatedAt              DateTime                      @updatedAt
+
+  @@index([applicationId])
+  @@index([studentProfileId])
+  @@index([opportunityId])
+  @@index([partnerOrganizationId])
+  @@index([verificationStatus])
+  @@index([certificateStatus])
+  @@index([verifiedById])
+  @@index([approvedById])
   @@index([createdAt])
 }
 
