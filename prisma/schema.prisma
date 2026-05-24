@@ -132,6 +132,7 @@ model User {
   onboardingItemsReviewed    ApplicationOnboardingItem[] @relation("OnboardingItemReviewer")
   verifiedPartnerOrganizations PartnerOrganization[] @relation("PartnerVerifier")
   moderatedOpportunities     Opportunity[]       @relation("OpportunityModerator")
+  claimedStudentImportRecords StudentImportRecord[] @relation("StudentImportClaim")
   createdAt                  DateTime           @default(now())
   updatedAt                  DateTime           @updatedAt
 
@@ -170,6 +171,38 @@ model StudentProfile {
   updatedAt           DateTime           @updatedAt
 
   @@index([graduationYear])
+}
+
+model StudentImportRecord {
+  id                    String            @id @default(cuid())
+  email                 String
+  normalizedEmail       String            @unique
+  firstName             String?
+  lastName              String?
+  school                String?
+  gradeYear             String?
+  major                 String?
+  graduationYear        Int?
+  city                  String?
+  state                 String?
+  country               String?
+  locationPreference    String?
+  remotePreference      String?
+  interestedSpecialties String[]          @default([])
+  opportunityTypes      OpportunityType[] @default([])
+  availability          String[]          @default([])
+  languages             String[]          @default([])
+  careerGoals           String?
+  experienceLevel       String?
+  claimedAt             DateTime?
+  claimedById           String?
+  claimedBy             User?             @relation("StudentImportClaim", fields: [claimedById], references: [id], onDelete: SetNull)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  @@index([email])
+  @@index([claimedAt])
+  @@index([claimedById])
 }
 
 model Resume {

@@ -6,6 +6,7 @@ import {
   BriefcaseBusiness,
   Building2,
   ClipboardCheck,
+  FileUp,
   FileClock,
   GraduationCap,
   Handshake,
@@ -216,6 +217,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       label: "Audit Logs",
       href: "/dashboard/admin/audit-logs",
       icon: LockKeyhole,
+    },
+    {
+      label: "Data Imports",
+      href: "/dashboard/admin/data-imports",
+      icon: FileUp,
     },
     {
       label: "Moderation",
