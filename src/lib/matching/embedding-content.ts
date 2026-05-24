@@ -17,7 +17,6 @@ type OpportunityEmbeddingContent = {
 type StudentProfileEmbeddingContent = {
   availability: string[];
   careerGoals: string | null;
-  experienceLevel: string | null;
   interestedSpecialties: string[];
   locationPreference: string | null;
   opportunityTypes: OpportunityType[];
@@ -93,9 +92,6 @@ export function buildStudentProfileEmbeddingContent(
       : null,
     list("Availability", profile.availability),
     profile.careerGoals ? `Career goals: ${profile.careerGoals}` : null,
-    profile.experienceLevel
-      ? `Experience level: ${profile.experienceLevel}`
-      : null,
   ]);
 }
 

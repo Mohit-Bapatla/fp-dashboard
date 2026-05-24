@@ -245,7 +245,7 @@ export function PartnerApplicantList({
               </div>
             </div>
 
-            <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
               <DetailPill
                 label="School"
                 value={application.studentProfile.school ?? "Not provided"}
@@ -253,12 +253,6 @@ export function PartnerApplicantList({
               <DetailPill
                 label="Grade year"
                 value={application.studentProfile.gradeYear ?? "Not provided"}
-              />
-              <DetailPill
-                label="Experience"
-                value={
-                  application.studentProfile.experienceLevel ?? "Not provided"
-                }
               />
             </div>
 

@@ -11,7 +11,6 @@ export type StudentProfileForCompletion = Pick<
   | "opportunityTypes"
   | "availability"
   | "careerGoals"
-  | "experienceLevel"
 >;
 
 const completionFields = [
@@ -24,7 +23,6 @@ const completionFields = [
   "opportunityTypes",
   "availability",
   "careerGoals",
-  "experienceLevel",
 ] as const;
 
 function hasValue(value: string | string[] | null) {

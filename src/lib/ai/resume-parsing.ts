@@ -58,10 +58,16 @@ const commonSkillTerms = [
   "first aid",
   "patient care",
   "clinical research",
+  "research",
   "data analysis",
+  "data entry",
   "excel",
+  "microsoft excel",
+  "google sheets",
   "python",
   "r programming",
+  "javascript",
+  "typescript",
   "spanish",
   "mandarin",
   "medical terminology",
@@ -73,19 +79,32 @@ const commonSkillTerms = [
   "public health",
   "community health",
   "laboratory",
+  "lab safety",
   "phlebotomy",
   "scribe",
+  "medical scribing",
+  "vital signs",
+  "patient communication",
 ];
 
 const sectionHeadings = {
   certifications: [
     "certification",
     "certifications",
+    "certificate",
+    "certificates",
     "licenses",
     "licensure",
     "training",
+    "licenses and certifications",
   ],
-  education: ["education", "academic background", "university", "college"],
+  education: [
+    "education",
+    "academic background",
+    "academic history",
+    "university",
+    "college",
+  ],
   experience: [
     "experience",
     "professional experience",
@@ -94,6 +113,8 @@ const sectionHeadings = {
     "volunteer experience",
     "research experience",
     "employment",
+    "leadership experience",
+    "activities",
   ],
   skills: [
     "skills",
@@ -101,20 +122,41 @@ const sectionHeadings = {
     "competencies",
     "technical skills",
     "clinical skills",
+    "relevant skills",
   ],
 } as const;
+
+const summaryHeadings = [
+  "summary",
+  "profile",
+  "professional summary",
+  "objective",
+  "about",
+];
 
 function cleanText(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
 
 function normalizeResumeText(value: string) {
-  return value
+  const withNormalizedBreaks = value
     .replace(/\u00a0/g, " ")
+    .replace(/\r/g, "\n")
+    .replace(/[|·]/g, " ")
     .replace(/[\u2022\u25cf\u25aa\u25e6]/g, "\n")
     .replace(/\t+/g, " ")
     .replace(/[ \f\v]+/g, " ")
+    .replace(
+      /([a-z0-9)])\s+(Education|Experience|Skills|Certifications|Certificates|Licenses|Projects|Summary|Objective)\s*:?/gi,
+      "$1\n$2:",
+    )
     .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return withNormalizedBreaks
+    .split(/\n/)
+    .map((line) => line.replace(/\s{2,}/g, " ").trim())
+    .join("\n")
     .trim();
 }
 
@@ -151,10 +193,10 @@ function uniqueSkills(values: string[]) {
 
       if (
         cleaned &&
-        (!isSingleLetter || cleaned === "R") &&
+        !isSingleLetter &&
         !["and", "or", "with", "skills", "skill"].includes(lower)
       ) {
-        map.set(lower, lower === "r" ? "R" : cleaned);
+        map.set(lower, cleaned);
       }
 
       return map;
@@ -179,12 +221,38 @@ function normalizeHeading(line: string) {
     .trim();
 }
 
-function getHeadingKey(line: string) {
-  const heading = normalizeHeading(line);
+function getAllHeadingTerms() {
+  return [
+    ...summaryHeadings,
+    ...Object.values(sectionHeadings).flatMap((headings) => headings),
+  ];
+}
+
+function parseHeadingLine(line: string) {
+  const compactLine = line.replace(/\s+/g, " ").trim();
+  const normalizedLine = normalizeHeading(compactLine);
 
   for (const [key, headings] of Object.entries(sectionHeadings)) {
-    if (headings.some((candidate) => heading === candidate)) {
-      return key as keyof typeof sectionHeadings;
+    for (const heading of headings) {
+      if (normalizedLine === heading) {
+        return {
+          key: key as keyof typeof sectionHeadings,
+          remainder: "",
+        };
+      }
+
+      const inlinePattern = new RegExp(
+        `^${escapeRegExp(heading)}\\s*[:\\-\\u2013\\u2014]?\\s+(.+)$`,
+        "i",
+      );
+      const match = compactLine.match(inlinePattern);
+
+      if (match?.[1]) {
+        return {
+          key: key as keyof typeof sectionHeadings,
+          remainder: match[1].trim(),
+        };
+      }
     }
   }
 
@@ -196,10 +264,13 @@ function extractSection(lines: string[], target: keyof typeof sectionHeadings) {
   let collecting = false;
 
   lines.forEach((line) => {
-    const headingKey = getHeadingKey(line);
+    const heading = parseHeadingLine(line);
 
-    if (headingKey) {
-      collecting = headingKey === target;
+    if (heading) {
+      collecting = heading.key === target;
+      if (collecting && heading.remainder) {
+        matches.push(heading.remainder);
+      }
       return;
     }
 
@@ -209,6 +280,48 @@ function extractSection(lines: string[], target: keyof typeof sectionHeadings) {
   });
 
   return uniqueStrings(matches);
+}
+
+function extractSummarySection(lines: string[]) {
+  const matches: string[] = [];
+  let collecting = false;
+  const allHeadings = getAllHeadingTerms();
+
+  lines.forEach((line) => {
+    const normalizedLine = normalizeHeading(line);
+    const summaryHeading = summaryHeadings.find(
+      (heading) =>
+        normalizedLine === heading ||
+        line.toLowerCase().startsWith(`${heading}:`),
+    );
+    const otherHeading =
+      parseHeadingLine(line) ||
+      allHeadings.some((heading) => normalizeHeading(line) === heading);
+
+    if (summaryHeading) {
+      collecting = true;
+      const remainder = line.replace(
+        new RegExp(`^${summaryHeading}:?`, "i"),
+        "",
+      );
+
+      if (remainder.trim()) {
+        matches.push(remainder.trim());
+      }
+      return;
+    }
+
+    if (collecting && otherHeading) {
+      collecting = false;
+      return;
+    }
+
+    if (collecting) {
+      matches.push(line);
+    }
+  });
+
+  return cleanText(matches.join(" ")).slice(0, 500);
 }
 
 function splitPotentialSkills(values: string[]) {
@@ -231,6 +344,46 @@ function skillsFromKnownTerms(text: string) {
 
     return pattern.test(text);
   });
+}
+
+function extractEducationFallback(lines: string[]) {
+  const educationPattern =
+    /\b(university|college|school|academy|bachelor|master|associate|degree|b\.?s\.?|b\.?a\.?|m\.?s\.?|m\.?a\.?|gpa|pre-?med|biology|chemistry|neuroscience)\b/i;
+
+  return uniqueStrings(
+    lines.filter((line) => {
+      return educationPattern.test(line) && line.length <= 180;
+    }),
+  );
+}
+
+function extractExperienceFallback(lines: string[]) {
+  const datePattern =
+    /\b(20\d{2}|19\d{2}|present|current|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i;
+  const rolePattern =
+    /\b(intern|volunteer|assistant|research|scribe|shadow|mentor|coordinator|leader|tutor|care|clinic|hospital|lab)\b/i;
+
+  return uniqueStrings(
+    lines.filter((line) => {
+      return (
+        line.length >= 12 &&
+        line.length <= 220 &&
+        rolePattern.test(line) &&
+        (datePattern.test(line) || /[-–—]/.test(line))
+      );
+    }),
+  );
+}
+
+function extractCertificationFallback(lines: string[]) {
+  const certificationPattern =
+    /\b(certified|certification|certificate|license|licensed|bls|cpr|first aid|hipaa|training)\b/i;
+
+  return uniqueStrings(
+    lines.filter((line) => {
+      return certificationPattern.test(line) && line.length <= 180;
+    }),
+  );
 }
 
 function extractContactSummary(lines: string[]) {
@@ -261,19 +414,29 @@ function deterministicParse(text: string): ParsedResumeData {
   const experience = extractSection(lines, "experience");
   const certifications = extractSection(lines, "certifications");
   const contact = extractContactSummary(lines);
-  const summaryLead = cleaned
+  const explicitSummary = extractSummarySection(lines);
+  const summaryLead = (explicitSummary || cleaned)
     .split(/(?<=[.!?])\s+/)
     .slice(0, 2)
     .join(" ")
     .slice(0, 500);
+  const contactParts = [
+    contact.name ? `Name: ${contact.name}` : null,
+    contact.email ? `Email: ${contact.email}` : null,
+    contact.phone ? `Phone: ${contact.phone}` : null,
+  ].filter(Boolean);
   const summary = cleaned
-    ? [contact.name, summaryLead].filter(Boolean).join(" - ")
+    ? [...contactParts, summaryLead].filter(Boolean).join("\n")
     : null;
 
   return {
-    certifications,
-    education,
-    experience,
+    certifications: certifications.length
+      ? certifications
+      : extractCertificationFallback(lines),
+    education: education.length ? education : extractEducationFallback(lines),
+    experience: experience.length
+      ? experience
+      : extractExperienceFallback(lines),
     skills,
     summary,
     text: normalizedText,
@@ -281,14 +444,38 @@ function deterministicParse(text: string): ParsedResumeData {
 }
 
 async function extractPdfText(bytes: Buffer): Promise<string> {
-  type PdfParseFunction = (data: Buffer) => Promise<{ text?: string }>;
-  const pdfParseModule = (await import("pdf-parse")) as unknown as {
-    default?: PdfParseFunction;
-  } & PdfParseFunction;
-  const pdfParse = pdfParseModule.default ?? pdfParseModule;
-  const result = await pdfParse(bytes);
+  type PdfParser = {
+    destroy?: () => Promise<void> | void;
+    getText: () => Promise<{ text?: string }>;
+  };
+  type PdfParseConstructor = new (options: { data: Buffer }) => PdfParser;
+  const { PDFParse } = (await import("pdf-parse")) as unknown as {
+    PDFParse?: PdfParseConstructor;
+  };
 
-  return result.text ?? "";
+  if (!PDFParse) {
+    throw new Error("PDF parsing is unavailable in this environment.");
+  }
+
+  let parser: PdfParser | null = null;
+
+  try {
+    parser = new PDFParse({
+      data: bytes,
+    });
+    const result = await parser.getText();
+
+    return result.text ?? "";
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown PDF parsing error.";
+
+    throw new Error(
+      `PDF text could not be extracted reliably. ${message}`.trim(),
+    );
+  } finally {
+    await parser?.destroy?.();
+  }
 }
 
 async function extractDocxText(bytes: Buffer) {

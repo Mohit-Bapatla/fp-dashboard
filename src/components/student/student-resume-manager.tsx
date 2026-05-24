@@ -109,16 +109,25 @@ export function StudentResumeManager({
       ) : (
         <div className="mt-6 space-y-5">
           {resume ? (
-            <div className="rounded-lg border border-border bg-muted/30 p-4">
-              <p className="text-sm font-semibold text-foreground">
-                {resume.fileName}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Updated {resume.updatedAt.toLocaleDateString()}
-              </p>
-              <p className="mt-2 text-sm font-medium text-muted-foreground">
-                Parse status: {formatParseStatus(resume.parseStatus)}
-              </p>
+            <div className="rounded-lg border border-border bg-muted/25 p-4">
+              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {resume.fileName}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Updated {resume.updatedAt.toLocaleDateString()}
+                  </p>
+                </div>
+                <span
+                  className={cn(
+                    "inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-medium",
+                    getParseStatusClassName(resume.parseStatus),
+                  )}
+                >
+                  {formatParseStatus(resume.parseStatus)}
+                </span>
+              </div>
               {needsReview ? (
                 <div className="mt-4 flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
                   <AlertTriangle
@@ -131,11 +140,11 @@ export function StudentResumeManager({
                   </p>
                 </div>
               ) : null}
-              <div className="mt-4 flex flex-wrap gap-3">
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 <form action={downloadAction}>
                   <input name="resumeId" type="hidden" value={resume.id} />
                   <button
-                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={downloadPending}
                     type="submit"
                   >
@@ -146,7 +155,7 @@ export function StudentResumeManager({
                 <form action={deleteAction}>
                   <input name="resumeId" type="hidden" value={resume.id} />
                   <button
-                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-red-200 px-4 text-sm font-medium text-red-700 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-background px-4 text-sm font-medium text-red-700 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={deletePending}
                     type="submit"
                   >
@@ -157,7 +166,7 @@ export function StudentResumeManager({
                 <form action={parseAction}>
                   <input name="resumeId" type="hidden" value={resume.id} />
                   <button
-                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={
                       parsePending || resume.parseStatus === "PROCESSING"
                     }
@@ -214,25 +223,38 @@ export function StudentResumeManager({
             </div>
           ) : null}
 
-          <form action={uploadAction} className="space-y-3">
-            <label className="block text-sm font-medium text-foreground">
-              {resume ? "Replace resume" : "Upload resume"}
-              <input
-                accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                className="mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm file:mr-4 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-foreground"
-                name="resume"
-                required
-                type="file"
-              />
-            </label>
-            <button
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={uploadPending}
-              type="submit"
-            >
-              <Upload aria-hidden="true" className="h-4 w-4" />
-              {uploadPending ? "Uploading" : resume ? "Replace" : "Upload"}
-            </button>
+          <form
+            action={uploadAction}
+            className="rounded-lg border border-dashed border-border bg-muted/20 p-4"
+          >
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+              <label className="block text-sm font-medium text-foreground">
+                {resume ? "Replace resume" : "Upload resume"}
+                <input
+                  accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  className="mt-2 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm file:mr-4 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground hover:file:bg-muted/80"
+                  name="resume"
+                  required
+                  type="file"
+                />
+              </label>
+              <button
+                className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                disabled={uploadPending}
+                type="submit"
+              >
+                <Upload aria-hidden="true" className="h-4 w-4" />
+                {uploadPending
+                  ? "Uploading"
+                  : resume
+                    ? "Upload replacement"
+                    : "Upload resume"}
+              </button>
+            </div>
+            <p className="mt-3 text-xs leading-5 text-muted-foreground">
+              PDF and DOCX files up to 5 MB are supported. After uploading, use
+              parse or retry parse to refresh the structured resume sections.
+            </p>
           </form>
         </div>
       )}
@@ -263,6 +285,19 @@ function formatParseStatus(status: string) {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function getParseStatusClassName(status: string) {
+  switch (status) {
+    case "COMPLETED":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    case "FAILED":
+      return "border-red-200 bg-red-50 text-red-700";
+    case "PROCESSING":
+      return "border-amber-200 bg-amber-50 text-amber-800";
+    default:
+      return "border-border bg-background text-muted-foreground";
+  }
 }
 
 function getNeedsReview(

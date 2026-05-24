@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronLeft, ChevronRight, Save } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Plus, Save, X } from "lucide-react";
 import { useActionState, useMemo, useState, type ReactNode } from "react";
 
 import { saveStudentProfile } from "@/app/dashboard/student/onboarding/actions";
@@ -54,6 +54,83 @@ const steps = [
     description: "Add career goals and any professional links.",
   },
 ];
+
+const gradeYearOptions = [
+  "High school freshman",
+  "High school sophomore",
+  "High school junior",
+  "High school senior",
+  "College freshman",
+  "College sophomore",
+  "College junior",
+  "College senior",
+  "Graduate student",
+  "Medical student",
+  "Gap year / post-baccalaureate",
+  "Other",
+] as const;
+
+const specialtySuggestions = [
+  "Neuroscience",
+  "Cardiology",
+  "Neurology",
+  "Pediatrics",
+  "Emergency medicine",
+  "Surgery",
+  "Internal medicine",
+  "Public health",
+  "Oncology",
+  "Psychiatry",
+  "Radiology",
+  "Dermatology",
+  "Primary care",
+  "Research",
+  "Machine learning in healthcare",
+  "Global health",
+  "Health policy",
+  "Medical education",
+] as const;
+
+function splitSpecialties(value: string) {
+  return value
+    .split(/[\n,;]+/)
+    .map(normalizeSpecialty)
+    .filter(Boolean);
+}
+
+function normalizeSpecialty(value: string) {
+  return value
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .map((word) => {
+      const lower = word.toLowerCase();
+
+      if (["in", "and", "of"].includes(lower)) {
+        return lower;
+      }
+
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join(" ");
+}
+
+function uniqueSpecialties(values: string[]) {
+  const seen = new Set<string>();
+  const unique: string[] = [];
+
+  values.forEach((value) => {
+    const normalized = normalizeSpecialty(value);
+    const key = normalized.toLowerCase();
+
+    if (normalized && !seen.has(key)) {
+      seen.add(key);
+      unique.push(normalized);
+    }
+  });
+
+  return unique;
+}
 
 function TextField({
   errors,
@@ -130,6 +207,121 @@ function SelectField({
   );
 }
 
+function SpecialtyTagInput({
+  errors,
+  values,
+}: {
+  errors: StudentProfileFieldErrors;
+  values: StudentProfileFormValues;
+}) {
+  const [selected, setSelected] = useState(() =>
+    uniqueSpecialties(splitSpecialties(values.interestedSpecialties)),
+  );
+  const [customValue, setCustomValue] = useState("");
+  const error = errors.interestedSpecialties;
+
+  function addSpecialty(value: string) {
+    const normalized = normalizeSpecialty(value);
+
+    if (!normalized) {
+      return;
+    }
+
+    setSelected((current) => uniqueSpecialties([...current, normalized]));
+    setCustomValue("");
+  }
+
+  function removeSpecialty(value: string) {
+    setSelected((current) =>
+      current.filter((item) => item.toLowerCase() !== value.toLowerCase()),
+    );
+  }
+
+  const availableSuggestions = specialtySuggestions.filter(
+    (suggestion) =>
+      !selected.some(
+        (value) => value.toLowerCase() === suggestion.toLowerCase(),
+      ),
+  );
+
+  return (
+    <fieldset className="rounded-lg border border-border bg-muted/20 p-4">
+      <legend className="px-1 text-sm font-medium text-foreground">
+        Interested specialties <span className="text-primary">*</span>
+      </legend>
+      <input
+        name="interestedSpecialties"
+        type="hidden"
+        value={selected.join(", ")}
+      />
+      {selected.length > 0 ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {selected.map((specialty) => (
+            <span
+              className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/[0.06] px-3 py-1 text-xs font-medium text-foreground"
+              key={specialty}
+            >
+              {specialty}
+              <button
+                aria-label={`Remove ${specialty}`}
+                className="rounded-full text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                onClick={() => removeSpecialty(specialty)}
+                type="button"
+              >
+                <X aria-hidden="true" className="h-3.5 w-3.5" />
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          Choose a few interests so matching can start with consistent data.
+        </p>
+      )}
+      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+        <input
+          className={cn(
+            "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground shadow-sm outline-none transition focus:border-primary",
+            error && "border-red-400 focus:border-red-500",
+          )}
+          onChange={(event) => setCustomValue(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              addSpecialty(customValue);
+            }
+          }}
+          placeholder="Add a custom specialty"
+          value={customValue}
+        />
+        <button
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          onClick={() => addSpecialty(customValue)}
+          type="button"
+        >
+          <Plus aria-hidden="true" className="h-4 w-4" />
+          Add
+        </button>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {availableSuggestions.map((suggestion) => (
+          <button
+            className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-primary hover:bg-primary/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            key={suggestion}
+            onClick={() => addSpecialty(suggestion)}
+            type="button"
+          >
+            {suggestion}
+          </button>
+        ))}
+      </div>
+      {error ? (
+        <span className="mt-2 block text-xs text-red-600">{error}</span>
+      ) : null}
+    </fieldset>
+  );
+}
+
 export function StudentOnboardingForm({
   initialState,
 }: StudentOnboardingFormProps) {
@@ -142,11 +334,23 @@ export function StudentOnboardingForm({
     () => Math.round(((step + 1) / steps.length) * 100),
     [step],
   );
+  const currentGradeYearIsLegacy =
+    state.values.gradeYear &&
+    !gradeYearOptions.some((option) => option === state.values.gradeYear);
 
   return (
     <form
       action={formAction}
       className="rounded-xl border border-border bg-background shadow-sm"
+      onKeyDown={(event) => {
+        if (
+          event.key === "Enter" &&
+          event.target instanceof HTMLInputElement &&
+          event.target.type !== "submit"
+        ) {
+          event.preventDefault();
+        }
+      }}
     >
       <div className="border-b border-border p-6">
         <nav aria-label="Form progress" className="mb-5">
@@ -252,15 +456,16 @@ export function StudentOnboardingForm({
             values={state.values}
           >
             <option value="">Choose grade year</option>
-            <option value="High school">High school</option>
-            <option value="Freshman">Freshman</option>
-            <option value="Sophomore">Sophomore</option>
-            <option value="Junior">Junior</option>
-            <option value="Senior">Senior</option>
-            <option value="Graduate student">Graduate student</option>
-            <option value={state.values.gradeYear}>
-              {state.values.gradeYear || "Other"}
-            </option>
+            {gradeYearOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+            {currentGradeYearIsLegacy ? (
+              <option value={state.values.gradeYear}>
+                {state.values.gradeYear}
+              </option>
+            ) : null}
           </SelectField>
         </section>
 
@@ -309,15 +514,7 @@ export function StudentOnboardingForm({
         </section>
 
         <section className={cn("space-y-5", step !== 2 && "hidden")}>
-          <TextField
-            errors={state.fieldErrors}
-            label="Interested specialties"
-            name="interestedSpecialties"
-            placeholder="Cardiology, pediatrics, emergency medicine"
-            required
-            rows={3}
-            values={state.values}
-          />
+          <SpecialtyTagInput errors={state.fieldErrors} values={state.values} />
 
           <fieldset>
             <legend className="text-sm font-medium text-foreground">
@@ -386,22 +583,6 @@ export function StudentOnboardingForm({
               values={state.values}
             />
           </div>
-          <SelectField
-            errors={state.fieldErrors}
-            label="Experience level"
-            name="experienceLevel"
-            required
-            values={state.values}
-          >
-            <option value="">Choose experience level</option>
-            <option value="Exploring">Exploring</option>
-            <option value="Beginner">Beginner</option>
-            <option value="Intermediate">Intermediate</option>
-            <option value="Advanced">Advanced</option>
-            <option value={state.values.experienceLevel}>
-              {state.values.experienceLevel || "Other"}
-            </option>
-          </SelectField>
           <TextField
             errors={state.fieldErrors}
             label="LinkedIn URL"
@@ -466,7 +647,7 @@ export function StudentOnboardingForm({
             ) : (
               <>
                 <Check aria-hidden="true" className="h-4 w-4" />
-                Save profile
+                Save and finish
               </>
             )}
           </button>

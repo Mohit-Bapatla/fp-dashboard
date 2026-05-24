@@ -70,7 +70,6 @@ async function getStudentProfileCandidates(): Promise<EmbeddingCandidate[]> {
     select: {
       availability: true,
       careerGoals: true,
-      experienceLevel: true,
       id: true,
       interestedSpecialties: true,
       locationPreference: true,

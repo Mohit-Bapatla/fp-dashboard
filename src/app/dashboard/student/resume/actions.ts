@@ -173,6 +173,7 @@ export async function uploadStudentResume(
   });
 
   revalidatePath("/dashboard/student");
+  revalidatePath("/dashboard/student/profile");
 
   return {
     error: null,
@@ -235,6 +236,7 @@ export async function deleteStudentResume(
   });
 
   revalidatePath("/dashboard/student");
+  revalidatePath("/dashboard/student/profile");
 
   return {
     error: null,
@@ -314,17 +316,19 @@ export async function parseStudentResume(
     });
 
     revalidatePath("/dashboard/student");
+    revalidatePath("/dashboard/student/profile");
 
     return {
       error:
         error instanceof Error
           ? error.message
-          : "Resume parsing failed. Please retry, or upload a clearer DOCX resume.",
+          : "Resume parsing failed. Please retry, or upload a clearer PDF/DOCX resume.",
       success: null,
     };
   }
 
   revalidatePath("/dashboard/student");
+  revalidatePath("/dashboard/student/profile");
 
   return {
     error: null,

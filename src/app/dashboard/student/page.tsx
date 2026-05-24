@@ -352,8 +352,8 @@ export default async function StudentDashboardPage() {
                 />
                 <ProfileDetail
                   icon={Target}
-                  label="Experience level"
-                  value={profile.experienceLevel}
+                  label="Remote preference"
+                  value={profile.remotePreference ?? "No preference set"}
                 />
               </div>
             </article>

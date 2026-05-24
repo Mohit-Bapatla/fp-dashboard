@@ -20,7 +20,6 @@ export type ApplicantSummaryResult = {
 type ApplicantSummaryInput = {
   opportunity: MatchOpportunity;
   profile: MatchStudentProfile & {
-    experienceLevel: string | null;
     school: string | null;
   };
   resume:
@@ -70,12 +69,10 @@ function firstItems(values: string[], count: number) {
 
 function deterministicApplicantSummary({
   match,
-  profile,
   resume,
   statement,
 }: {
   match: ReturnType<typeof getOpportunityMatchScore>;
-  profile: ApplicantSummaryInput["profile"];
   resume: ApplicantSummaryInput["resume"];
   statement: string | null;
 }) {
@@ -84,9 +81,6 @@ function deterministicApplicantSummary({
     ...firstItems(resume?.extractedSkills ?? [], 3).map(
       (skill) => `Resume includes ${skill}.`,
     ),
-    profile.experienceLevel
-      ? `Experience level listed as ${profile.experienceLevel}.`
-      : "",
   ].filter(Boolean);
   const gaps = match.gaps.length
     ? match.gaps
@@ -135,7 +129,6 @@ export async function getApplicantSummary(
   });
   const fallback = deterministicApplicantSummary({
     match,
-    profile: input.profile,
     resume: input.resume,
     statement: input.statement,
   });

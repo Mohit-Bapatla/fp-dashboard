@@ -25,7 +25,6 @@ export type StudentProfileFormValues = {
   availability: string;
   languages: string;
   careerGoals: string;
-  experienceLevel: string;
   linkedinUrl: string;
   githubUrl: string;
   portfolioUrl: string;
@@ -53,7 +52,6 @@ export type StudentProfileValidationResult =
         availability: string[];
         languages: string[];
         careerGoals: string;
-        experienceLevel: string;
         linkedinUrl: string | null;
         githubUrl: string | null;
         portfolioUrl: string | null;
@@ -81,7 +79,6 @@ export const emptyStudentProfileFormValues: StudentProfileFormValues = {
   availability: "",
   languages: "",
   careerGoals: "",
-  experienceLevel: "",
   linkedinUrl: "",
   githubUrl: "",
   portfolioUrl: "",
@@ -98,7 +95,6 @@ const requiredFields = [
   "interestedSpecialties",
   "availability",
   "careerGoals",
-  "experienceLevel",
 ] as const;
 
 function getString(formData: FormData, key: keyof StudentProfileFormValues) {
@@ -109,9 +105,43 @@ function getString(formData: FormData, key: keyof StudentProfileFormValues) {
 
 function splitList(value: string) {
   return value
-    .split(/[\n,]/)
+    .split(/[\n,;]/)
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function normalizeSpecialty(value: string) {
+  return value
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .map((word) => {
+      const lower = word.toLowerCase();
+
+      if (["in", "and", "of"].includes(lower)) {
+        return lower;
+      }
+
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join(" ");
+}
+
+function splitSpecialtyList(value: string) {
+  const seen = new Set<string>();
+
+  return splitList(value).flatMap((item) => {
+    const normalized = normalizeSpecialty(item);
+    const key = normalized.toLowerCase();
+
+    if (!normalized || seen.has(key)) {
+      return [];
+    }
+
+    seen.add(key);
+
+    return [normalized];
+  });
 }
 
 function getOpportunityTypes(formData: FormData) {
@@ -157,7 +187,6 @@ export function valuesFromFormData(
     availability: getString(formData, "availability"),
     languages: getString(formData, "languages"),
     careerGoals: getString(formData, "careerGoals"),
-    experienceLevel: getString(formData, "experienceLevel"),
     linkedinUrl: getString(formData, "linkedinUrl"),
     githubUrl: getString(formData, "githubUrl"),
     portfolioUrl: getString(formData, "portfolioUrl"),
@@ -207,12 +236,11 @@ export function validateStudentProfileForm(
       country: values.country,
       locationPreference: values.locationPreference || null,
       remotePreference: values.remotePreference || null,
-      interestedSpecialties: splitList(values.interestedSpecialties),
+      interestedSpecialties: splitSpecialtyList(values.interestedSpecialties),
       opportunityTypes: values.opportunityTypes,
       availability: splitList(values.availability),
       languages: splitList(values.languages),
       careerGoals: values.careerGoals,
-      experienceLevel: values.experienceLevel,
       linkedinUrl: values.linkedinUrl || null,
       githubUrl: values.githubUrl || null,
       portfolioUrl: values.portfolioUrl || null,

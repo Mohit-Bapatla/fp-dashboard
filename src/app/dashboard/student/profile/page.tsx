@@ -46,7 +46,6 @@ export default async function StudentProfilePage() {
       availability: listToText(profile?.availability ?? []),
       languages: listToText(profile?.languages ?? []),
       careerGoals: profile?.careerGoals ?? "",
-      experienceLevel: profile?.experienceLevel ?? "",
       linkedinUrl: profile?.linkedinUrl ?? "",
       githubUrl: profile?.githubUrl ?? "",
       portfolioUrl: profile?.portfolioUrl ?? "",

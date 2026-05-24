@@ -4,11 +4,24 @@ const allowedResumeTypes = [
   {
     extension: "pdf",
     mimeType: "application/pdf",
+    acceptedMimeTypes: [
+      "application/pdf",
+      "application/x-pdf",
+      "application/acrobat",
+      "application/vnd.pdf",
+      "application/octet-stream",
+      "",
+    ],
   },
   {
     extension: "docx",
     mimeType:
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    acceptedMimeTypes: [
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/octet-stream",
+      "",
+    ],
   },
 ] as const;
 
@@ -40,7 +53,10 @@ export function validateResumeFile(file: File): ResumeValidationResult {
 
   const extension = file.name.split(".").pop()?.toLowerCase();
   const allowedType = allowedResumeTypes.find((type) => {
-    return type.extension === extension && type.mimeType === file.type;
+    return (
+      type.extension === extension &&
+      (type.acceptedMimeTypes as readonly string[]).includes(file.type)
+    );
   });
 
   if (!allowedType) {
