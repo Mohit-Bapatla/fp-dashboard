@@ -1,7 +1,9 @@
 import { UserButton } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { Bell } from "lucide-react";
 import Link from "next/link";
 
+import { prisma } from "@/lib/db/prisma";
 import { getCurrentUserNotificationSummary } from "@/lib/notifications/notifications";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +22,23 @@ export async function DashboardTopNav({
 }: DashboardTopNavProps) {
   const meta = roleMeta[role];
   const { unreadCount } = await getCurrentUserNotificationSummary();
+  const { userId } = await auth();
+  const appUser = userId
+    ? await prisma.user.findUnique({
+        where: {
+          clerkUserId: userId,
+        },
+        select: {
+          email: true,
+          firstName: true,
+          lastName: true,
+        },
+      })
+    : null;
+  const displayName =
+    appUser &&
+    ([appUser.firstName, appUser.lastName].filter(Boolean).join(" ") ||
+      appUser.email);
 
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -56,6 +75,14 @@ export async function DashboardTopNav({
             ) : null}
           </Link>
           <RoleBadge role={role} />
+          {displayName ? (
+            <div className="hidden text-right sm:block">
+              <p className="text-sm font-semibold text-foreground">
+                {displayName}
+              </p>
+              <p className="text-xs text-muted-foreground">App profile</p>
+            </div>
+          ) : null}
           <UserButton />
         </div>
       </div>
@@ -64,24 +91,27 @@ export async function DashboardTopNav({
         aria-label={`${meta.label} mobile navigation`}
         className="flex gap-2 overflow-x-auto border-t border-border px-4 py-3 md:hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
-        {navItems.filter((item) => item.href !== "#").map((item) => {
-          const ItemIcon = item.icon;
+        {navItems
+          .filter((item) => item.href !== "#")
+          .map((item) => {
+            const ItemIcon = item.icon;
 
-          return (
-            <Link
-              aria-current={item.active ? "page" : undefined}
-              className={cn(
-                "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
-                item.active && "border-primary/60 bg-primary/[0.08] text-foreground",
-              )}
-              href={item.href}
-              key={item.label}
-            >
-              <ItemIcon aria-hidden="true" className="h-4 w-4" />
-              {item.label}
-            </Link>
-          );
-        })}
+            return (
+              <Link
+                aria-current={item.active ? "page" : undefined}
+                className={cn(
+                  "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
+                  item.active &&
+                    "border-primary/60 bg-primary/[0.08] text-foreground",
+                )}
+                href={item.href}
+                key={item.label}
+              >
+                <ItemIcon aria-hidden="true" className="h-4 w-4" />
+                {item.label}
+              </Link>
+            );
+          })}
       </nav>
     </header>
   );

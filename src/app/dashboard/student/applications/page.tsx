@@ -98,7 +98,8 @@ export default async function StudentApplicationsPage({
               Applications
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
-              Complete your student profile to start applying for healthcare opportunities.
+              Complete your student profile to start applying for healthcare
+              opportunities.
             </p>
           </header>
           <div className="space-y-4">

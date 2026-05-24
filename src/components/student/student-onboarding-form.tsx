@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, ChevronLeft, ChevronRight, Save } from "lucide-react";
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useMemo, useState, type ReactNode } from "react";
 
 import { saveStudentProfile } from "@/app/dashboard/student/onboarding/actions";
 import type { StudentOnboardingActionState } from "@/lib/student/onboarding-state";
@@ -24,6 +24,15 @@ type TextFieldProps = {
   required?: boolean;
   rows?: number;
   type?: string;
+  values: StudentProfileFormValues;
+};
+
+type SelectFieldProps = {
+  children: ReactNode;
+  errors: StudentProfileFieldErrors;
+  label: string;
+  name: keyof StudentProfileFormValues;
+  required?: boolean;
   values: StudentProfileFormValues;
 };
 
@@ -83,6 +92,37 @@ function TextField({
           type={type}
         />
       )}
+      {error ? (
+        <span className="mt-1 block text-xs text-red-600">{error}</span>
+      ) : null}
+    </label>
+  );
+}
+
+function SelectField({
+  children,
+  errors,
+  label,
+  name,
+  required,
+  values,
+}: SelectFieldProps) {
+  const error = errors[name];
+
+  return (
+    <label className="block text-sm font-medium text-foreground">
+      {label}
+      {required ? <span className="text-primary"> *</span> : null}
+      <select
+        className={cn(
+          "mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-primary",
+          error && "border-red-400 focus:border-red-500",
+        )}
+        defaultValue={values[name] as string}
+        name={name}
+      >
+        {children}
+      </select>
       {error ? (
         <span className="mt-1 block text-xs text-red-600">{error}</span>
       ) : null}
@@ -204,14 +244,24 @@ export function StudentOnboardingForm({
             required
             values={state.values}
           />
-          <TextField
+          <SelectField
             errors={state.fieldErrors}
             label="Grade year"
             name="gradeYear"
-            placeholder="Sophomore, junior, 2027..."
             required
             values={state.values}
-          />
+          >
+            <option value="">Choose grade year</option>
+            <option value="High school">High school</option>
+            <option value="Freshman">Freshman</option>
+            <option value="Sophomore">Sophomore</option>
+            <option value="Junior">Junior</option>
+            <option value="Senior">Senior</option>
+            <option value="Graduate student">Graduate student</option>
+            <option value={state.values.gradeYear}>
+              {state.values.gradeYear || "Other"}
+            </option>
+          </SelectField>
         </section>
 
         <section
@@ -245,13 +295,17 @@ export function StudentOnboardingForm({
             placeholder="Chicago area, Midwest, anywhere..."
             values={state.values}
           />
-          <TextField
+          <SelectField
             errors={state.fieldErrors}
             label="Remote preference"
             name="remotePreference"
-            placeholder="In-person, remote, hybrid..."
             values={state.values}
-          />
+          >
+            <option value="">No preference</option>
+            <option value="In person">In person</option>
+            <option value="Remote">Remote</option>
+            <option value="Hybrid">Hybrid</option>
+          </SelectField>
         </section>
 
         <section className={cn("space-y-5", step !== 2 && "hidden")}>
@@ -332,14 +386,22 @@ export function StudentOnboardingForm({
               values={state.values}
             />
           </div>
-          <TextField
+          <SelectField
             errors={state.fieldErrors}
             label="Experience level"
             name="experienceLevel"
-            placeholder="Exploring, beginner, intermediate..."
             required
             values={state.values}
-          />
+          >
+            <option value="">Choose experience level</option>
+            <option value="Exploring">Exploring</option>
+            <option value="Beginner">Beginner</option>
+            <option value="Intermediate">Intermediate</option>
+            <option value="Advanced">Advanced</option>
+            <option value={state.values.experienceLevel}>
+              {state.values.experienceLevel || "Other"}
+            </option>
+          </SelectField>
           <TextField
             errors={state.fieldErrors}
             label="LinkedIn URL"

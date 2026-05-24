@@ -36,6 +36,7 @@ export type DashboardNavItem = {
   href: string;
   icon: LucideIcon;
   active?: boolean;
+  group?: string;
 };
 
 export type DashboardStat = {
@@ -108,7 +109,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       href: "/dashboard/support",
       icon: LifeBuoy,
     },
-    { label: "Profile", href: "#", icon: GraduationCap },
+    {
+      label: "Profile",
+      href: "/dashboard/student/profile",
+      icon: GraduationCap,
+    },
     {
       label: "Opportunities",
       href: "/dashboard/student/opportunities",
@@ -129,8 +134,8 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       href: "/dashboard/student/events",
       icon: CalendarDays,
     },
-    { label: "Saved", href: "#", icon: Bookmark },
-    { label: "Settings", href: "#", icon: Settings },
+    { label: "Saved", href: "/dashboard/student/saved", icon: Bookmark },
+    { label: "Settings", href: "/dashboard/student/settings", icon: Settings },
   ],
   partner: [
     {
@@ -164,7 +169,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       href: "/dashboard/partner/applicants",
       icon: Users,
     },
-    { label: "Organization", href: "#", icon: Building2 },
+    {
+      label: "Organization",
+      href: "/dashboard/partner/organization",
+      icon: Building2,
+    },
     {
       label: "Analytics",
       href: "/dashboard/partner/analytics",
@@ -175,7 +184,7 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       href: "/dashboard/partner/success",
       icon: Medal,
     },
-    { label: "Settings", href: "#", icon: Settings },
+    { label: "Settings", href: "/dashboard/partner/settings", icon: Settings },
   ],
   staff: [
     {
@@ -233,9 +242,13 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       href: "/dashboard/staff/embeddings",
       icon: DatabaseZap,
     },
-    { label: "Opportunities", href: "#", icon: BriefcaseBusiness },
-    { label: "Analytics", href: "#", icon: BarChart3 },
-    { label: "Settings", href: "#", icon: Settings },
+    {
+      label: "Opportunities",
+      href: "/dashboard/staff/opportunities",
+      icon: BriefcaseBusiness,
+    },
+    { label: "Analytics", href: "/dashboard/staff/analytics", icon: BarChart3 },
+    { label: "Settings", href: "/dashboard/staff/settings", icon: Settings },
   ],
   admin: [
     {
@@ -243,100 +256,134 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       href: "/dashboard/admin",
       icon: LayoutDashboard,
       active: true,
+      group: "Overview",
     },
     {
       label: "Notifications",
       href: "/dashboard/notifications",
       icon: BellRing,
+      group: "Overview",
     },
     {
       label: "Launch",
       href: "/dashboard/admin/launch",
       icon: Rocket,
+      group: "Launch",
     },
-    { label: "Users", href: "#", icon: Users },
+    {
+      label: "Users",
+      href: "/dashboard/admin/users",
+      icon: Users,
+      group: "People",
+    },
     {
       label: "Students",
       href: "/dashboard/admin/students",
       icon: GraduationCap,
+      group: "People",
     },
-    { label: "Partners", href: "/dashboard/admin/partners", icon: Building2 },
+    {
+      label: "Partners",
+      href: "/dashboard/admin/partners",
+      icon: Building2,
+      group: "People",
+    },
     {
       label: "Opportunities",
       href: "/dashboard/admin/opportunities",
       icon: BriefcaseBusiness,
+      group: "Opportunities",
     },
     {
       label: "Applications",
       href: "/dashboard/admin/applications",
       icon: ClipboardCheck,
-    },
-    {
-      label: "Service Hours",
-      href: "/dashboard/admin/service-hours",
-      icon: Medal,
-    },
-    {
-      label: "Events",
-      href: "/dashboard/admin/events",
-      icon: CalendarDays,
-    },
-    {
-      label: "Sponsorships",
-      href: "/dashboard/admin/sponsorships",
-      icon: BadgeDollarSign,
+      group: "Opportunities",
     },
     {
       label: "Placement Requests",
       href: "/dashboard/admin/placement-requests",
       icon: Handshake,
+      group: "Opportunities",
+    },
+    {
+      label: "Service Hours",
+      href: "/dashboard/admin/service-hours",
+      icon: Medal,
+      group: "Operations",
+    },
+    {
+      label: "Events",
+      href: "/dashboard/admin/events",
+      icon: CalendarDays,
+      group: "Operations",
+    },
+    {
+      label: "Sponsorships",
+      href: "/dashboard/admin/sponsorships",
+      icon: BadgeDollarSign,
+      group: "Operations",
     },
     {
       label: "Analytics",
       href: "/dashboard/admin/analytics",
       icon: BarChart3,
+      group: "Analytics",
     },
     {
       label: "Advanced Analytics",
       href: "/dashboard/admin/advanced-analytics",
       icon: BarChart3,
+      group: "Analytics",
     },
     {
       label: "Impact",
       href: "/dashboard/admin/impact",
       icon: Target,
+      group: "Analytics",
     },
     {
       label: "Recommendation Evaluation",
       href: "/dashboard/admin/recommendation-evaluation",
       icon: Target,
+      group: "Analytics",
     },
     {
       label: "Feedback",
       href: "/dashboard/admin/feedback",
       icon: MessageSquareText,
+      group: "Analytics",
     },
     {
       label: "Data Quality",
       href: "/dashboard/admin/data-quality",
       icon: DatabaseZap,
+      group: "System",
     },
     {
       label: "Audit Logs",
       href: "/dashboard/admin/audit-logs",
       icon: LockKeyhole,
+      group: "System",
     },
     {
       label: "Data Imports",
       href: "/dashboard/admin/data-imports",
       icon: FileUp,
+      group: "System",
     },
     {
       label: "Moderation",
       href: "/dashboard/admin/moderation",
       icon: ShieldCheck,
+      group: "System",
     },
-    { label: "Settings", href: "#", icon: Settings },
+    {
+      label: "Settings",
+      href: "/dashboard/admin/settings",
+      icon: Settings,
+      group: "System",
+    },
   ],
 };
 

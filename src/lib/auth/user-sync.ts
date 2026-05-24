@@ -17,18 +17,36 @@ export async function syncCurrentUserFromClerk({
     clerkUser?.primaryEmailAddress?.emailAddress ??
     clerkUser?.emailAddresses.at(0)?.emailAddress ??
     `${clerkUserId}@example.invalid`;
-
-  return prisma.user.upsert({
+  const existingUser = await prisma.user.findUnique({
     where: {
       clerkUserId,
     },
-    update: {
-      email,
-      firstName: clerkUser?.firstName ?? undefined,
-      lastName: clerkUser?.lastName ?? undefined,
-      role,
+    select: {
+      firstName: true,
+      lastName: true,
     },
-    create: {
+  });
+
+  if (existingUser) {
+    return prisma.user.update({
+      where: {
+        clerkUserId,
+      },
+      data: {
+        email,
+        firstName: existingUser.firstName
+          ? undefined
+          : (clerkUser?.firstName ?? undefined),
+        lastName: existingUser.lastName
+          ? undefined
+          : (clerkUser?.lastName ?? undefined),
+        role,
+      },
+    });
+  }
+
+  return prisma.user.create({
+    data: {
       clerkUserId,
       email,
       firstName: clerkUser?.firstName ?? null,

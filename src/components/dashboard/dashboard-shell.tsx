@@ -17,7 +17,7 @@ export function DashboardShell({
   children,
 }: DashboardShellProps) {
   return (
-    <main className="min-h-screen bg-muted/40 text-foreground">
+    <main className="min-h-screen bg-muted/50 text-foreground">
       <div className="flex min-h-screen">
         <DashboardSidebar navItems={navItems} role={role} />
         <div className="flex min-w-0 flex-1 flex-col">

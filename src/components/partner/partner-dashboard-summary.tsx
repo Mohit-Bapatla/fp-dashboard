@@ -58,16 +58,20 @@ export function PartnerDashboardSummary({
               "Organization details will become editable in a later partner or admin workflow."}
           </p>
         </div>
-        <span className={[
-          "inline-flex shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium",
-          organization.status === "PARTNERED"
-            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-            : organization.status === "REJECTED" || organization.status === "PAUSED"
-              ? "border-slate-200 bg-slate-50 text-slate-600"
-              : organization.status === "INTERESTED" || organization.status === "MEETING_SCHEDULED"
-                ? "border-amber-200 bg-amber-50 text-amber-700"
-                : "border-border bg-muted/50 text-muted-foreground",
-        ].join(" ")}>
+        <span
+          className={[
+            "inline-flex shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium",
+            organization.status === "PARTNERED"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : organization.status === "REJECTED" ||
+                  organization.status === "PAUSED"
+                ? "border-slate-200 bg-slate-50 text-slate-600"
+                : organization.status === "INTERESTED" ||
+                    organization.status === "MEETING_SCHEDULED"
+                  ? "border-amber-200 bg-amber-50 text-amber-700"
+                  : "border-border bg-muted/50 text-muted-foreground",
+          ].join(" ")}
+        >
           {formatStatus(organization.status)}
         </span>
       </div>

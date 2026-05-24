@@ -2,6 +2,10 @@ import { Building2 } from "lucide-react";
 import Link from "next/link";
 
 import {
+  createAdminPartnerOrganization,
+  linkPartnerUserToOrganization,
+} from "@/app/dashboard/admin/partners/actions";
+import {
   AdminPartnerList,
   type AdminPartnerListItem,
 } from "@/components/admin/admin-partner-list";
@@ -112,6 +116,8 @@ export default async function AdminPartnersPage({
     filteredCount,
     partneredCount,
     opportunityCount,
+    pendingPartnerUsers,
+    organizationOptions,
   ] = await Promise.all([
     prisma.partnerOrganization.findMany({
       where,
@@ -160,6 +166,32 @@ export default async function AdminPartnersPage({
       },
     }),
     prisma.opportunity.count(),
+    prisma.user.findMany({
+      where: {
+        role: "PARTNER",
+        partnerMemberships: {
+          none: {},
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+      },
+    }),
+    prisma.partnerOrganization.findMany({
+      orderBy: {
+        name: "asc",
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    }),
   ]);
   const totalPages = getTotalPages(filteredCount, pagination.pageSize);
 
@@ -226,6 +258,173 @@ export default async function AdminPartnersPage({
             label="Opportunities"
             value={opportunityCount.toString()}
           />
+        </section>
+
+        <section className="grid gap-4 xl:grid-cols-2">
+          <article className="rounded-lg border border-border bg-background p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">
+              Add partner organization
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Create or update an organization record before linking partner
+              users.
+            </p>
+            <form
+              action={createAdminPartnerOrganization}
+              className="mt-5 grid gap-4 md:grid-cols-2"
+            >
+              <input
+                name="redirectTo"
+                type="hidden"
+                value="/dashboard/admin/partners"
+              />
+              <label className="text-sm font-medium text-foreground">
+                Name
+                <input
+                  className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground"
+                  name="name"
+                  required
+                />
+              </label>
+              <label className="text-sm font-medium text-foreground">
+                Status
+                <select
+                  className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground"
+                  defaultValue="PARTNERED"
+                  name="status"
+                >
+                  {partnerStatusOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {formatEnumLabel(option)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-sm font-medium text-foreground">
+                Type
+                <input
+                  className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground"
+                  name="type"
+                  placeholder="Clinic, hospital, lab"
+                />
+              </label>
+              <label className="text-sm font-medium text-foreground">
+                Contact email
+                <input
+                  className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground"
+                  name="contactEmail"
+                  type="email"
+                />
+              </label>
+              <label className="text-sm font-medium text-foreground">
+                Website
+                <input
+                  className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground"
+                  name="website"
+                  type="url"
+                />
+              </label>
+              <label className="text-sm font-medium text-foreground">
+                Location
+                <input
+                  className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground"
+                  name="location"
+                  placeholder="Dallas, TX"
+                />
+              </label>
+              <div className="md:col-span-2">
+                <label className="text-sm font-medium text-foreground">
+                  Description
+                  <textarea
+                    className="mt-2 min-h-24 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground"
+                    name="description"
+                  />
+                </label>
+              </div>
+              <button
+                className="inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 md:w-fit"
+                type="submit"
+              >
+                Save organization
+              </button>
+            </form>
+          </article>
+
+          <article className="rounded-lg border border-border bg-background p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">
+              Approve and link partner users
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Partner users appear here after they sign in with a PARTNER role
+              but before an organization is connected.
+            </p>
+            {pendingPartnerUsers.length > 0 &&
+            organizationOptions.length > 0 ? (
+              <div className="mt-5 space-y-4">
+                {pendingPartnerUsers.map((user) => (
+                  <form
+                    action={linkPartnerUserToOrganization}
+                    className="rounded-lg border border-border bg-muted/30 p-4"
+                    key={user.id}
+                  >
+                    <input
+                      name="redirectTo"
+                      type="hidden"
+                      value="/dashboard/admin/partners"
+                    />
+                    <input name="partnerUserId" type="hidden" value={user.id} />
+                    <p className="text-sm font-semibold text-foreground">
+                      {[user.firstName, user.lastName]
+                        .filter(Boolean)
+                        .join(" ") || user.email}
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {user.email}
+                    </p>
+                    <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)_auto] md:items-end">
+                      <label className="text-sm font-medium text-foreground">
+                        Organization
+                        <select
+                          className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground"
+                          name="organizationId"
+                          required
+                        >
+                          {organizationOptions.map((organization) => (
+                            <option
+                              key={organization.id}
+                              value={organization.id}
+                            >
+                              {organization.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="text-sm font-medium text-foreground">
+                        Title
+                        <input
+                          className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground"
+                          name="title"
+                          placeholder="Coordinator"
+                        />
+                      </label>
+                      <button
+                        className="inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+                        type="submit"
+                      >
+                        Link
+                      </button>
+                    </div>
+                  </form>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-5 rounded-lg border border-dashed border-border bg-muted/30 p-4 text-sm leading-6 text-muted-foreground">
+                {organizationOptions.length === 0
+                  ? "Create a partner organization first."
+                  : "No pending partner users need linking."}
+              </div>
+            )}
+          </article>
         </section>
 
         <section className="rounded-lg border border-border bg-background p-5 shadow-sm">

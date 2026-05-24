@@ -341,7 +341,10 @@ function ApplyCallToAction({
     return (
       <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm">
         <div className="flex items-center gap-2 font-semibold text-emerald-800">
-          <CheckCircle2 aria-hidden="true" className="h-4 w-4 text-emerald-600" />
+          <CheckCircle2
+            aria-hidden="true"
+            className="h-4 w-4 text-emerald-600"
+          />
           Application submitted
         </div>
         <p className="mt-2 text-emerald-700">

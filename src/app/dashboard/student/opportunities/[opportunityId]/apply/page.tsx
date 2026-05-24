@@ -180,7 +180,10 @@ export default async function StudentOpportunityApplyPage({
         ) : isAlreadyApplied ? (
           <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
             <div className="flex items-center gap-2">
-              <CheckCircle2 aria-hidden="true" className="h-5 w-5 text-emerald-600" />
+              <CheckCircle2
+                aria-hidden="true"
+                className="h-5 w-5 text-emerald-600"
+              />
               <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
                 Already applied
               </span>

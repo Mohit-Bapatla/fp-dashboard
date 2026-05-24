@@ -51,7 +51,10 @@ export function getDashboardPathForRole(role: AppRole) {
 }
 
 export function canAccessDashboardPath(role: AppRole, pathname: string) {
-  if (pathname === "/dashboard/support") {
+  if (
+    pathname === "/dashboard/support" ||
+    pathname === "/dashboard/notifications"
+  ) {
     return true;
   }
 

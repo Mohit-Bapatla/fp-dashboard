@@ -47,4 +47,14 @@ describe("auth role resolution", () => {
     expect(canAccessDashboardPath("PARTNER", "/dashboard/partner")).toBe(true);
     expect(canAccessDashboardPath("PARTNER", "/dashboard/admin")).toBe(false);
   });
+
+  it("allows shared authenticated support and notification routes", () => {
+    expect(canAccessDashboardPath("STUDENT", "/dashboard/support")).toBe(true);
+    expect(canAccessDashboardPath("STUDENT", "/dashboard/notifications")).toBe(
+      true,
+    );
+    expect(canAccessDashboardPath("PARTNER", "/dashboard/notifications")).toBe(
+      true,
+    );
+  });
 });

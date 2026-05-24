@@ -211,13 +211,16 @@ export default async function StudentDashboardPage() {
             message="Profile complete. Upload your resume so you are ready to apply faster."
           />
         )}
-        {profile && completion.isComplete && resume && applicationCount === 0 && (
-          <NextStepCallout
-            href="/dashboard/student/opportunities"
-            label="Browse opportunities"
-            message="Ready to apply — browse open opportunities and submit your first application."
-          />
-        )}
+        {profile &&
+          completion.isComplete &&
+          resume &&
+          applicationCount === 0 && (
+            <NextStepCallout
+              href="/dashboard/student/opportunities"
+              label="Browse opportunities"
+              message="Ready to apply — browse open opportunities and submit your first application."
+            />
+          )}
 
         {profile ? (
           <section className="space-y-4">

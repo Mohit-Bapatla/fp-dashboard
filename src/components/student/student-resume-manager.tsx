@@ -1,9 +1,14 @@
 "use client";
 
-import { Download, FileText, RefreshCw, Trash2, Upload } from "lucide-react";
+import {
+  AlertTriangle,
+  Download,
+  FileText,
+  RefreshCw,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { useActionState, useEffect } from "react";
-
-import { cn } from "@/lib/utils";
 
 import {
   createStudentResumeSignedUrl,
@@ -13,6 +18,7 @@ import {
   type ResumeActionState,
   type ResumeDownloadActionState,
 } from "@/app/dashboard/student/resume/actions";
+import { cn } from "@/lib/utils";
 
 type StudentResumeManagerProps = {
   hasProfile: boolean;
@@ -43,6 +49,7 @@ export function StudentResumeManager({
   hasProfile,
   resume,
 }: StudentResumeManagerProps) {
+  const needsReview = resume ? getNeedsReview(resume) : false;
   const [uploadState, uploadAction, uploadPending] = useActionState(
     uploadStudentResume,
     initialResumeActionState,
@@ -67,7 +74,10 @@ export function StudentResumeManager({
   }, [downloadState.signedUrl]);
 
   return (
-    <article className="rounded-xl border border-border bg-background p-6 shadow-sm" id="resume">
+    <article
+      className="rounded-xl border border-border bg-background p-6 shadow-sm"
+      id="resume"
+    >
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
           <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-muted text-primary">
@@ -76,8 +86,8 @@ export function StudentResumeManager({
           <h2 className="mt-5 text-xl font-semibold text-foreground">Resume</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
             A resume is required to apply to most opportunities. Upload one PDF
-            or DOCX file — stored privately, accessible only via temporary
-            download links.
+            or DOCX file. It is stored privately and accessible only via
+            temporary download links.
           </p>
         </div>
         <div
@@ -109,6 +119,18 @@ export function StudentResumeManager({
               <p className="mt-2 text-sm font-medium text-muted-foreground">
                 Parse status: {formatParseStatus(resume.parseStatus)}
               </p>
+              {needsReview ? (
+                <div className="mt-4 flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+                  <AlertTriangle
+                    aria-hidden="true"
+                    className="mt-0.5 h-4 w-4 shrink-0"
+                  />
+                  <p>
+                    Parsed details need review. The file was saved, but the
+                    parser found limited structured resume sections.
+                  </p>
+                </div>
+              ) : null}
               <div className="mt-4 flex flex-wrap gap-3">
                 <form action={downloadAction}>
                   <input name="resumeId" type="hidden" value={resume.id} />
@@ -135,7 +157,7 @@ export function StudentResumeManager({
                 <form action={parseAction}>
                   <input name="resumeId" type="hidden" value={resume.id} />
                   <button
-                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={
                       parsePending || resume.parseStatus === "PROCESSING"
                     }
@@ -165,26 +187,26 @@ export function StudentResumeManager({
                   <p className="text-sm font-semibold text-foreground">
                     Parsed summary
                   </p>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
                     {resume.parsedSummary}
                   </p>
                 </div>
               ) : null}
 
               {resume.extractedSkills.length > 0 ? (
-                <ParsedList label="Skills" values={resume.extractedSkills} />
+                <SkillChips label="Skills" values={resume.extractedSkills} />
               ) : null}
 
-              <div className="mt-5 grid gap-4 md:grid-cols-3">
-                <ParsedList
+              <div className="mt-5 grid gap-4 lg:grid-cols-3">
+                <ParsedSection
                   label="Education"
                   values={resume.extractedEducation}
                 />
-                <ParsedList
+                <ParsedSection
                   label="Experience"
                   values={resume.extractedExperience}
                 />
-                <ParsedList
+                <ParsedSection
                   label="Certifications"
                   values={resume.extractedCertifications}
                 />
@@ -243,16 +265,22 @@ function formatParseStatus(status: string) {
     .join(" ");
 }
 
-function ParsedList({ label, values }: { label: string; values: string[] }) {
-  if (values.length === 0) {
-    return (
-      <div className="rounded-lg border border-border bg-background p-4">
-        <p className="text-sm font-semibold text-foreground">{label}</p>
-        <p className="mt-2 text-sm text-muted-foreground">Not extracted yet.</p>
-      </div>
-    );
+function getNeedsReview(
+  resume: NonNullable<StudentResumeManagerProps["resume"]>,
+) {
+  if (resume.parseStatus !== "COMPLETED") {
+    return false;
   }
 
+  return (
+    resume.extractedSkills.length === 0 &&
+    resume.extractedEducation.length === 0 &&
+    resume.extractedExperience.length === 0 &&
+    resume.extractedCertifications.length === 0
+  );
+}
+
+function SkillChips({ label, values }: { label: string; values: string[] }) {
   return (
     <div className="mt-5 rounded-lg border border-border bg-background p-4">
       <p className="text-sm font-semibold text-foreground">{label}</p>
@@ -267,5 +295,29 @@ function ParsedList({ label, values }: { label: string; values: string[] }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function ParsedSection({ label, values }: { label: string; values: string[] }) {
+  return (
+    <section className="rounded-lg border border-border bg-background p-4">
+      <p className="text-sm font-semibold text-foreground">{label}</p>
+      {values.length > 0 ? (
+        <ul className="mt-3 space-y-3 text-sm leading-6 text-muted-foreground">
+          {values.map((value) => (
+            <li className="flex gap-2" key={value}>
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+              <span className="min-w-0 whitespace-normal break-words">
+                {value}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          Not extracted yet.
+        </p>
+      )}
+    </section>
   );
 }
