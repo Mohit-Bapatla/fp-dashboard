@@ -14,6 +14,7 @@ Stages 0-50 are complete for the internal beta plan.
 - Verify deployment environment variables and backups.
 - Exercise data import with sanitized sample sheets.
 - Review operational automation results before enabling production schedules.
+- Use the internal launch, student beta, partner beta, and workflow migration guides to replace old Forms/Sheets processes gradually.
 
 ## Likely Next Enhancements
 

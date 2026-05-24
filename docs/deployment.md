@@ -80,6 +80,15 @@ npm run format:check
 npm run test:e2e
 ```
 
+## Internal Launch Checks
+
+Before inviting internal staff or beta users, review:
+
+- [Internal launch guide](internal-launch.md)
+- [Student beta guide](student-beta.md)
+- [Partner beta guide](partner-beta.md)
+- [Workflow migration guide](workflow-migration.md)
+
 ## Rollback Notes
 
 Use Vercel deployment rollback for application issues. Database rollback should be handled carefully through explicit follow-up migrations, not by resetting production data.

@@ -1,8 +1,10 @@
 import {
   Building2,
   FileClock,
+  LifeBuoy,
   ListChecks,
   MailCheck,
+  Rocket,
   Users,
   Workflow,
 } from "lucide-react";
@@ -211,6 +213,18 @@ export default async function StaffDashboardPage() {
             href="/dashboard/staff/automations"
             icon={Workflow}
             title="Automations"
+          />
+          <StaffPanel
+            description="Follow the internal launch quick start and move day-to-day operations into the dashboard."
+            href="/dashboard/staff/launch"
+            icon={Rocket}
+            title="Launch"
+          />
+          <StaffPanel
+            description="Report beta blockers with role, page URL, steps to reproduce, and expected behavior."
+            href="/dashboard/support"
+            icon={LifeBuoy}
+            title="Support"
           />
           <StaffPanel
             description="Assign owners, update status, set priority, and maintain internal notes for student placement requests."

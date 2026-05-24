@@ -14,11 +14,13 @@ import {
   GraduationCap,
   Handshake,
   LayoutDashboard,
+  LifeBuoy,
   ListChecks,
   LockKeyhole,
   MailCheck,
   MessageSquareText,
   Medal,
+  Rocket,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -96,6 +98,16 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       href: "/dashboard/notifications",
       icon: BellRing,
     },
+    {
+      label: "Beta Guide",
+      href: "/dashboard/student/beta",
+      icon: Rocket,
+    },
+    {
+      label: "Support",
+      href: "/dashboard/support",
+      icon: LifeBuoy,
+    },
     { label: "Profile", href: "#", icon: GraduationCap },
     {
       label: "Opportunities",
@@ -133,6 +145,16 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       icon: BellRing,
     },
     {
+      label: "Beta Guide",
+      href: "/dashboard/partner/beta",
+      icon: Rocket,
+    },
+    {
+      label: "Support",
+      href: "/dashboard/support",
+      icon: LifeBuoy,
+    },
+    {
       label: "Opportunities",
       href: "/dashboard/partner/opportunities",
       icon: BriefcaseBusiness,
@@ -166,6 +188,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       label: "Notifications",
       href: "/dashboard/notifications",
       icon: BellRing,
+    },
+    {
+      label: "Launch",
+      href: "/dashboard/staff/launch",
+      icon: Rocket,
     },
     { label: "Partners", href: "/dashboard/staff/partners", icon: Building2 },
     { label: "Contacts", href: "/dashboard/staff/contacts", icon: Users },
@@ -221,6 +248,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       label: "Notifications",
       href: "/dashboard/notifications",
       icon: BellRing,
+    },
+    {
+      label: "Launch",
+      href: "/dashboard/admin/launch",
+      icon: Rocket,
     },
     { label: "Users", href: "#", icon: Users },
     {

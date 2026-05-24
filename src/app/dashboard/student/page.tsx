@@ -1,10 +1,13 @@
 import { auth } from "@clerk/nextjs/server";
 import {
   ArrowRight,
+  BellRing,
   ClipboardCheck,
   FileClock,
   GraduationCap,
+  LifeBuoy,
   MapPin,
+  Rocket,
   Target,
   UserRound,
 } from "lucide-react";
@@ -421,6 +424,32 @@ export default async function StudentDashboardPage() {
               View placement requests
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </Link>
+          </article>
+          <article className="rounded-lg border border-border bg-background p-6 shadow-sm">
+            <Rocket aria-hidden="true" className="h-5 w-5 text-primary" />
+            <h2 className="mt-4 text-base font-semibold text-foreground">
+              Student beta guide
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Review the beta checklist for profile setup, resume upload,
+              opportunity browsing, applications, notifications, and feedback.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+                href="/dashboard/student/beta"
+              >
+                <BellRing aria-hidden="true" className="h-4 w-4" />
+                Beta guide
+              </Link>
+              <Link
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+                href="/dashboard/support"
+              >
+                <LifeBuoy aria-hidden="true" className="h-4 w-4" />
+                Support
+              </Link>
+            </div>
           </article>
         </section>
       </div>

@@ -3,9 +3,13 @@ import {
   BriefcaseBusiness,
   Building2,
   ClipboardCheck,
+  DatabaseZap,
   FileClock,
+  FileUp,
   GraduationCap,
+  LifeBuoy,
   Plus,
+  Rocket,
 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -251,6 +255,66 @@ export default async function AdminDashboardPage() {
               opportunities, applications, placement requests, and outreach.
             </p>
           </AdminOverviewPanel>
+          <AdminOverviewPanel
+            href="/dashboard/admin/launch"
+            icon={Rocket}
+            title="Launch"
+          >
+            <p className="text-sm leading-6 text-muted-foreground">
+              Verify internal launch readiness, demo users, deployment setup,
+              and old workflow replacement steps.
+            </p>
+          </AdminOverviewPanel>
+          <AdminOverviewPanel
+            href="/dashboard/support"
+            icon={LifeBuoy}
+            title="Support"
+          >
+            <p className="text-sm leading-6 text-muted-foreground">
+              Capture beta issues with role, URL, steps to reproduce, expected
+              behavior, and screenshots.
+            </p>
+          </AdminOverviewPanel>
+        </section>
+
+        <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-muted text-primary">
+                <Rocket aria-hidden="true" className="h-5 w-5" />
+              </div>
+              <h2 className="mt-5 text-lg font-semibold text-foreground">
+                Launch readiness and workflow migration
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Use the launch checklist, CSV imports, data quality tools,
+                analytics, and demo guide before replacing manual
+                Forms/Sheets-based operations.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+                href="/dashboard/admin/data-imports"
+              >
+                <FileUp aria-hidden="true" className="h-4 w-4" />
+                Imports
+              </Link>
+              <Link
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+                href="/dashboard/admin/data-quality"
+              >
+                <DatabaseZap aria-hidden="true" className="h-4 w-4" />
+                Data quality
+              </Link>
+              <Link
+                className="inline-flex min-h-10 items-center justify-center rounded-md bg-foreground px-4 text-sm font-medium text-background shadow-sm transition hover:bg-foreground/90"
+                href="/dashboard/admin/launch"
+              >
+                Launch checklist
+              </Link>
+            </div>
+          </div>
         </section>
 
         <section className="grid gap-4 xl:grid-cols-3">

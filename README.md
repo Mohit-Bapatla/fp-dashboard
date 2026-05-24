@@ -143,6 +143,10 @@ Screenshots are intentionally placeholders until a stable beta environment is av
 - [Matching algorithm](docs/matching-algorithm.md)
 - [Security and privacy](docs/security-privacy.md)
 - [Demo guide](docs/demo-guide.md)
+- [Internal launch](docs/internal-launch.md)
+- [Student beta](docs/student-beta.md)
+- [Partner beta](docs/partner-beta.md)
+- [Workflow migration](docs/workflow-migration.md)
 - [Roadmap](docs/roadmap.md)
 
 ## Current Status

@@ -33,6 +33,10 @@ export function getDashboardPathForRole(role: AppRole) {
 }
 
 export function canAccessDashboardPath(role: AppRole, pathname: string) {
+  if (pathname === "/dashboard/support") {
+    return true;
+  }
+
   if (elevatedRoles.has(role)) {
     return pathname === "/dashboard" || pathname.startsWith("/dashboard/");
   }
