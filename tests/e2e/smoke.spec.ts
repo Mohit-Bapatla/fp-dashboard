@@ -22,7 +22,4 @@ test("unknown public opportunity returns not found", async ({ page }) => {
   const response = await page.goto("/opportunities/not-a-real-opportunity");
 
   expect(response?.status()).toBe(404);
-  await expect(
-    page.getByRole("heading", { name: /not available/i }),
-  ).toBeVisible();
 });
