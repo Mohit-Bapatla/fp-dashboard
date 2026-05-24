@@ -8,6 +8,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { PartnerApplicantList } from "@/components/partner/partner-applicant-list";
 import type { ApplicationStatus } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/db/prisma";
+import { getApplicantSummary } from "@/lib/matching/applicant-summary";
 import { getCurrentPartnerContext } from "@/lib/partner/context";
 import { getPartnerNavItems } from "@/lib/partner/navigation";
 
@@ -154,12 +155,22 @@ export default async function PartnerApplicantsPage({
         reviewedAt: true,
         resume: {
           select: {
+            extractedCertifications: true,
+            extractedEducation: true,
+            extractedExperience: true,
+            extractedSkills: true,
             fileName: true,
+            parsedSummary: true,
           },
         },
         opportunity: {
           select: {
+            description: true,
+            eligibilityRequirements: true,
             id: true,
+            location: true,
+            remoteType: true,
+            specialty: true,
             title: true,
             type: true,
             organization: {
@@ -176,6 +187,9 @@ export default async function PartnerApplicantsPage({
             city: true,
             state: true,
             country: true,
+            availability: true,
+            locationPreference: true,
+            remotePreference: true,
             interestedSpecialties: true,
             opportunityTypes: true,
             experienceLevel: true,
@@ -233,6 +247,28 @@ export default async function PartnerApplicantsPage({
     }),
   ]);
   const redirectTo = buildRedirectTo(status, opportunityId);
+  const applicationsWithSummaries = (
+    await Promise.all(
+      applications.map(async (application) => ({
+        ...application,
+        aiReview: await getApplicantSummary({
+          opportunity: application.opportunity,
+          profile: application.studentProfile,
+          resume: application.resume
+            ? {
+                extractedCertifications:
+                  application.resume.extractedCertifications,
+                extractedEducation: application.resume.extractedEducation,
+                extractedExperience: application.resume.extractedExperience,
+                extractedSkills: application.resume.extractedSkills,
+                parsedSummary: application.resume.parsedSummary,
+              }
+            : null,
+          statement: application.statement,
+        }),
+      })),
+    )
+  ).sort((first, second) => second.aiReview.fitScore - first.aiReview.fitScore);
 
   return (
     <DashboardShell
@@ -335,7 +371,7 @@ export default async function PartnerApplicantsPage({
         </section>
 
         <PartnerApplicantList
-          applications={applications}
+          applications={applicationsWithSummaries}
           hasAnyApplicants={totalCount > 0}
           redirectTo={redirectTo}
         />

@@ -15,6 +15,7 @@ import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { StudentResumeManager } from "@/components/student/student-resume-manager";
 import { prisma } from "@/lib/db/prisma";
+import { getRecommendedOpportunities } from "@/lib/matching/recommendations";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getStudentProfileCompletion } from "@/lib/student/profile-completion";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
@@ -85,6 +86,9 @@ export default async function StudentDashboardPage() {
         }),
       ])
     : [null, 0, 0, 0, 0, 0, 0];
+  const recommendedOpportunities = profile
+    ? await getRecommendedOpportunities(profile.id)
+    : [];
 
   return (
     <DashboardShell
@@ -154,6 +158,59 @@ export default async function StudentDashboardPage() {
             value={resume ? "Ready" : "Missing"}
           />
         </section>
+
+        {profile ? (
+          <section className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold text-foreground">
+                Recommended opportunities
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Personalized suggestions use your profile, parsed resume data,
+                and deterministic match scoring.
+              </p>
+            </div>
+            {recommendedOpportunities.length > 0 ? (
+              <div className="grid gap-4 lg:grid-cols-3">
+                {recommendedOpportunities.map(({ match, opportunity }) => (
+                  <article
+                    className="rounded-lg border border-border bg-background p-5 shadow-sm"
+                    key={opportunity.id}
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                        {match.score}% fit
+                      </p>
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {opportunity.organization.name}
+                      </p>
+                    </div>
+                    <h3 className="mt-4 text-base font-semibold text-foreground">
+                      {opportunity.title}
+                    </h3>
+                    <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
+                      {match.reasons.slice(0, 2).map((reason) => (
+                        <li key={reason}>{reason}</li>
+                      ))}
+                    </ul>
+                    <Link
+                      className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+                      href={`/dashboard/student/opportunities/${opportunity.id}`}
+                    >
+                      View details
+                      <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                    </Link>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-border bg-background p-5 text-sm leading-6 text-muted-foreground">
+                Recommendations will appear after published opportunities are
+                available and your profile is complete enough to compare.
+              </div>
+            )}
+          </section>
+        ) : null}
 
         {profile ? (
           <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
@@ -249,8 +306,14 @@ export default async function StudentDashboardPage() {
             resume={
               resume
                 ? {
+                    extractedCertifications: resume.extractedCertifications,
+                    extractedEducation: resume.extractedEducation,
+                    extractedExperience: resume.extractedExperience,
+                    extractedSkills: resume.extractedSkills,
                     id: resume.id,
                     fileName: resume.fileName,
+                    parsedSummary: resume.parsedSummary,
+                    parseStatus: resume.parseStatus,
                     updatedAt: resume.updatedAt,
                   }
                 : null

@@ -10,6 +10,7 @@ import {
 import Link from "next/link";
 
 import type { OpportunityType } from "@/generated/prisma/enums";
+import type { MatchScoreResult } from "@/lib/matching/match-score";
 
 export type StudentOpportunityDetailData = {
   id: string;
@@ -73,9 +74,11 @@ function fieldValue(value: string | null) {
 
 export function StudentOpportunityDetail({
   applyState,
+  match,
   opportunity,
 }: {
   applyState: StudentOpportunityApplyState;
+  match: MatchScoreResult | null;
   opportunity: StudentOpportunityDetailData;
 }) {
   return (
@@ -98,6 +101,11 @@ export function StudentOpportunityDetail({
               <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
                 Published
               </span>
+              {match ? (
+                <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                  {match.score}% fit
+                </span>
+              ) : null}
             </div>
             <h1 className="mt-4 max-w-4xl text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
               {opportunity.title}
@@ -150,6 +158,21 @@ export function StudentOpportunityDetail({
           />
         </div>
       </section>
+
+      {match ? (
+        <section className="grid gap-4 lg:grid-cols-2">
+          <MatchPanel
+            empty="Add more profile and resume details to improve matching."
+            items={match.reasons}
+            title="Why this may fit"
+          />
+          <MatchPanel
+            empty="No major gaps detected from available profile and resume data."
+            items={match.gaps}
+            title="Possible gaps"
+          />
+        </section>
+      ) : null}
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <article className="space-y-6 rounded-lg border border-border bg-background p-6 shadow-sm">
@@ -213,6 +236,31 @@ export function StudentOpportunityDetail({
         </aside>
       </section>
     </div>
+  );
+}
+
+function MatchPanel({
+  empty,
+  items,
+  title,
+}: {
+  empty: string;
+  items: string[];
+  title: string;
+}) {
+  return (
+    <article className="rounded-lg border border-border bg-background p-5 shadow-sm">
+      <h2 className="text-base font-semibold text-foreground">{title}</h2>
+      {items.length > 0 ? (
+        <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
+          {items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">{empty}</p>
+      )}
+    </article>
   );
 }
 

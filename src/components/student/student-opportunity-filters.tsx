@@ -101,6 +101,7 @@ export function StudentOpportunityFilters({
         <SelectField label="Sort" name="sort" value={filters.sort}>
           <option value="recent">Recently added</option>
           <option value="deadline">Deadline</option>
+          <option value="best-fit">Best fit</option>
         </SelectField>
 
         <div className="flex gap-3 lg:col-span-full">

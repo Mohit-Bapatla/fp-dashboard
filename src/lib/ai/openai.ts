@@ -1,0 +1,65 @@
+import "server-only";
+
+import OpenAI from "openai";
+
+const defaultModel = "gpt-4.1-mini";
+
+let client: OpenAI | null = null;
+
+export function hasOpenAiApiKey() {
+  return Boolean(process.env.OPENAI_API_KEY?.trim());
+}
+
+export function getOpenAiClient() {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+
+  if (!apiKey) {
+    return null;
+  }
+
+  client ??= new OpenAI({
+    apiKey,
+  });
+
+  return client;
+}
+
+export async function createStructuredJsonResponse<T>({
+  input,
+  schema,
+  schemaName,
+}: {
+  input: string;
+  schema: Record<string, unknown>;
+  schemaName: string;
+}): Promise<T | null> {
+  const openai = getOpenAiClient();
+
+  if (!openai) {
+    return null;
+  }
+
+  try {
+    const response = await openai.responses.create({
+      input,
+      model: process.env.OPENAI_MODEL?.trim() || defaultModel,
+      text: {
+        format: {
+          name: schemaName,
+          schema,
+          strict: true,
+          type: "json_schema",
+        },
+      },
+    });
+    const text = response.output_text;
+
+    if (!text) {
+      return null;
+    }
+
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}

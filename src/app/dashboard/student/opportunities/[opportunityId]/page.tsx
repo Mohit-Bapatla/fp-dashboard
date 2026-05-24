@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StudentOpportunityDetail } from "@/components/student/student-opportunity-detail";
+import { getOpportunityMatchScore } from "@/lib/matching/match-score";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
@@ -72,9 +73,15 @@ export default async function StudentOpportunityDetailPage({
             submittedAt: true,
           },
         }),
-        prisma.resume.count({
+        prisma.resume.findFirst({
           where: {
             studentProfileId: profile.id,
+          },
+          orderBy: {
+            updatedAt: "desc",
+          },
+          select: {
+            extractedSkills: true,
           },
         }),
       ])
@@ -89,6 +96,13 @@ export default async function StudentOpportunityDetailPage({
       : applicationState?.[1]
         ? ({ kind: "canApply" } as const)
         : ({ kind: "needsResume" } as const);
+  const match = profile
+    ? getOpportunityMatchScore({
+        opportunity,
+        profile,
+        resume: applicationState?.[1] ?? null,
+      })
+    : null;
 
   return (
     <DashboardShell
@@ -101,6 +115,7 @@ export default async function StudentOpportunityDetailPage({
         </header>
         <StudentOpportunityDetail
           applyState={applyState}
+          match={match}
           opportunity={opportunity}
         />
       </div>

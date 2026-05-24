@@ -17,6 +17,14 @@ import type {
 } from "@/generated/prisma/enums";
 
 export type PartnerApplicantListItem = {
+  aiReview: {
+    fitScore: number;
+    gaps: string[];
+    interviewQuestions: string[];
+    matchReasons: string[];
+    strengths: string[];
+    summary: string;
+  };
   id: string;
   status: ApplicationStatus;
   statement: string | null;
@@ -280,6 +288,42 @@ export function PartnerApplicantList({
               </p>
             </div>
 
+            <div className="mt-5 rounded-lg border border-border bg-background p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Applicant review assist
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    AI assists review; humans make final decisions.
+                  </p>
+                </div>
+                <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                  {application.aiReview.fitScore}% fit
+                </span>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-muted-foreground">
+                {application.aiReview.summary}
+              </p>
+              <div className="mt-4 grid gap-4 lg:grid-cols-3">
+                <ReviewList
+                  items={application.aiReview.strengths}
+                  title="Strengths"
+                />
+                <ReviewList
+                  items={[
+                    ...application.aiReview.matchReasons,
+                    ...application.aiReview.gaps,
+                  ]}
+                  title="Explanation and gaps"
+                />
+                <ReviewList
+                  items={application.aiReview.interviewQuestions}
+                  title="Suggested questions"
+                />
+              </div>
+            </div>
+
             <form
               action={updatePartnerApplicationStatus}
               className="mt-5 flex flex-col gap-3 rounded-lg border border-border bg-background p-4 sm:flex-row sm:items-end"
@@ -323,6 +367,25 @@ export function PartnerApplicantList({
           </article>
         );
       })}
+    </div>
+  );
+}
+
+function ReviewList({ items, title }: { items: string[]; title: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-muted/20 p-3">
+      <p className="text-sm font-semibold text-foreground">{title}</p>
+      {items.length > 0 ? (
+        <ul className="mt-2 space-y-2 text-sm leading-6 text-muted-foreground">
+          {items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-2 text-sm text-muted-foreground">
+          No details available yet.
+        </p>
+      )}
     </div>
   );
 }

@@ -6,12 +6,14 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { StudentOpportunityFilters } from "@/components/student/student-opportunity-filters";
 import { StudentOpportunityList } from "@/components/student/student-opportunity-list";
 import { Prisma } from "@/generated/prisma/client";
+import { getOpportunityMatchScore } from "@/lib/matching/match-score";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import {
   getStudentOpportunityFilters,
   type StudentOpportunityFilters as StudentOpportunityFiltersType,
 } from "@/lib/student/opportunity-filters";
+import { getCurrentStudentProfile } from "@/lib/student/profile";
 import { prisma } from "@/lib/db/prisma";
 
 type StudentOpportunitiesPageProps = {
@@ -138,10 +140,12 @@ function buildOrderBy(filters: StudentOpportunityFiltersType) {
 export default async function StudentOpportunitiesPage({
   searchParams,
 }: StudentOpportunitiesPageProps) {
-  await assertStudentAccess();
+  const { userId } = await assertStudentAccess();
 
   const params = await searchParams;
   const filters = getStudentOpportunityFilters(params);
+  const user = await getCurrentStudentProfile(userId);
+  const profile = user.studentProfile;
   const filterSource = await prisma.opportunity.findMany({
     where: {
       status: "PUBLISHED",
@@ -161,7 +165,7 @@ export default async function StudentOpportunitiesPage({
   };
   const effectiveFilters = getEffectiveFilters(filters, options);
   const where = buildWhere(effectiveFilters);
-  const [opportunities, publishedCount] = await Promise.all([
+  const [opportunities, publishedCount, resume] = await Promise.all([
     prisma.opportunity.findMany({
       where,
       orderBy: buildOrderBy(effectiveFilters),
@@ -191,7 +195,34 @@ export default async function StudentOpportunitiesPage({
         status: "PUBLISHED",
       },
     }),
+    profile
+      ? prisma.resume.findFirst({
+          where: {
+            studentProfileId: profile.id,
+          },
+          orderBy: {
+            updatedAt: "desc",
+          },
+          select: {
+            extractedSkills: true,
+          },
+        })
+      : Promise.resolve(null),
   ]);
+  const opportunitiesWithMatches = opportunities.map((opportunity) => ({
+    ...opportunity,
+    match: getOpportunityMatchScore({
+      opportunity,
+      profile,
+      resume,
+    }),
+  }));
+  const visibleOpportunities =
+    effectiveFilters.sort === "best-fit"
+      ? [...opportunitiesWithMatches].sort(
+          (first, second) => second.match.score - first.match.score,
+        )
+      : opportunitiesWithMatches;
 
   return (
     <DashboardShell
@@ -234,12 +265,20 @@ export default async function StudentOpportunitiesPage({
           />
           <StatCard
             helper={
-              effectiveFilters.sort === "deadline"
-                ? "Sorted by earliest deadline."
-                : "Sorted by recently published listings."
+              effectiveFilters.sort === "best-fit"
+                ? "Sorted by strongest deterministic fit."
+                : effectiveFilters.sort === "deadline"
+                  ? "Sorted by earliest deadline."
+                  : "Sorted by recently published listings."
             }
             label="Sort"
-            value={effectiveFilters.sort === "deadline" ? "Deadline" : "Recent"}
+            value={
+              effectiveFilters.sort === "best-fit"
+                ? "Best fit"
+                : effectiveFilters.sort === "deadline"
+                  ? "Deadline"
+                  : "Recent"
+            }
           />
         </section>
 
@@ -250,7 +289,7 @@ export default async function StudentOpportunitiesPage({
 
         <StudentOpportunityList
           hasPublishedOpportunities={publishedCount > 0}
-          opportunities={opportunities}
+          opportunities={visibleOpportunities}
         />
       </div>
     </DashboardShell>

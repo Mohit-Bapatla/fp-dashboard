@@ -8,6 +8,7 @@ import Link from "next/link";
 
 import type { OpportunityType } from "@/generated/prisma/enums";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import type { MatchScoreResult } from "@/lib/matching/match-score";
 
 export type StudentOpportunityListItem = {
   id: string;
@@ -26,6 +27,7 @@ export type StudentOpportunityListItem = {
   organization: {
     name: string;
   };
+  match?: MatchScoreResult;
 };
 
 type StudentOpportunityListProps = {
@@ -101,6 +103,11 @@ export function StudentOpportunityList({
                 <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
                   Published
                 </span>
+                {opportunity.match ? (
+                  <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                    {opportunity.match.score}% fit
+                  </span>
+                ) : null}
               </div>
               <h2 className="mt-3 text-xl font-semibold tracking-normal text-foreground">
                 {opportunity.title}
@@ -168,8 +175,43 @@ export function StudentOpportunityList({
               {previewText(opportunity.eligibilityRequirements, 220)}
             </p>
           </div>
+
+          {opportunity.match ? (
+            <MatchExplanation match={opportunity.match} />
+          ) : null}
         </article>
       ))}
+    </div>
+  );
+}
+
+function MatchExplanation({ match }: { match: MatchScoreResult }) {
+  return (
+    <div className="mt-5 grid gap-4 lg:grid-cols-2">
+      <div className="rounded-lg border border-border bg-background p-4">
+        <p className="text-sm font-semibold text-foreground">
+          Why this may fit
+        </p>
+        {match.reasons.length > 0 ? (
+          <ul className="mt-2 space-y-2 text-sm leading-6 text-muted-foreground">
+            {match.reasons.map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 text-sm text-muted-foreground">
+            Add more profile and resume details to improve matching.
+          </p>
+        )}
+      </div>
+      <div className="rounded-lg border border-border bg-background p-4">
+        <p className="text-sm font-semibold text-foreground">Possible gaps</p>
+        <ul className="mt-2 space-y-2 text-sm leading-6 text-muted-foreground">
+          {match.gaps.map((gap) => (
+            <li key={gap}>{gap}</li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
