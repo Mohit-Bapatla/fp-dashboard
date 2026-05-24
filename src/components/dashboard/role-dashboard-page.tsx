@@ -58,11 +58,11 @@ export function RoleDashboardPage({
         <section className="space-y-4">
           <div>
             <h2 className="text-xl font-semibold text-foreground">
-              Coming Soon
+              Features in development
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              These areas are intentionally placeholders until future stages add
-              persistence, authentication, and workflow logic.
+              These sections are being built out and will be available as the
+              platform grows.
             </p>
           </div>
           <div className="grid gap-4 lg:grid-cols-3">

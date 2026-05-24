@@ -62,7 +62,7 @@ export default async function AdminDashboardPage() {
             value={partnerCount.toString()}
           />
           <StatCard
-            helper="Admin-managed records prepared for future student flows."
+            helper="Published and draft opportunities across all partner organizations."
             label="Opportunities"
             value={opportunityCount.toString()}
           />

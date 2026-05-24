@@ -151,20 +151,21 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
 
 export const sharedComingSoon: ComingSoonItem[] = [
   {
-    title: "Live data",
+    title: "Live analytics",
     description:
-      "Connect dashboard metrics once the database layer is introduced.",
+      "Platform metrics and activity summaries will appear here as data grows.",
     icon: BarChart3,
   },
   {
-    title: "Workflow actions",
-    description: "Add create, review, and approval flows in later stages.",
+    title: "Workflow tools",
+    description:
+      "Application management, review tools, and approval workflows are in development.",
     icon: Sparkles,
   },
   {
     title: "Notifications",
     description:
-      "Surface role-specific alerts after messaging rules are defined.",
+      "Personalized alerts for new opportunities, application updates, and team activity.",
     icon: BellRing,
   },
 ];

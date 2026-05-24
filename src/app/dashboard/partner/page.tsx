@@ -173,8 +173,8 @@ export default async function PartnerDashboardPage() {
               Organization opportunities
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Recent opportunity records connected to your organization. Posting
-              and applicant review workflows will arrive in later stages.
+              Recent opportunities connected to your organization. Select an
+              opportunity to review applicants and manage listings.
             </p>
           </div>
           <PartnerOpportunityList opportunities={opportunities} />

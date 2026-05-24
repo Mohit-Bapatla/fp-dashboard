@@ -42,6 +42,18 @@ export function DashboardSidebar({ role, navItems }: DashboardSidebarProps) {
         {navItems.map((item) => {
           const ItemIcon = item.icon;
 
+          if (item.href === "#") {
+            return (
+              <span
+                className="flex cursor-default select-none items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground/40"
+                key={item.label}
+              >
+                <ItemIcon aria-hidden="true" className="h-4 w-4 shrink-0 opacity-40" />
+                <span>{item.label}</span>
+              </span>
+            );
+          }
+
           return (
             <Link
               aria-current={item.active ? "page" : undefined}

@@ -39,7 +39,7 @@ export function DashboardTopNav({ role, navItems }: DashboardTopNavProps) {
         aria-label={`${meta.label} mobile navigation`}
         className="flex gap-2 overflow-x-auto border-t border-border px-4 py-3 md:hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
-        {navItems.map((item) => {
+        {navItems.filter((item) => item.href !== "#").map((item) => {
           const ItemIcon = item.icon;
 
           return (

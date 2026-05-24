@@ -69,8 +69,9 @@ export default function Home() {
               FP Dashboard
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
-              Helping pre-med students discover healthcare opportunities, apply,
-              and track placement progress.
+              The placement platform for Future Physicians — connecting students
+              with healthcare opportunities, managing partner relationships, and
+              tracking outcomes.
             </p>
           </div>
 

@@ -9,23 +9,23 @@ export default function StaffDashboardPage() {
       stats={[
         {
           label: "Partner contacts",
-          value: "118",
-          helper: "Placeholder contact book for staff relationship tracking.",
+          value: "—",
+          helper: "Partner contacts will appear as outreach records are added.",
         },
         {
           label: "Open tasks",
-          value: "17",
-          helper: "Future follow-ups, reminders, and review work.",
+          value: "—",
+          helper: "Open tasks and follow-ups across your partner pipeline.",
         },
         {
           label: "Placement queue",
-          value: "22",
-          helper: "Requests staff will coordinate across roles.",
+          value: "—",
+          helper: "Active placement requests being coordinated for students.",
         },
         {
           label: "Outreach touches",
-          value: "44",
-          helper: "Recent outreach activity once logging is available.",
+          value: "—",
+          helper: "Outreach touches logged across partner contacts.",
         },
       ]}
     />
