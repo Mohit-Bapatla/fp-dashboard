@@ -12,6 +12,7 @@ import {
 
 type StudentApplicationFormProps = {
   opportunityId: string;
+  recommendationSource?: string;
   resumes: Array<{
     id: string;
     fileName: string;
@@ -35,6 +36,7 @@ function SubmitButton() {
 
 export function StudentApplicationForm({
   opportunityId,
+  recommendationSource,
   resumes,
 }: StudentApplicationFormProps) {
   const [state, action] = useActionState(
@@ -45,6 +47,11 @@ export function StudentApplicationForm({
   return (
     <form action={action} className="space-y-6">
       <input name="opportunityId" type="hidden" value={opportunityId} />
+      <input
+        name="recommendationSource"
+        type="hidden"
+        value={recommendationSource ?? ""}
+      />
 
       {state.formError ? (
         <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">

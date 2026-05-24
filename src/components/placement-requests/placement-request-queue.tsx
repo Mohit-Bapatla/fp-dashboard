@@ -8,6 +8,10 @@ import {
 } from "@/app/dashboard/placement-requests/actions";
 import { RecordCommentThread } from "@/components/comments/record-comment-thread";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import {
+  FeedbackForm,
+  type ExistingFeedback,
+} from "@/components/feedback/feedback-form";
 import { PlacementRequestStatusBadge } from "@/components/placement-requests/placement-request-status-badge";
 import type {
   OpportunityType,
@@ -57,6 +61,8 @@ export type PlacementRequestQueueItem = {
   updatedAt: Date;
   urgency: string | null;
   commentThread: RecordCommentThreadData;
+  matchQualityFeedback: ExistingFeedback;
+  placementDifficultyFeedback: ExistingFeedback;
 };
 
 export type PlacementRequestStaffOption = {
@@ -355,6 +361,27 @@ export function PlacementRequestQueue({
             redirectTo={redirectTo}
             thread={request.commentThread}
           />
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            <FeedbackForm
+              description="Rate how useful the current match context is for this request."
+              entityId={request.id}
+              entityType="PLACEMENT_REQUEST"
+              existingFeedback={request.matchQualityFeedback}
+              feedbackType="STAFF_MATCH_QUALITY"
+              redirectTo={redirectTo}
+              title="Match quality feedback"
+            />
+            <FeedbackForm
+              description="Rate how difficult this placement request is to coordinate."
+              entityId={request.id}
+              entityType="PLACEMENT_REQUEST"
+              existingFeedback={request.placementDifficultyFeedback}
+              feedbackType="STAFF_PLACEMENT_DIFFICULTY"
+              redirectTo={redirectTo}
+              title="Placement difficulty feedback"
+            />
+          </div>
         </article>
       ))}
     </div>

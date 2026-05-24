@@ -11,6 +11,10 @@ import { updatePartnerApplicationStatus } from "@/app/dashboard/partner/applican
 import { RecordCommentThread } from "@/components/comments/record-comment-thread";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import {
+  FeedbackForm,
+  type ExistingFeedback,
+} from "@/components/feedback/feedback-form";
+import {
   ApplicationOnboardingList,
   type ApplicationOnboardingItemView,
 } from "@/components/onboarding/application-onboarding-list";
@@ -31,6 +35,8 @@ export type PartnerApplicantListItem = {
     strengths: string[];
     summary: string;
   };
+  applicantQualityFeedback: ExistingFeedback;
+  reviewUsefulnessFeedback: ExistingFeedback;
   id: string;
   status: ApplicationStatus;
   statement: string | null;
@@ -347,6 +353,27 @@ export function PartnerApplicantList({
               redirectTo={redirectTo}
               thread={application.commentThread}
             />
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              <FeedbackForm
+                description="Rate how well this applicant fits the opportunity context."
+                entityId={application.id}
+                entityType="APPLICATION"
+                existingFeedback={application.applicantQualityFeedback}
+                feedbackType="PARTNER_APPLICANT_QUALITY"
+                redirectTo={redirectTo}
+                title="Applicant quality feedback"
+              />
+              <FeedbackForm
+                description="Rate whether the review assist content helped your evaluation."
+                entityId={application.id}
+                entityType="APPLICATION"
+                existingFeedback={application.reviewUsefulnessFeedback}
+                feedbackType="PARTNER_REVIEW_USEFULNESS"
+                redirectTo={redirectTo}
+                title="Review usefulness feedback"
+              />
+            </div>
 
             <form
               action={updatePartnerApplicationStatus}

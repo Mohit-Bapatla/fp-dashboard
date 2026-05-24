@@ -2,6 +2,10 @@ import { ArrowRight, FileClock, MapPin } from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/dashboard/empty-state";
+import {
+  FeedbackForm,
+  type ExistingFeedback,
+} from "@/components/feedback/feedback-form";
 import { PlacementRequestProgress } from "@/components/placement-requests/placement-request-progress";
 import { PlacementRequestStatusBadge } from "@/components/placement-requests/placement-request-status-badge";
 import type {
@@ -24,6 +28,7 @@ export type StudentPlacementRequestListItem = {
   title: string;
   updatedAt: Date;
   urgency: string | null;
+  feedback: ExistingFeedback;
 };
 
 type StudentPlacementRequestListProps = {
@@ -155,6 +160,18 @@ export function StudentPlacementRequestList({
               </p>
             </div>
           ) : null}
+
+          <div className="mt-5">
+            <FeedbackForm
+              description="Rate the placement support experience and add context for the FP team."
+              entityId={request.id}
+              entityType="PLACEMENT_REQUEST"
+              existingFeedback={request.feedback}
+              feedbackType="STUDENT_PLACEMENT_REQUEST"
+              redirectTo="/dashboard/student/placement-requests"
+              title="Placement request feedback"
+            />
+          </div>
         </article>
       ))}
     </div>

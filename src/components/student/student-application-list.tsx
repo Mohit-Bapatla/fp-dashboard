@@ -5,6 +5,10 @@ import { withdrawStudentApplication } from "@/app/dashboard/student/applications
 import { RecordCommentThread } from "@/components/comments/record-comment-thread";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import {
+  FeedbackForm,
+  type ExistingFeedback,
+} from "@/components/feedback/feedback-form";
+import {
   ApplicationOnboardingList,
   type ApplicationOnboardingItemView,
 } from "@/components/onboarding/application-onboarding-list";
@@ -30,6 +34,7 @@ export type StudentApplicationListItem = {
   };
   onboardingItems: ApplicationOnboardingItemView[];
   commentThread: RecordCommentThreadData;
+  feedback: ExistingFeedback;
 };
 
 type StudentApplicationListProps = {
@@ -168,6 +173,18 @@ export function StudentApplicationList({
             redirectTo="/dashboard/student/applications"
             thread={application.commentThread}
           />
+
+          <div className="mt-5">
+            <FeedbackForm
+              description="Rate your application experience and share anything that would make the process clearer."
+              entityId={application.id}
+              entityType="APPLICATION"
+              existingFeedback={application.feedback}
+              feedbackType="STUDENT_APPLICATION_EXPERIENCE"
+              redirectTo="/dashboard/student/applications"
+              title="Application feedback"
+            />
+          </div>
         </article>
       ))}
     </div>

@@ -76,10 +76,12 @@ export function StudentOpportunityDetail({
   applyState,
   match,
   opportunity,
+  source,
 }: {
   applyState: StudentOpportunityApplyState;
   match: MatchScoreResult | null;
   opportunity: StudentOpportunityDetailData;
+  source?: string;
 }) {
   return (
     <div className="space-y-8">
@@ -122,6 +124,7 @@ export function StudentOpportunityDetail({
           </div>
           <ApplyCallToAction
             opportunityId={opportunity.id}
+            source={source}
             state={applyState}
           />
         </div>
@@ -272,9 +275,11 @@ function MatchPanel({
 
 function ApplyCallToAction({
   opportunityId,
+  source,
   state,
 }: {
   opportunityId: string;
+  source?: string;
   state: StudentOpportunityApplyState;
 }) {
   if (state.kind === "alreadyApplied") {
@@ -320,7 +325,9 @@ function ApplyCallToAction({
   return (
     <Link
       className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
-      href={`/dashboard/student/opportunities/${opportunityId}/apply`}
+      href={`/dashboard/student/opportunities/${opportunityId}/apply${
+        source === "recommendation" ? "?source=recommendation" : ""
+      }`}
     >
       Apply now
     </Link>

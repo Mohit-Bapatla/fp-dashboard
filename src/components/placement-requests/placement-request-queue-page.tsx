@@ -86,7 +86,7 @@ export async function PlacementRequestQueuePage({
   searchParams,
   title,
 }: PlacementRequestQueuePageProps) {
-  await assertPlacementQueueAccess();
+  const access = await assertPlacementQueueAccess();
 
   const query = searchParams.q?.trim() ?? "";
   const status = searchParams.status
@@ -264,9 +264,51 @@ export async function PlacementRequestQueuePage({
         },
       }),
     ]);
+  const currentUser = await prisma.user.findUnique({
+    where: {
+      clerkUserId: access.userId,
+    },
+    select: {
+      id: true,
+    },
+  });
+  const feedbackByRequestAndType = new Map(
+    currentUser
+      ? (
+          await prisma.feedback.findMany({
+            where: {
+              authorId: currentUser.id,
+              entityId: {
+                in: requests.map((request) => request.id),
+              },
+              entityType: "PLACEMENT_REQUEST",
+              feedbackType: {
+                in: ["STAFF_MATCH_QUALITY", "STAFF_PLACEMENT_DIFFICULTY"],
+              },
+            },
+            select: {
+              entityId: true,
+              feedbackType: true,
+              notes: true,
+              rating: true,
+            },
+          })
+        ).map((feedback) => [
+          `${feedback.entityId}:${feedback.feedbackType}`,
+          feedback,
+        ])
+      : [],
+  );
   const requestsWithThreads = await Promise.all(
     requests.map(async (request) => ({
       ...request,
+      matchQualityFeedback:
+        feedbackByRequestAndType.get(`${request.id}:STAFF_MATCH_QUALITY`) ??
+        null,
+      placementDifficultyFeedback:
+        feedbackByRequestAndType.get(
+          `${request.id}:STAFF_PLACEMENT_DIFFICULTY`,
+        ) ?? null,
       commentThread: await getRecordCommentThread({
         entityId: request.id,
         entityType: "PLACEMENT_REQUEST",
