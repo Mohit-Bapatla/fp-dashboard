@@ -24,6 +24,7 @@ import {
 import { prisma } from "@/lib/db/prisma";
 import { getRecommendationExplanation } from "@/lib/matching/explanations";
 import { getRecommendedOpportunities } from "@/lib/matching/recommendations";
+import { cn } from "@/lib/utils";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getStudentProfileCompletion } from "@/lib/student/profile-completion";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
@@ -123,7 +124,7 @@ export default async function StudentDashboardPage() {
       role="student"
     >
       <div className="space-y-8">
-        <section className="flex flex-col justify-between gap-5 rounded-lg border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start">
+        <section className="flex flex-col justify-between gap-5 rounded-xl border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start">
           <div className="max-w-3xl">
             <RoleBadge className="mb-5" role="student" />
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
@@ -138,7 +139,7 @@ export default async function StudentDashboardPage() {
             </p>
           </div>
           <Link
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             href="/dashboard/student/onboarding"
           >
             {profile ? "Edit profile" : "Start onboarding"}
@@ -195,6 +196,28 @@ export default async function StudentDashboardPage() {
             value={certificateCount.toString()}
           />
         </section>
+
+        {profile && !completion.isComplete && (
+          <NextStepCallout
+            href="/dashboard/student/onboarding"
+            label="Finish profile"
+            message={`Your profile is ${completion.percent}% complete — finish all sections to improve placement readiness.`}
+          />
+        )}
+        {profile && completion.isComplete && !resume && (
+          <NextStepCallout
+            href="/dashboard/student"
+            label="Upload resume"
+            message="Profile complete. Upload your resume so you are ready to apply faster."
+          />
+        )}
+        {profile && completion.isComplete && resume && applicationCount === 0 && (
+          <NextStepCallout
+            href="/dashboard/student/opportunities"
+            label="Browse opportunities"
+            message="Ready to apply — browse open opportunities and submit your first application."
+          />
+        )}
 
         {profile ? (
           <section className="space-y-4">
@@ -283,7 +306,7 @@ export default async function StudentDashboardPage() {
 
         {profile ? (
           <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-            <article className="rounded-lg border border-border bg-background p-6 shadow-sm">
+            <article className="rounded-xl border border-border bg-background p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-semibold text-foreground">
@@ -294,7 +317,14 @@ export default async function StudentDashboardPage() {
                     future matching workflows.
                   </p>
                 </div>
-                <div className="rounded-full border border-border bg-muted/50 px-3 py-1 text-sm font-medium text-muted-foreground">
+                <div
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-xs font-medium",
+                    completion.isComplete
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-border bg-muted/50 text-muted-foreground",
+                  )}
+                >
                   {completion.isComplete ? "Complete" : "In progress"}
                 </div>
               </div>
@@ -325,7 +355,7 @@ export default async function StudentDashboardPage() {
               </div>
             </article>
 
-            <article className="rounded-lg border border-border bg-background p-6 shadow-sm">
+            <article className="rounded-xl border border-border bg-background p-6 shadow-sm">
               <h2 className="text-xl font-semibold text-foreground">
                 Interests
               </h2>
@@ -347,8 +377,8 @@ export default async function StudentDashboardPage() {
             </article>
           </section>
         ) : (
-          <section className="rounded-lg border border-dashed border-border bg-background p-8 shadow-sm">
-            <div className="flex h-12 w-12 items-center justify-center rounded-md border border-border bg-muted text-primary">
+          <section className="rounded-xl border border-dashed border-border bg-background p-8 shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-muted text-primary">
               <ClipboardCheck aria-hidden="true" className="h-6 w-6" />
             </div>
             <h2 className="mt-6 text-xl font-semibold text-foreground">
@@ -360,7 +390,7 @@ export default async function StudentDashboardPage() {
               profile.
             </p>
             <Link
-              className="mt-6 inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+              className="mt-6 inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               href="/dashboard/student/onboarding"
             >
               Start onboarding
@@ -388,20 +418,20 @@ export default async function StudentDashboardPage() {
                 : null
             }
           />
-          <article className="rounded-lg border border-border bg-background p-6 shadow-sm">
-            <ClipboardCheck
-              aria-hidden="true"
-              className="h-5 w-5 text-primary"
-            />
-            <h2 className="mt-4 text-base font-semibold text-foreground">
+          <article className="rounded-xl border border-border bg-background p-6 shadow-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-muted text-primary">
+              <ClipboardCheck aria-hidden="true" className="h-5 w-5" />
+            </div>
+            <h2 className="mt-5 text-base font-semibold text-foreground">
               Application tracker
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Review submitted applications, attached resumes, status updates,
-              and withdrawal options for active submissions.
+              {applicationCount === 0
+                ? "Once you apply to opportunities, your submissions will appear here for tracking."
+                : `${applicationCount} ${applicationCount === 1 ? "application" : "applications"} tracked${activeApplicationCount > 0 ? ` — ${activeApplicationCount} active` : ""}.`}
             </p>
             <Link
-              className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+              className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               href="/dashboard/student/applications"
             >
               View applications
@@ -454,6 +484,26 @@ export default async function StudentDashboardPage() {
         </section>
       </div>
     </DashboardShell>
+  );
+}
+
+type NextStepCalloutProps = {
+  message: string;
+  href: string;
+  label: string;
+};
+
+function NextStepCallout({ message, href, label }: NextStepCalloutProps) {
+  return (
+    <aside className="flex items-center justify-between gap-4 rounded-xl border border-primary/20 bg-primary/[0.04] px-5 py-4">
+      <p className="text-sm text-muted-foreground">{message}</p>
+      <Link
+        className="shrink-0 rounded text-sm font-medium text-primary transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+        href={href}
+      >
+        {label} <span aria-hidden="true">→</span>
+      </Link>
+    </aside>
   );
 }
 

@@ -69,30 +69,27 @@ export function StudentApplicationList({
 }: StudentApplicationListProps) {
   if (applications.length === 0) {
     return (
-      <div className="space-y-4">
-        <EmptyState
-          description={
-            hasAnyApplications
-              ? "Try changing the view or status filter to see more applications."
-              : "Submitted applications will appear here after you apply to a published opportunity."
-          }
-          icon={ClipboardCheck}
-          title={
-            hasAnyApplications
-              ? "No applications match these filters"
-              : "No applications yet"
-          }
-        />
-        {!hasAnyApplications ? (
-          <Link
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
-            href="/dashboard/student/opportunities"
-          >
-            Browse opportunities
-            <ArrowRight aria-hidden="true" className="h-4 w-4" />
-          </Link>
-        ) : null}
-      </div>
+      <EmptyState
+        action={
+          !hasAnyApplications
+            ? {
+                label: "Browse opportunities",
+                href: "/dashboard/student/opportunities",
+              }
+            : undefined
+        }
+        description={
+          hasAnyApplications
+            ? "Try changing the view or status filter to see more applications."
+            : "Submitted applications will appear here after you apply to a published opportunity."
+        }
+        icon={ClipboardCheck}
+        title={
+          hasAnyApplications
+            ? "No applications match these filters"
+            : "No applications yet"
+        }
+      />
     );
   }
 
@@ -100,7 +97,7 @@ export function StudentApplicationList({
     <div className="grid gap-4">
       {applications.map((application) => (
         <article
-          className="rounded-lg border border-border bg-background p-5 shadow-sm"
+          className="rounded-xl border border-border bg-background p-5 shadow-sm"
           key={application.id}
         >
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -120,7 +117,7 @@ export function StudentApplicationList({
               </p>
             </div>
             <Link
-              className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+              className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               href={`/dashboard/student/opportunities/${application.opportunity.id}`}
             >
               View opportunity
@@ -156,7 +153,7 @@ export function StudentApplicationList({
                 value={application.id}
               />
               <button
-                className="inline-flex min-h-10 items-center justify-center rounded-md border border-red-200 px-4 text-sm font-medium text-red-700 transition hover:bg-red-50"
+                className="inline-flex min-h-10 items-center justify-center rounded-lg border border-red-200 px-4 text-sm font-medium text-red-700 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2"
                 type="submit"
               >
                 Withdraw application

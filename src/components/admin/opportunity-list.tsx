@@ -97,7 +97,7 @@ function StatusButton({
       <input name="opportunityId" type="hidden" value={opportunityId} />
       <input name="redirectTo" type="hidden" value={redirectTo} />
       <button
-        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-40"
         disabled={disabled}
         title={label}
         type="submit"
@@ -116,6 +116,10 @@ export function OpportunityList({
   if (opportunities.length === 0) {
     return (
       <EmptyState
+        action={{
+          label: "New opportunity",
+          href: "/dashboard/admin/opportunities/new",
+        }}
         description="Create the first admin-managed opportunity or adjust the filters to widen the list."
         icon={Search}
         title="No opportunities found"
@@ -124,7 +128,7 @@ export function OpportunityList({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
       <div className="hidden grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_120px_150px_150px] gap-4 border-b border-border bg-muted/40 px-5 py-3 text-xs font-semibold uppercase tracking-normal text-muted-foreground lg:grid">
         <span>Opportunity</span>
         <span>Partner</span>
@@ -143,7 +147,7 @@ export function OpportunityList({
                 <h3 className="truncate text-sm font-semibold text-foreground">
                   {opportunity.title}
                 </h3>
-                <span className="rounded-md border border-border bg-muted px-2 py-1 text-xs text-muted-foreground">
+                <span className="rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
                   {formatEnumLabel(opportunity.type)}
                 </span>
               </div>
@@ -169,7 +173,7 @@ export function OpportunityList({
             <div>
               <span
                 className={[
-                  "inline-flex rounded-md border px-2.5 py-1 text-xs font-medium",
+                  "inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium",
                   statusClassName(opportunity.status),
                 ].join(" ")}
               >
@@ -186,7 +190,7 @@ export function OpportunityList({
 
             <div className="flex items-center gap-2 lg:justify-end">
               <a
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
                 href={`/dashboard/admin/opportunities/${opportunity.id}/edit`}
                 title="Edit opportunity"
               >
@@ -229,7 +233,7 @@ export function OpportunityList({
               />
               {opportunity.status !== "PUBLISHED" ? (
                 <span
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground"
                   title="Not visible to students yet"
                 >
                   <Lock aria-hidden="true" className="h-4 w-4" />

@@ -55,8 +55,8 @@ export default async function StudentOnboardingPage() {
 
   return (
     <DashboardShell navItems={roleNavigation.student} role="student">
-      <div className="space-y-6">
-        <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
+      <div className="space-y-8">
+        <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
           <RoleBadge className="mb-5" role="student" />
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
             Student onboarding

@@ -89,11 +89,17 @@ export default async function StudentApplicationsPage({
         role="student"
       >
         <div className="space-y-8">
-          <header>
-            <RoleBadge role="student" />
-            <h1 className="mt-4 text-3xl font-semibold tracking-normal text-foreground">
+          <header className="rounded-xl border border-border bg-background p-6 shadow-sm">
+            <RoleBadge className="mb-5" role="student" />
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
+              Application tracker
+            </p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
               Applications
             </h1>
+            <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
+              Complete your student profile to start applying for healthcare opportunities.
+            </p>
           </header>
           <div className="space-y-4">
             <EmptyState
@@ -102,7 +108,7 @@ export default async function StudentApplicationsPage({
               title="Complete your profile first"
             />
             <Link
-              className="inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+              className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               href="/dashboard/student/onboarding"
             >
               Go to onboarding
@@ -316,12 +322,12 @@ export default async function StudentApplicationsPage({
           />
         </section>
 
-        <section className="rounded-lg border border-border bg-background p-5 shadow-sm">
+        <section className="rounded-xl border border-border bg-background p-5 shadow-sm">
           <form className="grid gap-4 md:grid-cols-[180px_220px_auto] md:items-end">
             <label className="text-sm font-medium text-foreground">
               View
               <select
-                className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground"
+                className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary"
                 defaultValue={view}
                 name="view"
               >
@@ -333,7 +339,7 @@ export default async function StudentApplicationsPage({
             <label className="text-sm font-medium text-foreground">
               Status
               <select
-                className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground"
+                className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary"
                 defaultValue={status}
                 name="status"
               >
@@ -347,13 +353,13 @@ export default async function StudentApplicationsPage({
             </label>
             <div className="flex flex-wrap gap-3">
               <button
-                className="inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+                className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 type="submit"
               >
                 Apply filters
               </button>
               <Link
-                className="inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+                className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 href="/dashboard/student/applications"
               >
                 Clear

@@ -35,12 +35,12 @@ export function StudentOpportunityFilters({
   ];
 
   return (
-    <section className="rounded-lg border border-border bg-background p-5 shadow-sm">
+    <section className="rounded-xl border border-border bg-background p-5 shadow-sm">
       <form className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_repeat(5,minmax(0,0.8fr))_120px] lg:items-end">
         <label className="text-sm font-medium text-foreground">
           Search
           <input
-            className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus:border-foreground"
+            className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus:border-primary"
             defaultValue={filters.q}
             name="q"
             placeholder="Try remote cardiology research"
@@ -112,13 +112,13 @@ export function StudentOpportunityFilters({
 
         <div className="flex gap-3 lg:col-span-full">
           <button
-            className="inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+            className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             type="submit"
           >
             Apply filters
           </button>
           <Link
-            className="inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             href="/dashboard/student/opportunities"
           >
             Clear
@@ -153,7 +153,7 @@ function SelectField({ children, label, name, value }: SelectFieldProps) {
     <label className="text-sm font-medium text-foreground">
       {label}
       <select
-        className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground"
+        className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary"
         defaultValue={value}
         name={name}
       >

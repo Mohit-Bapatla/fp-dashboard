@@ -92,16 +92,16 @@ export function StudentOpportunityList({
     <div className="grid gap-4">
       {opportunities.map((opportunity) => (
         <article
-          className="rounded-lg border border-border bg-background p-5 shadow-sm"
+          className="rounded-xl border border-border bg-background p-5 shadow-sm"
           key={opportunity.id}
         >
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                <span className="rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
                   {formatEnumLabel(opportunity.type)}
                 </span>
-                <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
                   Published
                 </span>
                 {opportunity.match ? (
@@ -127,7 +127,7 @@ export function StudentOpportunityList({
               </p>
             </div>
             <Link
-              className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+              className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               href={`/dashboard/student/opportunities/${opportunity.id}`}
             >
               View details
@@ -135,7 +135,7 @@ export function StudentOpportunityList({
             </Link>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <OpportunityFact
               label="Specialty"
               value={opportunity.specialty ?? "Not specified"}

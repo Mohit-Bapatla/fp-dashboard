@@ -118,7 +118,7 @@ export default async function StaffDashboardPage() {
       role="staff"
     >
       <div className="space-y-8">
-        <section className="flex flex-col justify-between gap-5 rounded-lg border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start">
+        <section className="flex flex-col justify-between gap-5 rounded-xl border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start">
           <div className="max-w-3xl">
             <RoleBadge className="mb-5" role="staff" />
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
@@ -133,7 +133,7 @@ export default async function StaffDashboardPage() {
             </p>
           </div>
           <Link
-            className="inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+            className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             href="/dashboard/staff/placement-requests"
           >
             Open placement queue
@@ -250,14 +250,14 @@ function StaffPanel({
   title: string;
 }) {
   return (
-    <article className="rounded-lg border border-border bg-background p-6 shadow-sm">
+    <article className="rounded-xl border border-border bg-background p-6 shadow-sm">
       <Icon aria-hidden="true" className="h-5 w-5 text-primary" />
       <h2 className="mt-4 text-base font-semibold text-foreground">{title}</h2>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
         {description}
       </p>
       <Link
-        className="mt-5 inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+        className="mt-5 inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         href={href}
       >
         Open

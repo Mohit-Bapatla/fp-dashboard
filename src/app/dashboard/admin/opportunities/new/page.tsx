@@ -26,12 +26,15 @@ export default async function NewAdminOpportunityPage() {
       role="admin"
     >
       <div className="space-y-8">
-        <header>
-          <RoleBadge role="admin" />
-          <h1 className="mt-4 text-3xl font-semibold tracking-normal text-foreground">
+        <header className="rounded-xl border border-border bg-background p-6 shadow-sm">
+          <RoleBadge className="mb-5" role="admin" />
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
+            Admin management
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
             New Opportunity
           </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
+          <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
             Add an admin-managed opportunity and connect it to a partner
             organization before publishing.
           </p>

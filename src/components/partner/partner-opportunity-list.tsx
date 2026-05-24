@@ -67,7 +67,7 @@ export function PartnerOpportunityList({
   if (opportunities.length === 0) {
     return (
       <EmptyState
-        description="Partner-owned opportunities will appear here after Future Physicians connects records to your organization."
+        description="Opportunities connected to your organization will appear here. Contact Future Physicians to link records or create new listings."
         icon={BriefcaseBusiness}
         title="No organization opportunities yet"
       />
@@ -75,7 +75,7 @@ export function PartnerOpportunityList({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
       <div className="hidden grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_120px_130px_120px] gap-4 border-b border-border bg-muted/40 px-5 py-3 text-xs font-semibold uppercase tracking-normal text-muted-foreground lg:grid">
         <span>Opportunity</span>
         <span>Organization</span>
@@ -104,7 +104,7 @@ export function PartnerOpportunityList({
             <div>
               <span
                 className={[
-                  "inline-flex rounded-md border px-2.5 py-1 text-xs font-medium",
+                  "inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium",
                   statusClassName(opportunity.status),
                 ].join(" ")}
               >

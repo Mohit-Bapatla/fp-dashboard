@@ -34,6 +34,7 @@ export default async function AdminDashboardPage() {
     applicationCount,
     placementRequestCount,
     applicationsNeedingReviewCount,
+    draftCount,
     recentApplications,
     recentPartners,
     recentOpportunities,
@@ -57,6 +58,11 @@ export default async function AdminDashboardPage() {
         status: {
           in: ["SUBMITTED", "UNDER_REVIEW"],
         },
+      },
+    }),
+    prisma.opportunity.count({
+      where: {
+        status: "DRAFT",
       },
     }),
     prisma.application.findMany({
@@ -136,11 +142,11 @@ export default async function AdminDashboardPage() {
       role="admin"
     >
       <div className="space-y-8">
-        <header className="flex flex-col gap-5 rounded-lg border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start lg:justify-between">
+        <header className="flex flex-col gap-5 rounded-xl border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start lg:justify-between">
           <div>
             <RoleBadge className="mb-5" role="admin" />
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
-              Internal operations
+              Platform workspace
             </p>
             <h1 className="mt-3 text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
               Admin Dashboard
@@ -152,13 +158,13 @@ export default async function AdminDashboardPage() {
           </div>
           <div className="flex flex-wrap gap-3">
             <Link
-              className="inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+              className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               href="/dashboard/admin/applications"
             >
               Review applications
             </Link>
             <Link
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-foreground px-4 text-sm font-medium text-background shadow-sm transition hover:bg-foreground/90"
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               href="/dashboard/admin/opportunities/new"
             >
               <Plus aria-hidden="true" className="h-4 w-4" />
@@ -364,10 +370,10 @@ export default async function AdminDashboardPage() {
           />
         </section>
 
-        <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
+        <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <div className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-muted text-primary">
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-muted text-primary">
                 <BriefcaseBusiness aria-hidden="true" className="h-5 w-5" />
               </div>
               <h2 className="mt-5 text-lg font-semibold text-foreground">
@@ -377,16 +383,21 @@ export default async function AdminDashboardPage() {
                 Create opportunities, connect them to partner organizations, and
                 publish, archive, or close records from the admin workspace.
               </p>
+              {draftCount > 0 && (
+                <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                  {draftCount} draft {draftCount === 1 ? "listing" : "listings"} pending review
+                </p>
+              )}
             </div>
             <div className="flex flex-wrap gap-3">
               <Link
-                className="inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+                className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 href="/dashboard/admin/opportunities"
               >
                 View opportunities
               </Link>
               <Link
-                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-foreground px-4 text-sm font-medium text-background shadow-sm transition hover:bg-foreground/90"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 href="/dashboard/admin/opportunities/new"
               >
                 <Plus aria-hidden="true" className="h-4 w-4" />

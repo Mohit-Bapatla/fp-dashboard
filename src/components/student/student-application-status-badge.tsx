@@ -28,7 +28,7 @@ export function StudentApplicationStatusBadge({
   return (
     <span
       className={[
-        "inline-flex rounded-md border px-2.5 py-1 text-xs font-medium",
+        "inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium",
         statusStyles[status],
       ].join(" ")}
     >

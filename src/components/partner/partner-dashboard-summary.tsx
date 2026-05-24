@@ -44,10 +44,10 @@ export function PartnerDashboardSummary({
   organizationCount,
 }: PartnerDashboardSummaryProps) {
   return (
-    <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
+    <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-muted text-primary">
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-muted text-primary">
             <Building2 aria-hidden="true" className="h-5 w-5" />
           </div>
           <h2 className="mt-5 text-2xl font-semibold tracking-normal text-foreground">
@@ -58,9 +58,18 @@ export function PartnerDashboardSummary({
               "Organization details will become editable in a later partner or admin workflow."}
           </p>
         </div>
-        <div className="rounded-full border border-border bg-muted/50 px-3 py-1 text-sm font-medium text-muted-foreground">
+        <span className={[
+          "inline-flex shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium",
+          organization.status === "PARTNERED"
+            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+            : organization.status === "REJECTED" || organization.status === "PAUSED"
+              ? "border-slate-200 bg-slate-50 text-slate-600"
+              : organization.status === "INTERESTED" || organization.status === "MEETING_SCHEDULED"
+                ? "border-amber-200 bg-amber-50 text-amber-700"
+                : "border-border bg-muted/50 text-muted-foreground",
+        ].join(" ")}>
           {formatStatus(organization.status)}
-        </div>
+        </span>
       </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">

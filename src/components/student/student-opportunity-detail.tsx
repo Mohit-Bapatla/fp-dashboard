@@ -101,7 +101,7 @@ export function StudentOpportunityDetail({
   return (
     <div className="space-y-8">
       <Link
-        className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+        className="inline-flex items-center gap-2 rounded text-sm font-medium text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         href="/dashboard/student/opportunities"
       >
         <ArrowLeft aria-hidden="true" className="h-4 w-4" />
@@ -114,14 +114,14 @@ export function StudentOpportunityDetail({
         View public preview
       </Link>
 
-      <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
+      <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+              <span className="rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
                 {formatEnumLabel(opportunity.type)}
               </span>
-              <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
                 Published
               </span>
               {match ? (
@@ -204,20 +204,26 @@ export function StudentOpportunityDetail({
       ) : null}
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <article className="space-y-6 rounded-lg border border-border bg-background p-6 shadow-sm">
-          <ContentBlock body={opportunity.description} title="Description" />
-          <ContentBlock
-            body={opportunity.eligibilityRequirements}
-            title="Eligibility requirements"
-          />
-          <ContentBlock
-            body={opportunity.applicationInstructions}
-            title="Application instructions"
-          />
+        <article className="divide-y divide-border rounded-xl border border-border bg-background shadow-sm">
+          <div className="p-6">
+            <ContentBlock body={opportunity.description} title="Description" />
+          </div>
+          <div className="p-6">
+            <ContentBlock
+              body={opportunity.eligibilityRequirements}
+              title="Eligibility requirements"
+            />
+          </div>
+          <div className="p-6">
+            <ContentBlock
+              body={opportunity.applicationInstructions}
+              title="Application instructions"
+            />
+          </div>
         </article>
 
         <aside className="space-y-6">
-          <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
+          <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
             <FileText aria-hidden="true" className="h-5 w-5 text-primary" />
             <h2 className="mt-4 text-base font-semibold text-foreground">
               Required documents
@@ -226,7 +232,7 @@ export function StudentOpportunityDetail({
               <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                 {opportunity.requiredDocuments.map((document) => (
                   <li
-                    className="rounded-md border border-border p-3"
+                    className="rounded-lg border border-border p-3"
                     key={document}
                   >
                     {document}
@@ -240,7 +246,7 @@ export function StudentOpportunityDetail({
             )}
           </section>
 
-          <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
+          <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
             <h2 className="text-base font-semibold text-foreground">
               Partner organization
             </h2>
@@ -253,7 +259,7 @@ export function StudentOpportunityDetail({
             </p>
             {opportunity.organization.website ? (
               <a
-                className="mt-4 inline-flex text-sm font-medium text-primary hover:underline"
+                className="mt-4 inline-flex rounded text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 href={opportunity.organization.website}
                 rel="noreferrer"
                 target="_blank"
@@ -333,16 +339,22 @@ function ApplyCallToAction({
 }) {
   if (state.kind === "alreadyApplied") {
     return (
-      <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2 font-semibold text-foreground">
-          <CheckCircle2 aria-hidden="true" className="h-4 w-4 text-primary" />
-          Already applied
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm">
+        <div className="flex items-center gap-2 font-semibold text-emerald-800">
+          <CheckCircle2 aria-hidden="true" className="h-4 w-4 text-emerald-600" />
+          Application submitted
         </div>
-        <p className="mt-2">
+        <p className="mt-2 text-emerald-700">
           {state.submittedAt
             ? `Submitted ${formatDate(state.submittedAt)}.`
             : "Your application has been submitted."}
         </p>
+        <Link
+          className="mt-3 inline-flex items-center gap-1.5 rounded text-xs font-medium text-emerald-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+          href="/dashboard/student/applications"
+        >
+          View my applications
+        </Link>
       </div>
     );
   }
@@ -350,7 +362,7 @@ function ApplyCallToAction({
   if (state.kind === "needsProfile") {
     return (
       <Link
-        className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+        className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         href="/dashboard/student/onboarding"
       >
         <UserRound aria-hidden="true" className="h-4 w-4" />
@@ -362,7 +374,7 @@ function ApplyCallToAction({
   if (state.kind === "needsResume") {
     return (
       <Link
-        className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+        className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         href="/dashboard/student"
       >
         <FileText aria-hidden="true" className="h-4 w-4" />
@@ -373,7 +385,7 @@ function ApplyCallToAction({
 
   return (
     <Link
-      className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+      className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       href={`/dashboard/student/opportunities/${opportunityId}/apply${
         source === "recommendation" ? "?source=recommendation" : ""
       }`}

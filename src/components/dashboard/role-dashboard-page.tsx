@@ -31,7 +31,7 @@ export function RoleDashboardPage({
   return (
     <DashboardShell navItems={roleNavigation[role]} role={role}>
       <div className="space-y-8">
-        <section className="flex flex-col justify-between gap-5 rounded-lg border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start">
+        <section className="flex flex-col justify-between gap-5 rounded-xl border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start">
           <div className="max-w-3xl">
             <RoleBadge className="mb-5" role={role} />
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
@@ -43,9 +43,6 @@ export function RoleDashboardPage({
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
               {description}
             </p>
-          </div>
-          <div className="rounded-lg border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-            Stage 2 placeholder
           </div>
         </section>
 
@@ -61,11 +58,11 @@ export function RoleDashboardPage({
         <section className="space-y-4">
           <div>
             <h2 className="text-xl font-semibold text-foreground">
-              Coming Soon
+              Features in development
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              These areas are intentionally placeholders until future stages add
-              persistence, authentication, and workflow logic.
+              These sections are being built out and will be available as the
+              platform grows.
             </p>
           </div>
           <div className="grid gap-4 lg:grid-cols-3">

@@ -43,7 +43,7 @@ function SubmitButton({ label }: { label: string }) {
 
   return (
     <button
-      className="inline-flex items-center justify-center rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background shadow-sm transition hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex items-center justify-center rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background shadow-sm transition hover:bg-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
       disabled={pending}
       type="submit"
     >
@@ -62,10 +62,10 @@ function FieldError({ message }: { message?: string }) {
 
 function inputClassName(hasError?: boolean) {
   return [
-    "mt-2 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground",
+    "mt-2 w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
     hasError
       ? "border-destructive focus:border-destructive"
-      : "border-border focus:border-foreground",
+      : "border-border focus:border-primary",
   ].join(" ");
 }
 
@@ -90,10 +90,10 @@ export function OpportunityForm({
   const values = opportunityState.values;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
       <form
         action={opportunityAction}
-        className="rounded-lg border border-border bg-background p-5 shadow-sm"
+        className="rounded-xl border border-border bg-background p-5 shadow-sm"
       >
         <input
           name="opportunityId"
@@ -108,7 +108,7 @@ export function OpportunityForm({
             Create a clear admin-managed listing before publishing it.
           </p>
           {opportunityState.formError ? (
-            <p className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <p className="mt-4 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {opportunityState.formError}
             </p>
           ) : null}
@@ -300,7 +300,7 @@ export function OpportunityForm({
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <SubmitButton label="Save opportunity" />
           <a
-            className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
+            className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             href="/dashboard/admin/opportunities"
           >
             Back to opportunities
@@ -309,7 +309,7 @@ export function OpportunityForm({
       </form>
 
       <aside className="space-y-6">
-        <section className="rounded-lg border border-border bg-background p-5 shadow-sm">
+        <section className="rounded-xl border border-border bg-background p-5 shadow-sm">
           <h2 className="text-base font-semibold text-foreground">
             Partner organization
           </h2>
@@ -320,7 +320,7 @@ export function OpportunityForm({
           <form action={partnerAction} className="mt-5 space-y-4">
             <input name="redirectTo" type="hidden" value={currentPath} />
             {partnerState.formError ? (
-              <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {partnerState.formError}
               </p>
             ) : null}
