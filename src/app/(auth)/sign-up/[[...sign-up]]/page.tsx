@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function SignUpPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-12">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
       <div className="mb-8 text-center">
         <Link
           className="inline-block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"

@@ -18,12 +18,15 @@ export default async function PartnerDashboardPage() {
     return (
       <DashboardShell navItems={roleNavigation.partner} role="partner">
         <div className="space-y-8">
-          <header>
-            <RoleBadge role="partner" />
-            <h1 className="mt-4 text-3xl font-semibold tracking-normal text-foreground">
+          <header className="rounded-xl border border-border bg-background p-6 shadow-sm">
+            <RoleBadge className="mb-5" role="partner" />
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
+              Organization workspace
+            </p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
               Partner Dashboard
             </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
+            <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
               View organization details and opportunity activity once your
               partner account is connected to an organization.
             </p>
@@ -114,7 +117,7 @@ export default async function PartnerDashboardPage() {
   return (
     <DashboardShell navItems={roleNavigation.partner} role="partner">
       <div className="space-y-8">
-        <header className="flex flex-col gap-5 rounded-lg border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start lg:justify-between">
+        <header className="flex flex-col gap-5 rounded-xl border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start lg:justify-between">
           <div>
             <RoleBadge className="mb-5" role="partner" />
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
@@ -128,7 +131,7 @@ export default async function PartnerDashboardPage() {
               and application volume across Future Physicians records.
             </p>
           </div>
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-primary">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-primary">
             <Handshake aria-hidden="true" className="h-6 w-6" />
           </div>
         </header>

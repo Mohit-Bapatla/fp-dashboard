@@ -110,18 +110,21 @@ export default async function StudentOpportunityApplyPage({
       role="student"
     >
       <div className="space-y-8">
-        <header>
-          <RoleBadge role="student" />
-          <h1 className="mt-4 text-3xl font-semibold tracking-normal text-foreground">
+        <header className="rounded-xl border border-border bg-background p-6 shadow-sm">
+          <RoleBadge className="mb-5" role="student" />
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
+            Application
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
             Apply to Opportunity
           </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
+          <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
             Submit your profile and selected resume for this published
             opportunity.
           </p>
         </header>
 
-        <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
+        <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
           <p className="text-sm font-medium text-muted-foreground">
             {opportunity.organization.name}
           </p>
@@ -149,35 +152,40 @@ export default async function StudentOpportunityApplyPage({
         </section>
 
         {isSuccess ? (
-          <section className="rounded-lg border border-emerald-200 bg-emerald-50 p-6 text-emerald-900 shadow-sm">
+          <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-900 shadow-sm">
             <CheckCircle2 aria-hidden="true" className="h-6 w-6" />
             <h2 className="mt-4 text-xl font-semibold">
               Application submitted
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6">
-              Your application has been submitted. Future application tracking
-              and review workflows will be added in later stages.
+              Your application has been submitted. You can track your status in
+              the Applications section of your dashboard.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
-                className="inline-flex min-h-10 items-center justify-center rounded-md bg-emerald-900 px-4 text-sm font-medium text-white transition hover:opacity-90"
+                className="inline-flex min-h-10 items-center justify-center rounded-lg bg-emerald-900 px-4 text-sm font-medium text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
                 href={`/dashboard/student/opportunities/${opportunity.id}`}
               >
                 Back to opportunity
               </Link>
               <Link
-                className="inline-flex min-h-10 items-center justify-center rounded-md border border-emerald-300 px-4 text-sm font-medium text-emerald-900 transition hover:bg-emerald-100"
-                href="/dashboard/student/opportunities"
+                className="inline-flex min-h-10 items-center justify-center rounded-lg border border-emerald-300 px-4 text-sm font-medium text-emerald-900 transition hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
+                href="/dashboard/student/applications"
               >
-                Browse opportunities
+                View applications
               </Link>
             </div>
           </section>
         ) : isAlreadyApplied ? (
-          <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
-            <CheckCircle2 aria-hidden="true" className="h-6 w-6 text-primary" />
+          <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 aria-hidden="true" className="h-5 w-5 text-emerald-600" />
+              <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+                Already applied
+              </span>
+            </div>
             <h2 className="mt-4 text-xl font-semibold text-foreground">
-              Already applied
+              Application already submitted
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
               You have already submitted an application for this opportunity.
@@ -187,52 +195,60 @@ export default async function StudentOpportunityApplyPage({
             </p>
             {existingApplication?.resume?.fileName ? (
               <p className="mt-3 text-sm text-muted-foreground">
-                Resume: {existingApplication.resume.fileName}
+                Resume attached: {existingApplication.resume.fileName}
               </p>
             ) : null}
-            <Link
-              className="mt-5 inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
-              href={`/dashboard/student/opportunities/${opportunity.id}`}
-            >
-              Back to opportunity
-            </Link>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                href={`/dashboard/student/opportunities/${opportunity.id}`}
+              >
+                Back to opportunity
+              </Link>
+              <Link
+                className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                href="/dashboard/student/applications"
+              >
+                View my applications
+              </Link>
+            </div>
           </section>
         ) : !profile ? (
-          <EmptyState
-            description="Complete student onboarding before applying so Future Physicians can submit your profile details with the application."
-            icon={UserRound}
-            title="Complete your profile first"
-          />
+          <section className="space-y-4">
+            <EmptyState
+              description="Complete student onboarding before applying so Future Physicians can submit your profile details with the application."
+              icon={UserRound}
+              title="Complete your profile first"
+            />
+            <Link
+              className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              href="/dashboard/student/onboarding"
+            >
+              Go to onboarding
+            </Link>
+          </section>
         ) : resumes.length === 0 ? (
-          <EmptyState
-            description="Upload a PDF or DOCX resume from your student dashboard before applying."
-            icon={FileText}
-            title="Upload a resume first"
-          />
+          <section className="space-y-4">
+            <EmptyState
+              description="Upload a PDF or DOCX resume from your student dashboard before applying."
+              icon={FileText}
+              title="Upload a resume first"
+            />
+            <Link
+              className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              href="/dashboard/student"
+            >
+              Go to resume upload
+            </Link>
+          </section>
         ) : (
-          <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
+          <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
             <StudentApplicationForm
               opportunityId={opportunity.id}
               resumes={resumes}
             />
           </section>
         )}
-
-        {!profile ? (
-          <Link
-            className="inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
-            href="/dashboard/student/onboarding"
-          >
-            Go to onboarding
-          </Link>
-        ) : profile && resumes.length === 0 && !isAlreadyApplied ? (
-          <Link
-            className="inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
-            href="/dashboard/student"
-          >
-            Go to resume upload
-          </Link>
-        ) : null}
       </div>
     </DashboardShell>
   );

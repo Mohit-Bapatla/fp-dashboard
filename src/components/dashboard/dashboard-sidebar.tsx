@@ -47,16 +47,19 @@ export function DashboardSidebar({ role, navItems }: DashboardSidebarProps) {
               aria-current={item.active ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
-                item.active && "bg-primary/[0.08] text-foreground",
+                item.active && "bg-primary/[0.08] text-foreground font-semibold",
               )}
               href={item.href}
               key={item.label}
             >
               <ItemIcon
                 aria-hidden="true"
-                className={cn("h-4 w-4 shrink-0", item.active && "text-primary")}
+                className={cn("h-4 w-4 shrink-0", item.active ? "text-primary" : "text-muted-foreground/70")}
               />
               <span>{item.label}</span>
+              {item.active && (
+                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+              )}
             </Link>
           );
         })}

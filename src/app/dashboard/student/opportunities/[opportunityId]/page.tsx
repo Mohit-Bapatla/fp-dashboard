@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StudentOpportunityDetail } from "@/components/student/student-opportunity-detail";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
@@ -96,9 +95,6 @@ export default async function StudentOpportunityDetailPage({
       role="student"
     >
       <div className="space-y-8">
-        <header>
-          <RoleBadge role="student" />
-        </header>
         <StudentOpportunityDetail
           applyState={applyState}
           opportunity={opportunity}

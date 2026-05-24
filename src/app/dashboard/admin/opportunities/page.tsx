@@ -159,20 +159,22 @@ export default async function AdminOpportunitiesPage({
       role="admin"
     >
       <div className="space-y-8">
-        <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <header className="flex flex-col gap-5 rounded-xl border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <RoleBadge role="admin" />
-            <h1 className="mt-4 text-3xl font-semibold tracking-normal text-foreground">
+            <RoleBadge className="mb-5" role="admin" />
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
+              Admin management
+            </p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
               Opportunity Management
             </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
+            <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
               Create partner-connected opportunities, keep listings in draft,
-              and publish them when they are ready for future student-facing
-              workflows.
+              and publish them when they are ready for student-facing workflows.
             </p>
           </div>
           <a
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background shadow-sm transition hover:bg-foreground/90"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             href="/dashboard/admin/opportunities/new"
           >
             <Plus aria-hidden="true" className="h-4 w-4" />
@@ -203,12 +205,12 @@ export default async function AdminOpportunitiesPage({
           />
         </section>
 
-        <section className="rounded-lg border border-border bg-background p-5 shadow-sm">
+        <section className="rounded-xl border border-border bg-background p-5 shadow-sm">
           <form className="grid gap-4 md:grid-cols-[minmax(0,1fr)_180px_180px_auto] md:items-end">
             <label className="text-sm font-medium text-foreground">
               Search
               <input
-                className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus:border-foreground"
+                className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus:border-primary"
                 defaultValue={query}
                 name="q"
                 placeholder="Search title, specialty, location, or partner"
@@ -217,7 +219,7 @@ export default async function AdminOpportunitiesPage({
             <label className="text-sm font-medium text-foreground">
               Status
               <select
-                className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground"
+                className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary"
                 defaultValue={status}
                 name="status"
               >
@@ -232,7 +234,7 @@ export default async function AdminOpportunitiesPage({
             <label className="text-sm font-medium text-foreground">
               Type
               <select
-                className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-foreground"
+                className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary"
                 defaultValue={type}
                 name="type"
               >
@@ -245,7 +247,7 @@ export default async function AdminOpportunitiesPage({
               </select>
             </label>
             <button
-              className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
+              className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               type="submit"
             >
               Apply filters

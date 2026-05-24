@@ -152,16 +152,22 @@ export function StudentOpportunityDetail({
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <article className="space-y-6 rounded-xl border border-border bg-background p-6 shadow-sm">
-          <ContentBlock body={opportunity.description} title="Description" />
-          <ContentBlock
-            body={opportunity.eligibilityRequirements}
-            title="Eligibility requirements"
-          />
-          <ContentBlock
-            body={opportunity.applicationInstructions}
-            title="Application instructions"
-          />
+        <article className="divide-y divide-border rounded-xl border border-border bg-background shadow-sm">
+          <div className="p-6">
+            <ContentBlock body={opportunity.description} title="Description" />
+          </div>
+          <div className="p-6">
+            <ContentBlock
+              body={opportunity.eligibilityRequirements}
+              title="Eligibility requirements"
+            />
+          </div>
+          <div className="p-6">
+            <ContentBlock
+              body={opportunity.applicationInstructions}
+              title="Application instructions"
+            />
+          </div>
         </article>
 
         <aside className="space-y-6">
@@ -225,16 +231,22 @@ function ApplyCallToAction({
 }) {
   if (state.kind === "alreadyApplied") {
     return (
-      <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2 font-semibold text-foreground">
-          <CheckCircle2 aria-hidden="true" className="h-4 w-4 text-primary" />
-          Already applied
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm">
+        <div className="flex items-center gap-2 font-semibold text-emerald-800">
+          <CheckCircle2 aria-hidden="true" className="h-4 w-4 text-emerald-600" />
+          Application submitted
         </div>
-        <p className="mt-2">
+        <p className="mt-2 text-emerald-700">
           {state.submittedAt
             ? `Submitted ${formatDate(state.submittedAt)}.`
             : "Your application has been submitted."}
         </p>
+        <Link
+          className="mt-3 inline-flex items-center gap-1.5 rounded text-xs font-medium text-emerald-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+          href="/dashboard/student/applications"
+        >
+          View my applications
+        </Link>
       </div>
     );
   }

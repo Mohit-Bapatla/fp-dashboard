@@ -121,7 +121,7 @@ export function StudentOpportunityList({
             </Link>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <OpportunityFact
               label="Specialty"
               value={opportunity.specialty ?? "Not specified"}
