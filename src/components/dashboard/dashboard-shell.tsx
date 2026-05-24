@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { DemoModeBanner } from "./demo-mode-banner";
 import { DashboardSidebar } from "./dashboard-sidebar";
 import { DashboardTopNav } from "./dashboard-top-nav";
 import type { DashboardNavItem, DashboardRole } from "./role-config";
@@ -21,6 +22,7 @@ export function DashboardShell({
         <DashboardSidebar navItems={navItems} role={role} />
         <div className="flex min-w-0 flex-1 flex-col">
           <DashboardTopNav navItems={navItems} role={role} />
+          <DemoModeBanner />
           <div className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
             <div className="mx-auto w-full max-w-7xl">{children}</div>
           </div>
