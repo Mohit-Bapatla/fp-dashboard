@@ -1,6 +1,8 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 
 import type { StudentProfile } from "@/generated/prisma/client";
+import { getRoleFromSessionClaims } from "@/lib/auth/roles";
+import { syncCurrentUserFromClerk } from "@/lib/auth/user-sync";
 import { prisma } from "@/lib/db/prisma";
 
 function normalizeEmail(value: string) {
@@ -161,34 +163,24 @@ async function claimStagedStudentImport(user: {
 }
 
 export async function getOrCreateCurrentStudentUser(clerkUserId: string) {
-  const clerkUser = await currentUser();
-  const email =
-    clerkUser?.primaryEmailAddress?.emailAddress ??
-    clerkUser?.emailAddresses.at(0)?.emailAddress ??
-    `${clerkUserId}@example.invalid`;
+  const { sessionClaims } = await auth();
+  const role = getRoleFromSessionClaims(sessionClaims);
 
-  const user = await prisma.user.upsert({
+  await syncCurrentUserFromClerk({
+    clerkUserId,
+    role,
+  });
+
+  const user = await prisma.user.findUniqueOrThrow({
     where: {
       clerkUserId,
-    },
-    update: {
-      email,
-      firstName: clerkUser?.firstName ?? undefined,
-      lastName: clerkUser?.lastName ?? undefined,
-    },
-    create: {
-      clerkUserId,
-      email,
-      firstName: clerkUser?.firstName ?? null,
-      lastName: clerkUser?.lastName ?? null,
-      role: "STUDENT",
     },
     include: {
       studentProfile: true,
     },
   });
 
-  return claimStagedStudentImport(user);
+  return role === "STUDENT" ? claimStagedStudentImport(user) : user;
 }
 
 export async function getCurrentStudentProfile(clerkUserId: string) {

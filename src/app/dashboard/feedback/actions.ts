@@ -10,7 +10,8 @@ import type {
   UserRole,
 } from "@/generated/prisma/enums";
 import { createAuditLog } from "@/lib/audit/audit-log";
-import { getAppRole } from "@/lib/auth/roles";
+import { getRoleFromSessionClaims } from "@/lib/auth/roles";
+import { syncCurrentUserFromClerk } from "@/lib/auth/user-sync";
 import { prisma } from "@/lib/db/prisma";
 
 const feedbackTypes: FeedbackType[] = [
@@ -152,15 +153,10 @@ export async function submitFeedback(formData: FormData) {
     return redirectToSignIn();
   }
 
-  const role = getAppRole(sessionClaims?.metadata?.role);
-  const user = await prisma.user.findUnique({
-    where: {
-      clerkUserId,
-    },
-    select: {
-      id: true,
-      role: true,
-    },
+  const role = getRoleFromSessionClaims(sessionClaims);
+  const user = await syncCurrentUserFromClerk({
+    clerkUserId,
+    role,
   });
   const redirectTo = getSafeRedirect(formData);
   const entityId = getString(formData, "entityId");

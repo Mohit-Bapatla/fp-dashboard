@@ -1,7 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
-import { getAppRole } from "@/lib/auth/roles";
+import { getRoleFromSessionClaims } from "@/lib/auth/roles";
+import { syncCurrentUserFromClerk } from "@/lib/auth/user-sync";
 
 export async function assertAdminAccess() {
   const { redirectToSignIn, sessionClaims, userId } = await auth();
@@ -10,11 +11,16 @@ export async function assertAdminAccess() {
     return redirectToSignIn();
   }
 
-  const role = getAppRole(sessionClaims?.metadata?.role);
+  const role = getRoleFromSessionClaims(sessionClaims);
 
   if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
     redirect("/dashboard");
   }
+
+  await syncCurrentUserFromClerk({
+    clerkUserId: userId,
+    role,
+  });
 
   return {
     role,

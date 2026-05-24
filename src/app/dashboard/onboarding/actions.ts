@@ -6,7 +6,8 @@ import { redirect } from "next/navigation";
 
 import type { ApplicationOnboardingItemStatus } from "@/generated/prisma/enums";
 import { createAuditLog } from "@/lib/audit/audit-log";
-import { getAppRole } from "@/lib/auth/roles";
+import { getRoleFromSessionClaims } from "@/lib/auth/roles";
+import { syncCurrentUserFromClerk } from "@/lib/auth/user-sync";
 import { prisma } from "@/lib/db/prisma";
 
 const reviewerStatuses: ApplicationOnboardingItemStatus[] = [
@@ -34,6 +35,12 @@ async function getCurrentUser() {
     return null;
   }
 
+  const claimRole = getRoleFromSessionClaims(sessionClaims);
+  await syncCurrentUserFromClerk({
+    clerkUserId: userId,
+    role: claimRole,
+  });
+
   const user = await prisma.user.findUnique({
     where: {
       clerkUserId: userId,
@@ -47,7 +54,7 @@ async function getCurrentUser() {
   return user
     ? {
         ...user,
-        claimRole: getAppRole(sessionClaims?.metadata?.role),
+        claimRole,
       }
     : null;
 }

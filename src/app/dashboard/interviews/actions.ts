@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createAuditLog } from "@/lib/audit/audit-log";
-import { getAppRole } from "@/lib/auth/roles";
+import { getRoleFromSessionClaims } from "@/lib/auth/roles";
 import { prisma } from "@/lib/db/prisma";
 import { createNotifications } from "@/lib/notifications/notifications";
 import { getCurrentPartnerContext } from "@/lib/partner/context";
@@ -430,7 +430,7 @@ export async function assertInterviewViewerRole() {
   }
 
   return {
-    role: getAppRole(sessionClaims?.metadata?.role),
+    role: getRoleFromSessionClaims(sessionClaims),
     userId,
   };
 }

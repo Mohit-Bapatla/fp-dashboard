@@ -12,6 +12,8 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { NotificationList } from "@/components/notifications/notification-list";
 import type { UserRole } from "@/generated/prisma/enums";
 import { getAdminNavItems } from "@/lib/admin/navigation";
+import { getRoleFromSessionClaims } from "@/lib/auth/roles";
+import { syncCurrentUserFromClerk } from "@/lib/auth/user-sync";
 import { prisma } from "@/lib/db/prisma";
 import { getPartnerNavItems } from "@/lib/partner/navigation";
 import { getStaffNavItems } from "@/lib/staff/navigation";
@@ -42,11 +44,17 @@ function getNavItems(role: DashboardRole): DashboardNavItem[] {
 }
 
 export default async function NotificationsPage() {
-  const { redirectToSignIn, userId } = await auth();
+  const { redirectToSignIn, sessionClaims, userId } = await auth();
 
   if (!userId) {
     return redirectToSignIn();
   }
+
+  const role = getRoleFromSessionClaims(sessionClaims);
+  await syncCurrentUserFromClerk({
+    clerkUserId: userId,
+    role,
+  });
 
   const user = await prisma.user.findUnique({
     where: {

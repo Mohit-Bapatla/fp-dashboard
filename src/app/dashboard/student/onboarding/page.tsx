@@ -5,7 +5,7 @@ import { StudentOnboardingForm } from "@/components/student/student-onboarding-f
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import { roleNavigation } from "@/components/dashboard/role-config";
-import { getAppRole } from "@/lib/auth/roles";
+import { getRoleFromSessionClaims } from "@/lib/auth/roles";
 import {
   initialStudentOnboardingActionState,
   type StudentOnboardingActionState,
@@ -23,7 +23,7 @@ export default async function StudentOnboardingPage() {
     return redirectToSignIn();
   }
 
-  if (getAppRole(sessionClaims?.metadata?.role) !== "STUDENT") {
+  if (getRoleFromSessionClaims(sessionClaims) !== "STUDENT") {
     redirect("/dashboard");
   }
 

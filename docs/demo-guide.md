@@ -60,6 +60,18 @@ Example metadata:
 }
 ```
 
+The app expects Clerk session claims to expose public metadata at
+`sessionClaims.metadata`. Configure the Clerk session token template with:
+
+```json
+{
+  "metadata": "{{user.public_metadata}}"
+}
+```
+
+After changing a demo user's role in Clerk, sign out and back in before testing
+dashboard routing so the session token is refreshed.
+
 ## Suggested Demo Walkthrough
 
 1. Sign in as `demo-student@example.com` and review the dashboard, opportunities, applications, events, and service-hour summary.

@@ -20,6 +20,22 @@ Create Clerk users normally. Assign role through `publicMetadata.role`, for exam
 }
 ```
 
+Then configure Clerk session token claims so the app can read that public
+metadata in middleware and server components:
+
+```json
+{
+  "metadata": "{{user.public_metadata}}"
+}
+```
+
+FP Dashboard reads roles from `sessionClaims.metadata.role`. Clerk
+`publicMetadata.role` is the source of truth, but middleware only receives it
+after the session token template exposes it in the `metadata` claim. Missing or
+invalid roles default to `STUDENT`; invalid metadata never grants elevated
+access. After changing a user's role in Clerk, the user may need to sign out and
+back in so Clerk issues a fresh session token.
+
 The local app creates or updates the corresponding `User` row through existing onboarding/user helpers. Demo seed data expects deterministic Clerk test user IDs documented in [demo-guide.md](demo-guide.md).
 
 ## Guard Helpers

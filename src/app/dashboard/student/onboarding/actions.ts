@@ -3,7 +3,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
-import { getAppRole } from "@/lib/auth/roles";
+import { getRoleFromSessionClaims } from "@/lib/auth/roles";
 import { createAuditLog } from "@/lib/audit/audit-log";
 import { prisma } from "@/lib/db/prisma";
 import type { StudentOnboardingActionState } from "@/lib/student/onboarding-state";
@@ -20,7 +20,7 @@ export async function saveStudentProfile(
     return redirectToSignIn();
   }
 
-  if (getAppRole(sessionClaims?.metadata?.role) !== "STUDENT") {
+  if (getRoleFromSessionClaims(sessionClaims) !== "STUDENT") {
     redirect("/dashboard");
   }
 

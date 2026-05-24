@@ -4,8 +4,9 @@ import Link from "next/link";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import type { DashboardRole } from "@/components/dashboard/role-config";
-import { getAppRole } from "@/lib/auth/roles";
 import { getAdminNavItems } from "@/lib/admin/navigation";
+import { getRoleFromSessionClaims } from "@/lib/auth/roles";
+import { syncCurrentUserFromClerk } from "@/lib/auth/user-sync";
 import { getPartnerNavItems } from "@/lib/partner/navigation";
 import { getStaffNavItems } from "@/lib/staff/navigation";
 import { getStudentNavItems } from "@/lib/student/navigation";
@@ -26,7 +27,11 @@ export default async function SupportPage() {
     return redirectToSignIn();
   }
 
-  const appRole = getAppRole(sessionClaims?.metadata?.role);
+  const appRole = getRoleFromSessionClaims(sessionClaims);
+  await syncCurrentUserFromClerk({
+    clerkUserId: userId,
+    role: appRole,
+  });
   const role = getDashboardRole(appRole);
 
   return (
