@@ -111,6 +111,29 @@ enum PartnerVerificationStatus {
   SUSPENDED
 }
 
+enum FeedbackType {
+  STUDENT_APPLICATION_EXPERIENCE
+  STUDENT_PLACEMENT_REQUEST
+  PARTNER_APPLICANT_QUALITY
+  PARTNER_REVIEW_USEFULNESS
+  STAFF_MATCH_QUALITY
+  STAFF_PLACEMENT_DIFFICULTY
+}
+
+enum FeedbackEntityType {
+  APPLICATION
+  OPPORTUNITY
+  PLACEMENT_REQUEST
+  USER
+}
+
+enum RecommendationEventType {
+  IMPRESSION
+  CLICK
+  APPLICATION
+  SEARCH_RESULTS
+}
+
 model User {
   id                         String             @id @default(cuid())
   clerkUserId                String             @unique
@@ -133,6 +156,9 @@ model User {
   verifiedPartnerOrganizations PartnerOrganization[] @relation("PartnerVerifier")
   moderatedOpportunities     Opportunity[]       @relation("OpportunityModerator")
   claimedStudentImportRecords StudentImportRecord[] @relation("StudentImportClaim")
+  feedbackAuthored          Feedback[]          @relation("FeedbackAuthor")
+  recommendationEvents      RecommendationEvent[] @relation("RecommendationEventUser")
+  dataQualityAcknowledgements DataQualityAcknowledgement[] @relation("DataQualityAcknowledgementUser")
   createdAt                  DateTime           @default(now())
   updatedAt                  DateTime           @updatedAt
 
@@ -306,6 +332,7 @@ model Opportunity {
   applications      Application[]
   placementRequests PlacementRequest[]
   adminNotes        AdminNote[]
+  recommendationEvents RecommendationEvent[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -329,6 +356,7 @@ model Application {
   submittedAt      DateTime?
   reviewedAt       DateTime?
   onboardingItems   ApplicationOnboardingItem[]
+  recommendationEvents RecommendationEvent[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
@@ -522,5 +550,68 @@ model AuditLog {
 
   @@index([actorId])
   @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model Feedback {
+  id           String             @id @default(cuid())
+  authorId     String
+  author       User               @relation("FeedbackAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  feedbackType FeedbackType
+  entityType   FeedbackEntityType
+  entityId     String
+  rating       Int
+  notes        String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@unique([authorId, feedbackType, entityType, entityId])
+  @@index([authorId])
+  @@index([feedbackType])
+  @@index([entityType, entityId])
+  @@index([rating])
+  @@index([createdAt])
+}
+
+model RecommendationEvent {
+  id            String                  @id @default(cuid())
+  userId        String?
+  user          User?                   @relation("RecommendationEventUser", fields: [userId], references: [id], onDelete: SetNull)
+  opportunityId String?
+  opportunity   Opportunity?            @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  applicationId String?
+  application   Application?            @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  eventType     RecommendationEventType
+  source        String
+  matchScore    Int?
+  searchQuery   String?
+  resultCount   Int?
+  metadata      Json?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  @@index([userId])
+  @@index([opportunityId])
+  @@index([applicationId])
+  @@index([eventType])
+  @@index([source])
+  @@index([createdAt])
+}
+
+model DataQualityAcknowledgement {
+  id               String   @id @default(cuid())
+  entityType       String
+  entityId         String
+  issueKey         String
+  acknowledgedById String
+  acknowledgedBy   User     @relation("DataQualityAcknowledgementUser", fields: [acknowledgedById], references: [id], onDelete: Cascade)
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([entityType, entityId, issueKey])
+  @@index([acknowledgedById])
+  @@index([entityType, entityId])
+  @@index([issueKey])
   @@index([createdAt])
 }

@@ -90,6 +90,29 @@ export default async function StudentPlacementRequestsPage() {
       },
     }),
   ]);
+  const feedbackByRequestId = new Map(
+    (
+      await prisma.feedback.findMany({
+        where: {
+          authorId: user.id,
+          entityId: {
+            in: requests.map((request) => request.id),
+          },
+          entityType: "PLACEMENT_REQUEST",
+          feedbackType: "STUDENT_PLACEMENT_REQUEST",
+        },
+        select: {
+          entityId: true,
+          notes: true,
+          rating: true,
+        },
+      })
+    ).map((feedback) => [feedback.entityId, feedback]),
+  );
+  const requestsWithFeedback = requests.map((request) => ({
+    ...request,
+    feedback: feedbackByRequestId.get(request.id) ?? null,
+  }));
 
   return (
     <DashboardShell
@@ -138,7 +161,7 @@ export default async function StudentPlacementRequestsPage() {
           />
         </section>
 
-        <StudentPlacementRequestList requests={requests} />
+        <StudentPlacementRequestList requests={requestsWithFeedback} />
 
         <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
           <FileClock aria-hidden="true" className="h-5 w-5 text-primary" />

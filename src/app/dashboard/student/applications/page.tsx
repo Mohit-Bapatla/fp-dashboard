@@ -200,9 +200,29 @@ export default async function StudentApplicationsPage({
         },
       }),
     ]);
+  const feedbackByApplicationId = new Map(
+    (
+      await prisma.feedback.findMany({
+        where: {
+          authorId: user.id,
+          entityId: {
+            in: applications.map((application) => application.id),
+          },
+          entityType: "APPLICATION",
+          feedbackType: "STUDENT_APPLICATION_EXPERIENCE",
+        },
+        select: {
+          entityId: true,
+          notes: true,
+          rating: true,
+        },
+      })
+    ).map((feedback) => [feedback.entityId, feedback]),
+  );
   const applicationsWithThreads = await Promise.all(
     applications.map(async (application) => ({
       ...application,
+      feedback: feedbackByApplicationId.get(application.id) ?? null,
       commentThread: await getRecordCommentThread({
         entityId: application.id,
         entityType: "APPLICATION",

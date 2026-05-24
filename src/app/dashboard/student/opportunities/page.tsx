@@ -5,6 +5,7 @@ import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { StudentOpportunityFilters } from "@/components/student/student-opportunity-filters";
 import { StudentOpportunityList } from "@/components/student/student-opportunity-list";
+import { RecommendationEventTracker } from "@/components/student/recommendation-event-tracker";
 import { Prisma } from "@/generated/prisma/client";
 import { getOpportunityMatchScore } from "@/lib/matching/match-score";
 import {
@@ -271,6 +272,19 @@ export default async function StudentOpportunitiesPage({
           filters={effectiveFilters}
           options={options}
         />
+
+        {effectiveFilters.q ? (
+          <RecommendationEventTracker
+            events={[
+              {
+                eventType: "SEARCH_RESULTS",
+                resultCount: visibleOpportunities.length,
+                searchQuery: effectiveFilters.q,
+                source: "student_opportunity_board",
+              },
+            ]}
+          />
+        ) : null}
 
         <StudentOpportunityList
           hasPublishedOpportunities={publishedCount > 0}

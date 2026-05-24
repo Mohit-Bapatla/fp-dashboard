@@ -265,10 +265,43 @@ export default async function PartnerApplicantsPage({
     }),
   ]);
   const redirectTo = buildRedirectTo(status, opportunityId);
+  const feedbackByApplicationAndType = new Map(
+    (
+      await prisma.feedback.findMany({
+        where: {
+          authorId: context.user.id,
+          entityId: {
+            in: applications.map((application) => application.id),
+          },
+          entityType: "APPLICATION",
+          feedbackType: {
+            in: ["PARTNER_APPLICANT_QUALITY", "PARTNER_REVIEW_USEFULNESS"],
+          },
+        },
+        select: {
+          entityId: true,
+          feedbackType: true,
+          notes: true,
+          rating: true,
+        },
+      })
+    ).map((feedback) => [
+      `${feedback.entityId}:${feedback.feedbackType}`,
+      feedback,
+    ]),
+  );
   const applicationsWithSummaries = (
     await Promise.all(
       applications.map(async (application) => ({
         ...application,
+        applicantQualityFeedback:
+          feedbackByApplicationAndType.get(
+            `${application.id}:PARTNER_APPLICANT_QUALITY`,
+          ) ?? null,
+        reviewUsefulnessFeedback:
+          feedbackByApplicationAndType.get(
+            `${application.id}:PARTNER_REVIEW_USEFULNESS`,
+          ) ?? null,
         aiReview: await getApplicantSummary({
           opportunity: application.opportunity,
           profile: application.studentProfile,

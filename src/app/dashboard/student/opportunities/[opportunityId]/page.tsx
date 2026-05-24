@@ -13,14 +13,19 @@ type StudentOpportunityDetailPageProps = {
   params: Promise<{
     opportunityId: string;
   }>;
+  searchParams: Promise<{
+    source?: string;
+  }>;
 };
 
 export default async function StudentOpportunityDetailPage({
   params,
+  searchParams,
 }: StudentOpportunityDetailPageProps) {
   const { userId } = await assertStudentAccess();
 
   const { opportunityId } = await params;
+  const query = await searchParams;
   const [user, opportunity] = await Promise.all([
     getCurrentStudentProfile(userId),
     prisma.opportunity.findFirst({
@@ -117,6 +122,7 @@ export default async function StudentOpportunityDetailPage({
           applyState={applyState}
           match={match}
           opportunity={opportunity}
+          source={query.source}
         />
       </div>
     </DashboardShell>

@@ -6,6 +6,7 @@ import {
   BriefcaseBusiness,
   Building2,
   ClipboardCheck,
+  DatabaseZap,
   FileUp,
   FileClock,
   GraduationCap,
@@ -14,9 +15,11 @@ import {
   ListChecks,
   LockKeyhole,
   MailCheck,
+  MessageSquareText,
   Settings,
   ShieldCheck,
   Sparkles,
+  Target,
   Users,
   Workflow,
 } from "lucide-react";
@@ -212,6 +215,26 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       label: "Analytics",
       href: "/dashboard/admin/analytics",
       icon: BarChart3,
+    },
+    {
+      label: "Advanced Analytics",
+      href: "/dashboard/admin/advanced-analytics",
+      icon: BarChart3,
+    },
+    {
+      label: "Recommendation Evaluation",
+      href: "/dashboard/admin/recommendation-evaluation",
+      icon: Target,
+    },
+    {
+      label: "Feedback",
+      href: "/dashboard/admin/feedback",
+      icon: MessageSquareText,
+    },
+    {
+      label: "Data Quality",
+      href: "/dashboard/admin/data-quality",
+      icon: DatabaseZap,
     },
     {
       label: "Audit Logs",

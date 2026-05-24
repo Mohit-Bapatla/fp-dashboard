@@ -17,6 +17,7 @@ type StudentOpportunityApplyPageProps = {
   }>;
   searchParams: Promise<{
     alreadyApplied?: string;
+    source?: string;
     success?: string;
   }>;
 };
@@ -213,6 +214,9 @@ export default async function StudentOpportunityApplyPage({
           <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
             <StudentApplicationForm
               opportunityId={opportunity.id}
+              recommendationSource={
+                query.source === "recommendation" ? "recommendation" : ""
+              }
               resumes={resumes}
             />
           </section>

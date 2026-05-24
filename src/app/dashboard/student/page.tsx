@@ -14,6 +14,10 @@ import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { StudentResumeManager } from "@/components/student/student-resume-manager";
+import {
+  RecommendationEventTracker,
+  TrackedRecommendationLink,
+} from "@/components/student/recommendation-event-tracker";
 import { prisma } from "@/lib/db/prisma";
 import { getRecommendedOpportunities } from "@/lib/matching/recommendations";
 import { getStudentNavItems } from "@/lib/student/navigation";
@@ -172,6 +176,16 @@ export default async function StudentDashboardPage() {
             </div>
             {recommendedOpportunities.length > 0 ? (
               <div className="grid gap-4 lg:grid-cols-3">
+                <RecommendationEventTracker
+                  events={recommendedOpportunities.map(
+                    ({ match, opportunity }) => ({
+                      eventType: "IMPRESSION",
+                      matchScore: match.score,
+                      opportunityId: opportunity.id,
+                      source: "student_dashboard_recommendation",
+                    }),
+                  )}
+                />
                 {recommendedOpportunities.map(({ match, opportunity }) => (
                   <article
                     className="rounded-lg border border-border bg-background p-5 shadow-sm"
@@ -193,13 +207,16 @@ export default async function StudentDashboardPage() {
                         <li key={reason}>{reason}</li>
                       ))}
                     </ul>
-                    <Link
+                    <TrackedRecommendationLink
                       className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
-                      href={`/dashboard/student/opportunities/${opportunity.id}`}
+                      href={`/dashboard/student/opportunities/${opportunity.id}?source=recommendation`}
+                      matchScore={match.score}
+                      opportunityId={opportunity.id}
+                      source="student_dashboard_recommendation"
                     >
                       View details
                       <ArrowRight aria-hidden="true" className="h-4 w-4" />
-                    </Link>
+                    </TrackedRecommendationLink>
                   </article>
                 ))}
               </div>

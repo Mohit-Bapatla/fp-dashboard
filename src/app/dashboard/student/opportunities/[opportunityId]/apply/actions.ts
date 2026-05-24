@@ -12,6 +12,8 @@ import {
   createNotifications,
   getUsersByRoles,
 } from "@/lib/notifications/notifications";
+import { getOpportunityMatchScore } from "@/lib/matching/match-score";
+import { recordRecommendationEvents } from "@/lib/matching/recommendation-events";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import type { StudentApplicationActionState } from "@/lib/student/application-validation";
 import { validateStudentApplicationForm } from "@/lib/student/application-validation";
@@ -30,6 +32,7 @@ export async function submitStudentApplication(
 ): Promise<StudentApplicationActionState> {
   const { userId } = await assertStudentAccess();
   const opportunityId = getString(formData, "opportunityId");
+  const recommendationSource = getString(formData, "recommendationSource");
   const validation = validateStudentApplicationForm(formData);
 
   if (!validation.success) {
@@ -61,8 +64,14 @@ export async function submitStudentApplication(
         status: "PUBLISHED",
       },
       select: {
+        description: true,
+        eligibilityRequirements: true,
         id: true,
+        location: true,
+        remoteType: true,
+        specialty: true,
         title: true,
+        type: true,
         organization: {
           select: {
             members: {
@@ -86,6 +95,7 @@ export async function submitStudentApplication(
         studentProfileId: user.studentProfile.id,
       },
       select: {
+        extractedSkills: true,
         id: true,
       },
     }),
@@ -210,6 +220,28 @@ export async function submitStudentApplication(
       studentEmailSkipped: studentEmailResult.skipped,
       studentProfileId: user.studentProfile.id,
     },
+  });
+
+  const match = getOpportunityMatchScore({
+    opportunity,
+    profile: user.studentProfile,
+    resume,
+  });
+
+  await recordRecommendationEvents({
+    events: [
+      {
+        applicationId,
+        eventType: "APPLICATION",
+        matchScore: match.score,
+        opportunityId,
+        source:
+          recommendationSource === "recommendation"
+            ? "student_dashboard_recommendation"
+            : "student_application_submit",
+      },
+    ],
+    userId: user.id,
   });
 
   redirect(`/dashboard/student/opportunities/${opportunityId}/apply?success=1`);
