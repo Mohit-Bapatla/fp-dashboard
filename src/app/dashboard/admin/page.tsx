@@ -10,6 +10,7 @@ import {
   LifeBuoy,
   Plus,
   Rocket,
+  Target,
 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -253,6 +254,16 @@ export default async function AdminDashboardPage() {
             <p className="text-sm leading-6 text-muted-foreground">
               Review operational counts by status across students, partners,
               opportunities, applications, placement requests, and outreach.
+            </p>
+          </AdminOverviewPanel>
+          <AdminOverviewPanel
+            href="/dashboard/admin/impact"
+            icon={Target}
+            title="Impact"
+          >
+            <p className="text-sm leading-6 text-muted-foreground">
+              Review aggregate-only impact metrics, status breakdowns, verified
+              service hours, recommendations, and interview activity.
             </p>
           </AdminOverviewPanel>
           <AdminOverviewPanel

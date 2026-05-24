@@ -302,6 +302,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       icon: BarChart3,
     },
     {
+      label: "Impact",
+      href: "/dashboard/admin/impact",
+      icon: Target,
+    },
+    {
       label: "Recommendation Evaluation",
       href: "/dashboard/admin/recommendation-evaluation",
       icon: Target,
