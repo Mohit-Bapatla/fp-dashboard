@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Sparkles,
   Users,
+  Workflow,
 } from "lucide-react";
 
 export type DashboardRole = "student" | "partner" | "staff" | "admin";
@@ -162,6 +163,11 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       label: "Placement Requests",
       href: "/dashboard/staff/placement-requests",
       icon: FileClock,
+    },
+    {
+      label: "Automations",
+      href: "/dashboard/staff/automations",
+      icon: Workflow,
     },
     { label: "Opportunities", href: "#", icon: BriefcaseBusiness },
     { label: "Analytics", href: "#", icon: BarChart3 },

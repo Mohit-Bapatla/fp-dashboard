@@ -4,6 +4,7 @@ import {
   ListChecks,
   MailCheck,
   Users,
+  Workflow,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -204,6 +205,12 @@ export default async function StaffDashboardPage() {
             href="/dashboard/staff/tasks"
             icon={ListChecks}
             title="Task workspace"
+          />
+          <StaffPanel
+            description="Run and inspect operational checks for expired opportunities, stale requests, follow-ups, and overdue tasks."
+            href="/dashboard/staff/automations"
+            icon={Workflow}
+            title="Automations"
           />
           <StaffPanel
             description="Assign owners, update status, set priority, and maintain internal notes for student placement requests."
