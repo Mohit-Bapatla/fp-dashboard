@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { AdminApplicationList } from "@/components/admin/admin-application-list";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { PaginationControls } from "@/components/dashboard/pagination-controls";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { Prisma } from "@/generated/prisma/client";
@@ -11,12 +12,14 @@ import { assertAdminAccess } from "@/lib/admin/authorization";
 import { getAdminNavItems } from "@/lib/admin/navigation";
 import { getRecordCommentThread } from "@/lib/comments/record-comments";
 import { prisma } from "@/lib/db/prisma";
+import { getPageParam, getPagination, getTotalPages } from "@/lib/pagination";
 
 type AdminApplicationsPageProps = {
   searchParams: Promise<{
     q?: string;
     organizationId?: string;
     opportunityId?: string;
+    page?: string;
     status?: string;
   }>;
 };
@@ -88,6 +91,8 @@ export default async function AdminApplicationsPage({
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const status = getStatusFilter(params.status);
+  const page = getPageParam(params.page);
+  const pagination = getPagination(page);
   const [organizations, opportunities] = await Promise.all([
     prisma.partnerOrganization.findMany({
       orderBy: {
@@ -189,111 +194,122 @@ export default async function AdminApplicationsPage({
     };
   }
 
-  const [applications, totalCount, needsReviewCount, interviewCount] =
-    await Promise.all([
-      prisma.application.findMany({
-        where,
-        orderBy: [
-          {
-            submittedAt: "desc",
+  const [
+    applications,
+    platformApplicationCount,
+    filteredCount,
+    needsReviewCount,
+    interviewCount,
+  ] = await Promise.all([
+    prisma.application.findMany({
+      where,
+      orderBy: [
+        {
+          submittedAt: "desc",
+        },
+        {
+          createdAt: "desc",
+        },
+      ],
+      skip: pagination.skip,
+      take: pagination.take,
+      select: {
+        id: true,
+        status: true,
+        statement: true,
+        submittedAt: true,
+        createdAt: true,
+        reviewedAt: true,
+        onboardingItems: {
+          orderBy: {
+            createdAt: "asc",
           },
-          {
+          select: {
+            completedAt: true,
+            description: true,
+            id: true,
+            required: true,
+            reviewedAt: true,
+            reviewerNotes: true,
+            status: true,
+            studentNotes: true,
+            submittedAt: true,
+            title: true,
+          },
+        },
+        interviewRequests: {
+          orderBy: {
             createdAt: "desc",
           },
-        ],
-        select: {
-          id: true,
-          status: true,
-          statement: true,
-          submittedAt: true,
-          createdAt: true,
-          reviewedAt: true,
-          onboardingItems: {
-            orderBy: {
-              createdAt: "asc",
-            },
-            select: {
-              completedAt: true,
-              description: true,
-              id: true,
-              required: true,
-              reviewedAt: true,
-              reviewerNotes: true,
-              status: true,
-              studentNotes: true,
-              submittedAt: true,
-              title: true,
-            },
-          },
-          interviewRequests: {
-            orderBy: {
-              createdAt: "desc",
-            },
-            select: {
-              id: true,
-              location: true,
-              meetingLink: true,
-              notes: true,
-              selectedSlotId: true,
-              status: true,
-              studentResponseNotes: true,
-              proposedSlots: {
-                orderBy: {
-                  startsAt: "asc",
-                },
-                select: {
-                  endsAt: true,
-                  id: true,
-                  selected: true,
-                  startsAt: true,
-                },
+          select: {
+            id: true,
+            location: true,
+            meetingLink: true,
+            notes: true,
+            selectedSlotId: true,
+            status: true,
+            studentResponseNotes: true,
+            proposedSlots: {
+              orderBy: {
+                startsAt: "asc",
               },
-            },
-          },
-          resume: {
-            select: {
-              fileName: true,
-            },
-          },
-          opportunity: {
-            select: {
-              id: true,
-              title: true,
-              organization: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-          },
-          studentProfile: {
-            select: {
-              user: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                  email: true,
-                },
+              select: {
+                endsAt: true,
+                id: true,
+                selected: true,
+                startsAt: true,
               },
             },
           },
         },
-      }),
-      prisma.application.count(),
-      prisma.application.count({
-        where: {
-          status: {
-            in: ["SUBMITTED", "UNDER_REVIEW"],
+        resume: {
+          select: {
+            fileName: true,
           },
         },
-      }),
-      prisma.application.count({
-        where: {
-          status: "INTERVIEW",
+        opportunity: {
+          select: {
+            id: true,
+            title: true,
+            organization: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
         },
-      }),
-    ]);
+        studentProfile: {
+          select: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+    prisma.application.count(),
+    prisma.application.count({
+      where,
+    }),
+    prisma.application.count({
+      where: {
+        status: {
+          in: ["SUBMITTED", "UNDER_REVIEW"],
+        },
+      },
+    }),
+    prisma.application.count({
+      where: {
+        status: "INTERVIEW",
+      },
+    }),
+  ]);
+  const totalPages = getTotalPages(filteredCount, pagination.pageSize);
   const applicationsWithThreads = await Promise.all(
     applications.map(async (application) => ({
       ...application,
@@ -342,7 +358,7 @@ export default async function AdminApplicationsPage({
           <StatCard
             helper="All application records in the database."
             label="Applications"
-            value={totalCount.toString()}
+            value={platformApplicationCount.toString()}
           />
           <StatCard
             helper="Submitted or under-review applications."
@@ -432,6 +448,18 @@ export default async function AdminApplicationsPage({
         <AdminApplicationList
           applications={applicationsWithThreads}
           redirectTo={redirectTo}
+        />
+        <PaginationControls
+          page={page}
+          pathname="/dashboard/admin/applications"
+          searchParams={{
+            ...(query ? { q: query } : {}),
+            ...(status ? { status } : {}),
+            ...(organizationId ? { organizationId } : {}),
+            ...(opportunityId ? { opportunityId } : {}),
+          }}
+          totalCount={filteredCount}
+          totalPages={totalPages}
         />
       </div>
     </DashboardShell>

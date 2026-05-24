@@ -11,6 +11,10 @@ import {
 } from "@/lib/imports/data-imports";
 import { getActorIdFromClerkUserId } from "@/lib/audit/audit-log";
 import { assertAdminAccess } from "@/lib/admin/authorization";
+import {
+  enforceRateLimit,
+  formatRateLimitMessage,
+} from "@/lib/security/rate-limit";
 
 export type CsvImportActionState = {
   error: string | null;
@@ -58,7 +62,21 @@ export async function previewCsvImport(
   _previousState: CsvImportActionState,
   formData: FormData,
 ): Promise<CsvImportActionState> {
-  await assertAdminAccess();
+  const { userId } = await assertAdminAccess();
+  const rateLimit = await enforceRateLimit({
+    action: "csv_import_preview",
+    identifier: userId,
+    limit: 20,
+    windowSeconds: 15 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    return {
+      error: formatRateLimitMessage(rateLimit),
+      preview: null,
+      summary: null,
+    };
+  }
 
   const importType = getString(formData, "importType");
   const csvText = await getCsvText(formData);
@@ -97,6 +115,21 @@ export async function importCsvPreview(
   formData: FormData,
 ): Promise<CsvImportActionState> {
   const { userId } = await assertAdminAccess();
+  const rateLimit = await enforceRateLimit({
+    action: "csv_import_commit",
+    identifier: userId,
+    limit: 5,
+    windowSeconds: 15 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    return {
+      error: formatRateLimitMessage(rateLimit),
+      preview: null,
+      summary: null,
+    };
+  }
+
   const payload = getString(formData, "previewPayload");
 
   if (!payload) {

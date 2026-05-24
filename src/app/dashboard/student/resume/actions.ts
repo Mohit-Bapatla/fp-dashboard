@@ -6,6 +6,10 @@ import { createAuditLog } from "@/lib/audit/audit-log";
 import { parseResume } from "@/lib/ai/resume-parsing";
 import { prisma } from "@/lib/db/prisma";
 import {
+  enforceRateLimit,
+  formatRateLimitMessage,
+} from "@/lib/security/rate-limit";
+import {
   createResumeSignedUrl,
   getCurrentStudentResumeContext,
 } from "@/lib/student/resume";
@@ -38,6 +42,20 @@ export async function uploadStudentResume(
   if (!context) {
     return {
       error: "Complete student onboarding before uploading a resume.",
+      success: null,
+    };
+  }
+
+  const rateLimit = await enforceRateLimit({
+    action: "resume_upload",
+    identifier: context.profileId,
+    limit: 5,
+    windowSeconds: 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    return {
+      error: formatRateLimitMessage(rateLimit),
       success: null,
     };
   }
@@ -238,6 +256,20 @@ export async function parseStudentResume(
   ) {
     return {
       error: "Resume was not found.",
+      success: null,
+    };
+  }
+
+  const rateLimit = await enforceRateLimit({
+    action: "resume_parse",
+    identifier: context.profileId,
+    limit: 10,
+    windowSeconds: 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    return {
+      error: formatRateLimitMessage(rateLimit),
       success: null,
     };
   }

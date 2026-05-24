@@ -277,6 +277,7 @@ model User {
   updatedAt                  DateTime           @updatedAt
 
   @@index([role])
+  @@index([role, createdAt])
   @@index([createdAt])
 }
 
@@ -401,6 +402,7 @@ model PartnerOrganization {
   updatedAt         DateTime           @updatedAt
 
   @@index([status])
+  @@index([status, createdAt])
   @@index([verificationStatus])
   @@index([nextFollowUpAt])
   @@index([createdAt])
@@ -457,6 +459,8 @@ model Opportunity {
   @@index([organizationId])
   @@index([type])
   @@index([status])
+  @@index([status, deadline])
+  @@index([organizationId, status, createdAt])
   @@index([moderatedById])
   @@index([createdAt])
 }
@@ -483,6 +487,8 @@ model Application {
   @@unique([studentProfileId, opportunityId])
   @@index([resumeId])
   @@index([status])
+  @@index([status, submittedAt])
+  @@index([opportunityId, status, submittedAt])
   @@index([createdAt])
 }
 
@@ -1003,4 +1009,19 @@ model EmbeddingRecord {
   @@index([entityId])
   @@index([contentHash])
   @@index([updatedAt])
+}
+
+model ActionRateLimit {
+  id          String   @id @default(cuid())
+  key         String
+  action      String
+  count       Int      @default(1)
+  windowStart DateTime @default(now())
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([key, action])
+  @@index([action, expiresAt])
+  @@index([expiresAt])
 }

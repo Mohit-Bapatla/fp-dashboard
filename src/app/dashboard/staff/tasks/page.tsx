@@ -2,6 +2,7 @@ import { ListChecks } from "lucide-react";
 import Link from "next/link";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { PaginationControls } from "@/components/dashboard/pagination-controls";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import {
   NewOutreachTaskForm,
@@ -12,6 +13,7 @@ import { Prisma } from "@/generated/prisma/client";
 import type { OutreachTaskStatus } from "@/generated/prisma/enums";
 import { getRecordCommentThread } from "@/lib/comments/record-comments";
 import { prisma } from "@/lib/db/prisma";
+import { getPageParam, getPagination, getTotalPages } from "@/lib/pagination";
 import { assertPlacementQueueAccess } from "@/lib/placement-requests/authorization";
 import {
   formatEnumLabel,
@@ -26,6 +28,7 @@ import { getStaffNavItems } from "@/lib/staff/navigation";
 type StaffTasksPageProps = {
   searchParams: Promise<{
     assignedToId?: string;
+    page?: string;
     priority?: string;
     status?: string;
     view?: string;
@@ -170,6 +173,8 @@ export default async function StaffTasksPage({
   const { userId } = await assertPlacementQueueAccess();
   const params = await searchParams;
   const view = isTaskView(params.view) ? params.view : "all";
+  const page = getPageParam(params.page);
+  const pagination = getPagination(page);
   const status =
     params.status && isOutreachTaskStatus(params.status) ? params.status : "";
   const priority =
@@ -265,6 +270,7 @@ export default async function StaffTasksPage({
 
   const [
     tasks,
+    filteredCount,
     totalCount,
     myCount,
     dueSoonCount,
@@ -275,6 +281,8 @@ export default async function StaffTasksPage({
     prisma.outreachTask.findMany({
       where,
       orderBy: [{ dueAt: "asc" }, { updatedAt: "desc" }],
+      skip: pagination.skip,
+      take: pagination.take,
       select: {
         id: true,
         assignedToId: true,
@@ -295,6 +303,9 @@ export default async function StaffTasksPage({
         status: true,
         title: true,
       },
+    }),
+    prisma.outreachTask.count({
+      where,
     }),
     prisma.outreachTask.count(),
     currentUserId
@@ -339,6 +350,7 @@ export default async function StaffTasksPage({
       },
     }),
   ]);
+  const totalPages = getTotalPages(filteredCount, pagination.pageSize);
   const redirectTo = buildRedirectTo({
     assignedToId: view === "mine" ? "" : assignedToId,
     priority,
@@ -508,6 +520,18 @@ export default async function StaffTasksPage({
           redirectTo={redirectTo}
           staffUsers={staffUsers}
           tasks={tasksWithThreads as StaffOutreachTaskItem[]}
+        />
+        <PaginationControls
+          page={page}
+          pathname="/dashboard/staff/tasks"
+          searchParams={{
+            ...(view !== "all" ? { view } : {}),
+            ...(status ? { status } : {}),
+            ...(priority ? { priority } : {}),
+            ...(assignedToId && view !== "mine" ? { assignedToId } : {}),
+          }}
+          totalCount={filteredCount}
+          totalPages={totalPages}
         />
       </div>
     </DashboardShell>

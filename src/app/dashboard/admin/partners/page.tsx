@@ -6,6 +6,7 @@ import {
   type AdminPartnerListItem,
 } from "@/components/admin/admin-partner-list";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { PaginationControls } from "@/components/dashboard/pagination-controls";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { Prisma } from "@/generated/prisma/client";
@@ -13,9 +14,11 @@ import type { PartnerStatus } from "@/generated/prisma/enums";
 import { assertAdminAccess } from "@/lib/admin/authorization";
 import { getAdminNavItems } from "@/lib/admin/navigation";
 import { prisma } from "@/lib/db/prisma";
+import { getPageParam, getPagination, getTotalPages } from "@/lib/pagination";
 
 type AdminPartnersPageProps = {
   searchParams: Promise<{
+    page?: string;
     q?: string;
     status?: string;
   }>;
@@ -55,6 +58,8 @@ export default async function AdminPartnersPage({
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const status = getStatusFilter(params.status);
+  const page = getPageParam(params.page);
+  const pagination = getPagination(page);
   const where: Prisma.PartnerOrganizationWhereInput = {};
 
   if (query) {
@@ -101,51 +106,62 @@ export default async function AdminPartnersPage({
     where.status = status;
   }
 
-  const [partners, totalCount, partneredCount, opportunityCount] =
-    await Promise.all([
-      prisma.partnerOrganization.findMany({
-        where,
-        orderBy: [
-          {
-            createdAt: "desc",
+  const [
+    partners,
+    totalCount,
+    filteredCount,
+    partneredCount,
+    opportunityCount,
+  ] = await Promise.all([
+    prisma.partnerOrganization.findMany({
+      where,
+      orderBy: [
+        {
+          createdAt: "desc",
+        },
+      ],
+      skip: pagination.skip,
+      take: pagination.take,
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        type: true,
+        location: true,
+        city: true,
+        state: true,
+        country: true,
+        contactEmail: true,
+        createdAt: true,
+        _count: {
+          select: {
+            members: true,
+            opportunities: true,
           },
-        ],
-        select: {
-          id: true,
-          name: true,
-          status: true,
-          type: true,
-          location: true,
-          city: true,
-          state: true,
-          country: true,
-          contactEmail: true,
-          createdAt: true,
-          _count: {
-            select: {
-              members: true,
-              opportunities: true,
-            },
-          },
-          opportunities: {
-            select: {
-              _count: {
-                select: {
-                  applications: true,
-                },
+        },
+        opportunities: {
+          select: {
+            _count: {
+              select: {
+                applications: true,
               },
             },
           },
         },
-      }),
-      prisma.partnerOrganization.count(),
-      prisma.partnerOrganization.count({
-        where: {
-          status: "PARTNERED",
-        },
-      }),
-      prisma.opportunity.count(),
-    ]);
+      },
+    }),
+    prisma.partnerOrganization.count(),
+    prisma.partnerOrganization.count({
+      where,
+    }),
+    prisma.partnerOrganization.count({
+      where: {
+        status: "PARTNERED",
+      },
+    }),
+    prisma.opportunity.count(),
+  ]);
+  const totalPages = getTotalPages(filteredCount, pagination.pageSize);
 
   const partnerItems: AdminPartnerListItem[] = partners.map((partner) => ({
     id: partner.id,
@@ -256,6 +272,16 @@ export default async function AdminPartnersPage({
         </section>
 
         <AdminPartnerList partners={partnerItems} />
+        <PaginationControls
+          page={page}
+          pathname="/dashboard/admin/partners"
+          searchParams={{
+            ...(query ? { q: query } : {}),
+            ...(status ? { status } : {}),
+          }}
+          totalCount={filteredCount}
+          totalPages={totalPages}
+        />
       </div>
     </DashboardShell>
   );

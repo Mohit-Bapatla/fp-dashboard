@@ -6,16 +6,19 @@ import {
   type AdminStudentListItem,
 } from "@/components/admin/admin-student-list";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { PaginationControls } from "@/components/dashboard/pagination-controls";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { Prisma } from "@/generated/prisma/client";
 import { assertAdminAccess } from "@/lib/admin/authorization";
 import { getAdminNavItems } from "@/lib/admin/navigation";
 import { prisma } from "@/lib/db/prisma";
+import { getPageParam, getPagination, getTotalPages } from "@/lib/pagination";
 import { getStudentProfileCompletion } from "@/lib/student/profile-completion";
 
 type AdminStudentsPageProps = {
   searchParams: Promise<{
+    page?: string;
     q?: string;
   }>;
 };
@@ -27,6 +30,8 @@ export default async function AdminStudentsPage({
 
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
+  const page = getPageParam(params.page);
+  const pagination = getPagination(page);
   const where: Prisma.UserWhereInput = {
     role: "STUDENT",
   };
@@ -96,50 +101,57 @@ export default async function AdminStudentsPage({
     ];
   }
 
-  const [students, totalCount, profileCount, resumeCount] = await Promise.all([
-    prisma.user.findMany({
-      where,
-      orderBy: [
-        {
-          createdAt: "desc",
-        },
-      ],
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        createdAt: true,
-        studentProfile: {
-          select: {
-            school: true,
-            gradeYear: true,
-            city: true,
-            state: true,
-            country: true,
-            interestedSpecialties: true,
-            opportunityTypes: true,
-            availability: true,
-            careerGoals: true,
-            experienceLevel: true,
-            _count: {
-              select: {
-                applications: true,
-                resumes: true,
+  const [students, totalCount, filteredCount, profileCount, resumeCount] =
+    await Promise.all([
+      prisma.user.findMany({
+        where,
+        orderBy: [
+          {
+            createdAt: "desc",
+          },
+        ],
+        skip: pagination.skip,
+        take: pagination.take,
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          createdAt: true,
+          studentProfile: {
+            select: {
+              school: true,
+              gradeYear: true,
+              city: true,
+              state: true,
+              country: true,
+              interestedSpecialties: true,
+              opportunityTypes: true,
+              availability: true,
+              careerGoals: true,
+              experienceLevel: true,
+              _count: {
+                select: {
+                  applications: true,
+                  resumes: true,
+                },
               },
             },
           },
         },
-      },
-    }),
-    prisma.user.count({
-      where: {
-        role: "STUDENT",
-      },
-    }),
-    prisma.studentProfile.count(),
-    prisma.resume.count(),
-  ]);
+      }),
+      prisma.user.count({
+        where: {
+          role: "STUDENT",
+        },
+      }),
+      prisma.user.count({
+        where,
+      }),
+      prisma.studentProfile.count(),
+      prisma.resume.count(),
+    ]);
+  const totalPages = getTotalPages(filteredCount, pagination.pageSize);
 
   const studentItems: AdminStudentListItem[] = students.map((student) => ({
     ...student,
@@ -233,6 +245,13 @@ export default async function AdminStudentsPage({
         </section>
 
         <AdminStudentList students={studentItems} />
+        <PaginationControls
+          page={page}
+          pathname="/dashboard/admin/students"
+          searchParams={query ? { q: query } : {}}
+          totalCount={filteredCount}
+          totalPages={totalPages}
+        />
       </div>
     </DashboardShell>
   );

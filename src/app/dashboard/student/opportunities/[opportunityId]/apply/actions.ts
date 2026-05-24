@@ -14,6 +14,10 @@ import {
 } from "@/lib/notifications/notifications";
 import { getOpportunityMatchScore } from "@/lib/matching/match-score";
 import { recordRecommendationEvents } from "@/lib/matching/recommendation-events";
+import {
+  enforceRateLimit,
+  formatRateLimitMessage,
+} from "@/lib/security/rate-limit";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import type { StudentApplicationActionState } from "@/lib/student/application-validation";
 import { validateStudentApplicationForm } from "@/lib/student/application-validation";
@@ -55,6 +59,21 @@ export async function submitStudentApplication(
 
   if (!user.studentProfile) {
     redirect("/dashboard/student/onboarding");
+  }
+
+  const rateLimit = await enforceRateLimit({
+    action: "application_submit",
+    identifier: user.id,
+    limit: 10,
+    windowSeconds: 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    return {
+      fieldErrors: {},
+      formError: formatRateLimitMessage(rateLimit),
+      values: validation.values,
+    };
   }
 
   const [opportunity, resume, existingApplication] = await Promise.all([

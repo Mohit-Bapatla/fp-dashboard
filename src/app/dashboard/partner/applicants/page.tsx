@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { PaginationControls } from "@/components/dashboard/pagination-controls";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { PartnerApplicantList } from "@/components/partner/partner-applicant-list";
@@ -10,12 +11,14 @@ import type { ApplicationStatus } from "@/generated/prisma/enums";
 import { getRecordCommentThread } from "@/lib/comments/record-comments";
 import { prisma } from "@/lib/db/prisma";
 import { getApplicantSummary } from "@/lib/matching/applicant-summary";
+import { getPageParam, getPagination, getTotalPages } from "@/lib/pagination";
 import { getCurrentPartnerContext } from "@/lib/partner/context";
 import { getPartnerNavItems } from "@/lib/partner/navigation";
 
 type PartnerApplicantsPageProps = {
   searchParams: Promise<{
     opportunityId?: string;
+    page?: string;
     status?: string;
   }>;
 };
@@ -67,6 +70,8 @@ export default async function PartnerApplicantsPage({
   const context = await getCurrentPartnerContext();
   const params = await searchParams;
   const status = getStatusFilter(params.status);
+  const page = getPageParam(params.page);
+  const pagination = getPagination(page);
   const { organizationIds } = context;
 
   if (organizationIds.length === 0) {
@@ -132,6 +137,7 @@ export default async function PartnerApplicantsPage({
 
   const [
     applications,
+    filteredCount,
     totalCount,
     pendingCount,
     interviewCount,
@@ -147,6 +153,8 @@ export default async function PartnerApplicantsPage({
           createdAt: "desc",
         },
       ],
+      skip: pagination.skip,
+      take: pagination.take,
       select: {
         id: true,
         status: true,
@@ -263,6 +271,9 @@ export default async function PartnerApplicantsPage({
       },
     }),
     prisma.application.count({
+      where,
+    }),
+    prisma.application.count({
       where: {
         opportunity: {
           organizationId: {
@@ -304,6 +315,7 @@ export default async function PartnerApplicantsPage({
       },
     }),
   ]);
+  const totalPages = getTotalPages(filteredCount, pagination.pageSize);
   const redirectTo = buildRedirectTo(status, opportunityId);
   const feedbackByApplicationAndType = new Map(
     (
@@ -469,6 +481,16 @@ export default async function PartnerApplicantsPage({
           applications={applicationsWithSummaries}
           hasAnyApplicants={totalCount > 0}
           redirectTo={redirectTo}
+        />
+        <PaginationControls
+          page={page}
+          pathname="/dashboard/partner/applicants"
+          searchParams={{
+            ...(status ? { status } : {}),
+            ...(opportunityId ? { opportunityId } : {}),
+          }}
+          totalCount={filteredCount}
+          totalPages={totalPages}
         />
       </div>
     </DashboardShell>

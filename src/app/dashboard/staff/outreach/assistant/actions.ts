@@ -3,6 +3,10 @@
 import { createOutreachDraft } from "@/lib/ai/outreach-draft";
 import { prisma } from "@/lib/db/prisma";
 import { assertPlacementQueueAccess } from "@/lib/placement-requests/authorization";
+import {
+  enforceRateLimit,
+  formatRateLimitMessage,
+} from "@/lib/security/rate-limit";
 import { outreachTemplateTypes } from "@/lib/staff/outreach-assistant-options";
 
 export type OutreachAssistantState = {
@@ -21,7 +25,21 @@ export async function generateOutreachDraft(
   _previousState: OutreachAssistantState,
   formData: FormData,
 ): Promise<OutreachAssistantState> {
-  await assertPlacementQueueAccess();
+  const { userId } = await assertPlacementQueueAccess();
+  const rateLimit = await enforceRateLimit({
+    action: "ai_outreach_draft",
+    identifier: userId,
+    limit: 20,
+    windowSeconds: 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    return {
+      body: "",
+      error: formatRateLimitMessage(rateLimit),
+      subject: "",
+    };
+  }
 
   const templateType = getString(formData, "templateType");
 

@@ -2,21 +2,35 @@ import { LockKeyhole } from "lucide-react";
 
 import { AuditLogList } from "@/components/admin/audit-log-list";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { PaginationControls } from "@/components/dashboard/pagination-controls";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { assertAdminAccess } from "@/lib/admin/authorization";
 import { getAdminNavItems } from "@/lib/admin/navigation";
 import { prisma } from "@/lib/db/prisma";
+import { getPageParam, getPagination, getTotalPages } from "@/lib/pagination";
 
-export default async function AdminAuditLogsPage() {
+type AdminAuditLogsPageProps = {
+  searchParams: Promise<{
+    page?: string;
+  }>;
+};
+
+export default async function AdminAuditLogsPage({
+  searchParams,
+}: AdminAuditLogsPageProps) {
   await assertAdminAccess();
 
+  const params = await searchParams;
+  const page = getPageParam(params.page);
+  const pagination = getPagination(page);
   const [auditLogs, totalCount] = await Promise.all([
     prisma.auditLog.findMany({
       orderBy: {
         createdAt: "desc",
       },
-      take: 100,
+      skip: pagination.skip,
+      take: pagination.take,
       select: {
         action: true,
         actor: {
@@ -35,6 +49,7 @@ export default async function AdminAuditLogsPage() {
     }),
     prisma.auditLog.count(),
   ]);
+  const totalPages = getTotalPages(totalCount, pagination.pageSize);
 
   return (
     <DashboardShell
@@ -79,6 +94,13 @@ export default async function AdminAuditLogsPage() {
         </section>
 
         <AuditLogList auditLogs={auditLogs} />
+        <PaginationControls
+          page={page}
+          pathname="/dashboard/admin/audit-logs"
+          searchParams={{}}
+          totalCount={totalCount}
+          totalPages={totalPages}
+        />
       </div>
     </DashboardShell>
   );

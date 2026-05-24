@@ -2,6 +2,7 @@ import { MailCheck } from "lucide-react";
 import Link from "next/link";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { PaginationControls } from "@/components/dashboard/pagination-controls";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import {
@@ -13,6 +14,7 @@ import { Prisma } from "@/generated/prisma/client";
 import type { OutreachTaskStatus } from "@/generated/prisma/enums";
 import { getRecordCommentThread } from "@/lib/comments/record-comments";
 import { prisma } from "@/lib/db/prisma";
+import { getPageParam, getPagination, getTotalPages } from "@/lib/pagination";
 import { assertPlacementQueueAccess } from "@/lib/placement-requests/authorization";
 import {
   formatEnumLabel,
@@ -25,6 +27,7 @@ type StaffOutreachPageProps = {
   searchParams: Promise<{
     assignedToId?: string;
     organizationId?: string;
+    page?: string;
     q?: string;
     status?: string;
   }>;
@@ -37,6 +40,8 @@ export default async function StaffOutreachPage({
 
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
+  const page = getPageParam(params.page);
+  const pagination = getPagination(page);
   const status =
     params.status && isOutreachTaskStatus(params.status) ? params.status : "";
   const [organizations, contacts, staffUsers, placementRequests] =
@@ -116,42 +121,49 @@ export default async function StaffOutreachPage({
     where.assignedToId = assignedToId;
   }
 
-  const [tasks, totalCount, dueCount, blockedCount] = await Promise.all([
-    prisma.outreachTask.findMany({
-      where,
-      orderBy: [{ dueAt: "asc" }, { updatedAt: "desc" }],
-      select: {
-        id: true,
-        assignedToId: true,
-        assignedTo: {
-          select: { id: true, email: true, firstName: true, lastName: true },
+  const [tasks, totalCount, filteredCount, dueCount, blockedCount] =
+    await Promise.all([
+      prisma.outreachTask.findMany({
+        where,
+        orderBy: [{ dueAt: "asc" }, { updatedAt: "desc" }],
+        skip: pagination.skip,
+        take: pagination.take,
+        select: {
+          id: true,
+          assignedToId: true,
+          assignedTo: {
+            select: { id: true, email: true, firstName: true, lastName: true },
+          },
+          completedAt: true,
+          contactId: true,
+          contact: { select: { firstName: true, lastName: true } },
+          description: true,
+          dueAt: true,
+          notes: true,
+          partnerOrganizationId: true,
+          partnerOrganization: { select: { name: true } },
+          placementRequestId: true,
+          placementRequest: { select: { title: true } },
+          priority: true,
+          status: true,
+          title: true,
         },
-        completedAt: true,
-        contactId: true,
-        contact: { select: { firstName: true, lastName: true } },
-        description: true,
-        dueAt: true,
-        notes: true,
-        partnerOrganizationId: true,
-        partnerOrganization: { select: { name: true } },
-        placementRequestId: true,
-        placementRequest: { select: { title: true } },
-        priority: true,
-        status: true,
-        title: true,
-      },
-    }),
-    prisma.outreachTask.count(),
-    prisma.outreachTask.count({
-      where: {
-        dueAt: { lte: new Date() },
-        status: { not: "COMPLETED" },
-      },
-    }),
-    prisma.outreachTask.count({
-      where: { status: "BLOCKED" },
-    }),
-  ]);
+      }),
+      prisma.outreachTask.count(),
+      prisma.outreachTask.count({
+        where,
+      }),
+      prisma.outreachTask.count({
+        where: {
+          dueAt: { lte: new Date() },
+          status: { not: "COMPLETED" },
+        },
+      }),
+      prisma.outreachTask.count({
+        where: { status: "BLOCKED" },
+      }),
+    ]);
+  const totalPages = getTotalPages(filteredCount, pagination.pageSize);
   const redirectParams = new URLSearchParams();
 
   if (query) redirectParams.set("q", query);
@@ -312,6 +324,18 @@ export default async function StaffOutreachPage({
           redirectTo={redirectTo}
           staffUsers={staffUsers}
           tasks={tasksWithThreads as StaffOutreachTaskItem[]}
+        />
+        <PaginationControls
+          page={page}
+          pathname="/dashboard/staff/outreach"
+          searchParams={{
+            ...(query ? { q: query } : {}),
+            ...(status ? { status } : {}),
+            ...(organizationId ? { organizationId } : {}),
+            ...(assignedToId ? { assignedToId } : {}),
+          }}
+          totalCount={filteredCount}
+          totalPages={totalPages}
         />
       </div>
     </DashboardShell>
