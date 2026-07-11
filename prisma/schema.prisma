@@ -50,6 +50,26 @@ enum ApplicationStatus {
   WITHDRAWN
 }
 
+enum ApplicationMethod {
+  EXTERNAL_PORTAL
+  FP_INTERNAL
+  FP_REFERRAL
+}
+
+enum GradeLevelCode {
+  HS_9
+  HS_10
+  HS_11
+  HS_12
+  COLLEGE_1
+  COLLEGE_2
+  COLLEGE_3
+  COLLEGE_4
+  GRADUATE
+  MEDICAL
+  GAP_YEAR_POST_BACC
+}
+
 enum OpportunityRelationshipType {
   EXTERNAL_PUBLIC
   FP_PARTNER
@@ -490,6 +510,7 @@ model Opportunity {
   specialty                   String?
   status                      OpportunityStatus             @default(DRAFT)
   relationshipType            OpportunityRelationshipType   @default(EXTERNAL_PUBLIC)
+  applicationMethod           ApplicationMethod              @default(EXTERNAL_PORTAL)
   officialSourceUrl           String?
   officialApplicationUrl      String?
   relationshipNotes           String?
@@ -521,7 +542,7 @@ model Opportunity {
   eligibilityRequirements     String?
   minimumAge                  Int?
   maximumAge                  Int?
-  acceptedGradeLevels         String[]                      @default([])
+  acceptedGradeLevels         GradeLevelCode[]              @default([])
   minimumGpa                  Float?
   residencyRequirement        String?
   citizenshipRequirement      String?
@@ -564,6 +585,7 @@ model Opportunity {
   @@index([verificationStatus])
   @@index([availabilityStatus])
   @@index([relationshipType])
+  @@index([applicationMethod])
   @@index([nextVerificationAt])
   @@index([deadline])
   @@index([officialSourceUrl])
@@ -580,6 +602,7 @@ model Application {
   opportunity            Opportunity                 @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   resume                 Resume?                     @relation(fields: [resumeId], references: [id], onDelete: SetNull)
   status                 ApplicationStatus           @default(DRAFT)
+  applicationMethod      ApplicationMethod            @default(EXTERNAL_PORTAL)
   statement              String?
   submittedAt            DateTime?
   targetDeadline         DateTime?
@@ -601,6 +624,7 @@ model Application {
   @@unique([studentProfileId, opportunityId])
   @@index([resumeId])
   @@index([status])
+  @@index([applicationMethod])
   @@index([status, submittedAt])
   @@index([opportunityId, status, submittedAt])
   @@index([createdAt])

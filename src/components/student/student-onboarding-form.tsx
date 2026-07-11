@@ -471,7 +471,14 @@ export function StudentOnboardingForm({
             required
             values={state.values}
           />
-          <TextField errors={state.fieldErrors} label="Age in years (optional)" name="ageYears" placeholder="16" type="number" values={state.values} />
+          <TextField
+            errors={state.fieldErrors}
+            label="Age in years (optional)"
+            name="ageYears"
+            placeholder="16"
+            type="number"
+            values={state.values}
+          />
           <div className="space-y-3">
             <label className="block text-sm font-medium text-foreground">
               Grade year <span className="text-primary">*</span>
@@ -567,8 +574,22 @@ export function StudentOnboardingForm({
             <option value="Remote">Remote</option>
             <option value="Hybrid">Hybrid</option>
           </SelectField>
-          <TextField errors={state.fieldErrors} label="Maximum travel distance (miles)" name="maximumTravelMiles" placeholder="25" type="number" values={state.values} />
-          <TextField errors={state.fieldErrors} label="Transportation notes" name="transportationNotes" placeholder="Public transit only, family ride available..." rows={3} values={state.values} />
+          <TextField
+            errors={state.fieldErrors}
+            label="Maximum travel distance (miles)"
+            name="maximumTravelMiles"
+            placeholder="25"
+            type="number"
+            values={state.values}
+          />
+          <TextField
+            errors={state.fieldErrors}
+            label="Transportation notes"
+            name="transportationNotes"
+            placeholder="Public transit only, family ride available..."
+            rows={3}
+            values={state.values}
+          />
         </section>
 
         <section className={cn("space-y-5", step !== 2 && "hidden")}>
@@ -625,10 +646,30 @@ export function StudentOnboardingForm({
             rows={3}
             values={state.values}
           />
-          <TextField errors={state.fieldErrors} label="Certifications" name="certifications" placeholder="CPR, BLS" rows={3} values={state.values} />
-          <TextField errors={state.fieldErrors} label="Preferred seasons" name="preferredSeasons" placeholder="Summer, Fall" values={state.values} />
-          <SelectField errors={state.fieldErrors} label="Paid opportunities only" name="paidOnlyPreference" values={state.values}>
-            <option value="">No preference</option><option value="true">Yes</option><option value="false">No</option>
+          <TextField
+            errors={state.fieldErrors}
+            label="Certifications"
+            name="certifications"
+            placeholder="CPR, BLS"
+            rows={3}
+            values={state.values}
+          />
+          <TextField
+            errors={state.fieldErrors}
+            label="Preferred seasons"
+            name="preferredSeasons"
+            placeholder="Summer, Fall"
+            values={state.values}
+          />
+          <SelectField
+            errors={state.fieldErrors}
+            label="Paid opportunities only"
+            name="paidOnlyPreference"
+            values={state.values}
+          >
+            <option value="">No preference</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
           </SelectField>
         </section>
 

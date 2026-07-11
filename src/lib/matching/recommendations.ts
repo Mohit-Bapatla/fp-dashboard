@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db/prisma";
 import { createStructuredJsonResponse } from "@/lib/ai/openai";
 import { getOpportunityMatchScore } from "@/lib/matching/match-score";
 import { evaluateOpportunityEligibility } from "@/lib/matching/opportunity-eligibility";
+import { rankRecommendationCandidates } from "@/lib/matching/recommendation-ranking";
+import { studentDirectoryOpportunityWhere } from "@/lib/opportunities/student-visibility";
 import {
   cosineSimilarity,
   parseEmbedding,
@@ -25,10 +27,6 @@ const reasonSchema = {
   required: ["reasons"],
   type: "object",
 };
-
-function getTime(value: Date | null) {
-  return value?.getTime() ?? Number.MAX_SAFE_INTEGER;
-}
 
 async function polishReasons(reasons: string[]) {
   if (reasons.length === 0) {
@@ -61,6 +59,10 @@ export async function getRecommendedOpportunities(studentProfileId: string) {
           opportunityId: true,
         },
       },
+      savedOpportunities: {
+        where: { dismissedAt: { not: null } },
+        select: { opportunityId: true },
+      },
       availability: true,
       city: true,
       country: true,
@@ -92,12 +94,18 @@ export async function getRecommendedOpportunities(studentProfileId: string) {
   const appliedOpportunityIds = new Set(
     profile.applications.map((application) => application.opportunityId),
   );
+  const dismissedOpportunityIds = profile.savedOpportunities.map(
+    (saved) => saved.opportunityId,
+  );
   const opportunities = await prisma.opportunity.findMany({
     where: {
+      ...studentDirectoryOpportunityWhere(),
       id: {
-        notIn: Array.from(appliedOpportunityIds),
+        notIn: [
+          ...Array.from(appliedOpportunityIds),
+          ...dismissedOpportunityIds,
+        ],
       },
-      status: "PUBLISHED",
     },
     select: {
       deadline: true,
@@ -110,7 +118,17 @@ export async function getRecommendedOpportunities(studentProfileId: string) {
       specialty: true,
       title: true,
       type: true,
-      availabilityStatus: true, minimumAge: true, maximumAge: true, acceptedGradeLevels: true, requiredCertifications: true, city: true, state: true, country: true, geographicScope: true, scheduleRequirements: true, relationshipType: true,
+      availabilityStatus: true,
+      minimumAge: true,
+      maximumAge: true,
+      acceptedGradeLevels: true,
+      requiredCertifications: true,
+      city: true,
+      state: true,
+      country: true,
+      geographicScope: true,
+      scheduleRequirements: true,
+      relationshipType: true,
       organization: {
         select: {
           name: true,
@@ -118,6 +136,15 @@ export async function getRecommendedOpportunities(studentProfileId: string) {
       },
     },
   });
+  const eligibleOpportunities = opportunities
+    .map((opportunity) => ({
+      eligibility: evaluateOpportunityEligibility({
+        opportunity,
+        student: profile,
+      }),
+      opportunity,
+    }))
+    .filter((item) => item.eligibility.category !== "NOT_ELIGIBLE");
   const resume = profile.resumes.at(0) ?? null;
   const [profileEmbedding, resumeEmbedding, opportunityEmbeddings] =
     await Promise.all([
@@ -148,7 +175,7 @@ export async function getRecommendedOpportunities(studentProfileId: string) {
       prisma.embeddingRecord.findMany({
         where: {
           entityId: {
-            in: opportunities.map((opportunity) => opportunity.id),
+            in: eligibleOpportunities.map(({ opportunity }) => opportunity.id),
           },
           entityType: "OPPORTUNITY",
         },
@@ -168,8 +195,9 @@ export async function getRecommendedOpportunities(studentProfileId: string) {
       parseEmbedding(record.embedding),
     ]),
   );
-  const ranked = opportunities
-    .map((opportunity) => ({
+  const ranked = rankRecommendationCandidates(
+    eligibleOpportunities.map(({ eligibility, opportunity }) => ({
+      eligibility,
       match: getOpportunityMatchScore({
         opportunity,
         profile,
@@ -180,46 +208,13 @@ export async function getRecommendedOpportunities(studentProfileId: string) {
         studentVector,
         opportunityEmbeddingById.get(opportunity.id) ?? [],
       ),
-    }))
-    .sort((first, second) => {
-      const scoreDifference = second.match.score - first.match.score;
-
-      if (Math.abs(scoreDifference) > 10) {
-        return scoreDifference;
-      }
-
-      const boostedDifference =
-        second.match.score +
-        similarityToBoost(second.vectorSimilarity, 8) -
-        (first.match.score + similarityToBoost(first.vectorSimilarity, 8));
-
-      if (boostedDifference !== 0) {
-        return boostedDifference;
-      }
-
-      if (scoreDifference !== 0) {
-        return second.match.score - first.match.score;
-      }
-
-      const deadlineDifference =
-        getTime(first.opportunity.deadline) -
-        getTime(second.opportunity.deadline);
-
-      if (deadlineDifference !== 0) {
-        return deadlineDifference;
-      }
-
-      return (
-        getTime(second.opportunity.publishedAt) -
-        getTime(first.opportunity.publishedAt)
-      );
-    })
-    .slice(0, 6);
+    })),
+    (similarity) => similarityToBoost(similarity, 8),
+  ).slice(0, 6);
 
   return Promise.all(
     ranked.map(async (item) => ({
       ...item,
-      eligibility: evaluateOpportunityEligibility({ opportunity: item.opportunity, student: profile }),
       match: {
         ...item.match,
         reasons: await polishReasons(item.match.reasons),

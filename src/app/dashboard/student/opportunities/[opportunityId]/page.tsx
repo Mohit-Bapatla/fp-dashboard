@@ -18,6 +18,11 @@ import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
 import { prisma } from "@/lib/db/prisma";
+import {
+  isOpportunityCurrentlyAvailable,
+  studentDirectoryOpportunityWhere,
+  studentReadOnlyOpportunityWhere,
+} from "@/lib/opportunities/student-visibility";
 
 type StudentOpportunityDetailPageProps = {
   params: Promise<{
@@ -35,8 +40,7 @@ export default async function StudentOpportunityDetailPage({
     getCurrentStudentProfile(userId),
     prisma.opportunity.findFirst({
       where: {
-        id: opportunityId,
-        status: "PUBLISHED",
+        ...studentReadOnlyOpportunityWhere(opportunityId),
       },
       select: {
         id: true,
@@ -121,18 +125,33 @@ export default async function StudentOpportunityDetailPage({
         }),
       ])
     : null;
-  const applyState = !profile
-    ? ({ kind: "needsProfile" } as const)
-    : applicationState?.[0] && ["DRAFT", "SAVED", "PLANNING", "PREPARING", "WAITING_FOR_RECOMMENDATION", "READY_TO_SUBMIT"].includes(applicationState[0].status)
-      ? ({ kind: "workspace", applicationId: applicationState[0].id } as const)
-    : applicationState?.[0]
-      ? ({
-          kind: "alreadyApplied",
-          submittedAt: applicationState[0].submittedAt,
-        } as const)
-      : applicationState?.[1]
-        ? ({ kind: "canApply" } as const)
-        : ({ kind: "needsResume" } as const);
+  const applyState = !isOpportunityCurrentlyAvailable(
+    opportunity.availabilityStatus,
+  )
+    ? ({ kind: "unavailable" } as const)
+    : !profile
+      ? ({ kind: "needsProfile" } as const)
+      : applicationState?.[0] &&
+          [
+            "DRAFT",
+            "SAVED",
+            "PLANNING",
+            "PREPARING",
+            "WAITING_FOR_RECOMMENDATION",
+            "READY_TO_SUBMIT",
+          ].includes(applicationState[0].status)
+        ? ({
+            kind: "workspace",
+            applicationId: applicationState[0].id,
+          } as const)
+        : applicationState?.[0]
+          ? ({
+              kind: "alreadyApplied",
+              submittedAt: applicationState[0].submittedAt,
+            } as const)
+          : applicationState?.[1]
+            ? ({ kind: "canApply" } as const)
+            : ({ kind: "needsResume" } as const);
   const match = profile
     ? getOpportunityMatchScore({
         opportunity,
@@ -147,9 +166,32 @@ export default async function StudentOpportunityDetailPage({
         resumeSkills: applicationState?.[1]?.extractedSkills ?? [],
       })
     : null;
-  const eligibility = evaluateOpportunityEligibility({ opportunity, student: profile });
-  const saved = profile ? await prisma.savedOpportunity.findUnique({ where: { studentProfileId_opportunityId: { studentProfileId: profile.id, opportunityId } }, select: { followReopening: true } }) : null;
-  const safeOpportunity = { ...opportunity, officialSourceUrl: isSafeExternalUrl(opportunity.officialSourceUrl) ? opportunity.officialSourceUrl : null, officialApplicationUrl: isSafeExternalUrl(opportunity.officialApplicationUrl) ? opportunity.officialApplicationUrl : null };
+  const eligibility = evaluateOpportunityEligibility({
+    opportunity,
+    student: profile,
+  });
+  const saved = profile
+    ? await prisma.savedOpportunity.findUnique({
+        where: {
+          studentProfileId_opportunityId: {
+            studentProfileId: profile.id,
+            opportunityId,
+          },
+        },
+        select: { followReopening: true },
+      })
+    : null;
+  const safeOpportunity = {
+    ...opportunity,
+    officialSourceUrl: isSafeExternalUrl(opportunity.officialSourceUrl)
+      ? opportunity.officialSourceUrl
+      : null,
+    officialApplicationUrl: isSafeExternalUrl(
+      opportunity.officialApplicationUrl,
+    )
+      ? opportunity.officialApplicationUrl
+      : null,
+  };
   const currentOpportunityVector = await getEmbeddingVectorForEntity({
     entityId: opportunity.id,
     entityType: "OPPORTUNITY",
@@ -184,7 +226,7 @@ export default async function StudentOpportunityDetailPage({
               const similarOpportunity = await prisma.opportunity.findFirst({
                 where: {
                   id: record.entityId,
-                  status: "PUBLISHED",
+                  ...studentDirectoryOpportunityWhere(),
                 },
                 select: {
                   id: true,

@@ -11,6 +11,8 @@ CREATE TYPE "OpportunityVerificationStatus" AS ENUM ('NEEDS_REVIEW', 'VERIFIED',
 CREATE TYPE "OpportunityAvailabilityStatus" AS ENUM ('OPEN', 'OPENING_SOON', 'ROLLING', 'CLOSED', 'EXPIRED', 'ARCHIVED');
 CREATE TYPE "OpportunityCorrectionCategory" AS ENUM ('BROKEN_LINK', 'INCORRECT_DEADLINE', 'ELIGIBILITY_ERROR', 'PROGRAM_CLOSED', 'DUPLICATE', 'OTHER');
 CREATE TYPE "OpportunityCorrectionStatus" AS ENUM ('OPEN', 'RESOLVED', 'REJECTED');
+CREATE TYPE "ApplicationMethod" AS ENUM ('EXTERNAL_PORTAL', 'FP_INTERNAL', 'FP_REFERRAL');
+CREATE TYPE "GradeLevelCode" AS ENUM ('HS_9', 'HS_10', 'HS_11', 'HS_12', 'COLLEGE_1', 'COLLEGE_2', 'COLLEGE_3', 'COLLEGE_4', 'GRADUATE', 'MEDICAL', 'GAP_YEAR_POST_BACC');
 
 ALTER TABLE "StudentProfile"
   ADD COLUMN "ageYears" INTEGER,
@@ -24,6 +26,7 @@ ALTER TABLE "Opportunity"
   ADD COLUMN "shortDescription" TEXT,
   ADD COLUMN "fpSummary" TEXT,
   ADD COLUMN "relationshipType" "OpportunityRelationshipType" NOT NULL DEFAULT 'EXTERNAL_PUBLIC',
+  ADD COLUMN "applicationMethod" "ApplicationMethod" NOT NULL DEFAULT 'EXTERNAL_PORTAL',
   ADD COLUMN "officialSourceUrl" TEXT,
   ADD COLUMN "officialApplicationUrl" TEXT,
   ADD COLUMN "relationshipNotes" TEXT,
@@ -48,7 +51,7 @@ ALTER TABLE "Opportunity"
   ADD COLUMN "maximumTravelMiles" INTEGER,
   ADD COLUMN "minimumAge" INTEGER,
   ADD COLUMN "maximumAge" INTEGER,
-  ADD COLUMN "acceptedGradeLevels" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+  ADD COLUMN "acceptedGradeLevels" "GradeLevelCode"[] NOT NULL DEFAULT ARRAY[]::"GradeLevelCode"[],
   ADD COLUMN "minimumGpa" DOUBLE PRECISION,
   ADD COLUMN "residencyRequirement" TEXT,
   ADD COLUMN "citizenshipRequirement" TEXT,
@@ -63,6 +66,7 @@ ALTER TABLE "Opportunity"
   ADD COLUMN "estimatedWeeklyHours" DOUBLE PRECISION;
 
 ALTER TABLE "Application"
+  ADD COLUMN "applicationMethod" "ApplicationMethod" NOT NULL DEFAULT 'EXTERNAL_PORTAL',
   ADD COLUMN "targetDeadline" TIMESTAMP(3),
   ADD COLUMN "completionPercent" INTEGER NOT NULL DEFAULT 0,
   ADD COLUMN "nextAction" TEXT,
@@ -70,6 +74,12 @@ ALTER TABLE "Application"
   ADD COLUMN "submissionConfirmation" TEXT,
   ADD COLUMN "outcomeNotes" TEXT,
   ADD COLUMN "lastActivityAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+-- Legacy published records were never source-verified. Remove them from student
+-- visibility until an admin explicitly verifies and republishes each record.
+UPDATE "Opportunity" SET "status" = 'PENDING_APPROVAL' WHERE "status" = 'PUBLISHED';
+UPDATE "Opportunity" SET "availabilityStatus" = 'CLOSED' WHERE "status" = 'CLOSED';
+UPDATE "Opportunity" SET "availabilityStatus" = 'ARCHIVED', "verificationStatus" = 'ARCHIVED' WHERE "status" = 'ARCHIVED';
 
 CREATE TABLE "SavedOpportunity" (
   "id" TEXT NOT NULL,
@@ -115,6 +125,7 @@ CREATE TABLE "OpportunityCorrectionReport" (
 CREATE INDEX "Opportunity_verificationStatus_idx" ON "Opportunity"("verificationStatus");
 CREATE INDEX "Opportunity_availabilityStatus_idx" ON "Opportunity"("availabilityStatus");
 CREATE INDEX "Opportunity_relationshipType_idx" ON "Opportunity"("relationshipType");
+CREATE INDEX "Opportunity_applicationMethod_idx" ON "Opportunity"("applicationMethod");
 CREATE INDEX "Opportunity_nextVerificationAt_idx" ON "Opportunity"("nextVerificationAt");
 CREATE INDEX "Opportunity_deadline_idx" ON "Opportunity"("deadline");
 CREATE INDEX "Opportunity_officialSourceUrl_idx" ON "Opportunity"("officialSourceUrl");
@@ -125,6 +136,7 @@ CREATE INDEX "SavedOpportunity_opportunityId_idx" ON "SavedOpportunity"("opportu
 CREATE INDEX "SavedOpportunity_studentProfileId_updatedAt_idx" ON "SavedOpportunity"("studentProfileId", "updatedAt");
 CREATE UNIQUE INDEX "ApplicationChecklistItem_applicationId_label_key" ON "ApplicationChecklistItem"("applicationId", "label");
 CREATE INDEX "ApplicationChecklistItem_applicationId_sortOrder_idx" ON "ApplicationChecklistItem"("applicationId", "sortOrder");
+CREATE INDEX "Application_applicationMethod_idx" ON "Application"("applicationMethod");
 CREATE INDEX "OpportunityCorrectionReport_opportunityId_status_idx" ON "OpportunityCorrectionReport"("opportunityId", "status");
 CREATE INDEX "OpportunityCorrectionReport_reporterId_idx" ON "OpportunityCorrectionReport"("reporterId");
 CREATE INDEX "OpportunityCorrectionReport_reviewedById_idx" ON "OpportunityCorrectionReport"("reviewedById");

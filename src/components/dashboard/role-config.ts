@@ -300,7 +300,12 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       icon: ClipboardCheck,
       group: "Opportunities",
     },
-    { label: "Verification", href: "/dashboard/admin/opportunities/verification", icon: ShieldCheck, group: "Opportunities" },
+    {
+      label: "Verification",
+      href: "/dashboard/admin/opportunities/verification",
+      icon: ShieldCheck,
+      group: "Opportunities",
+    },
     {
       label: "Placement Requests",
       href: "/dashboard/admin/placement-requests",

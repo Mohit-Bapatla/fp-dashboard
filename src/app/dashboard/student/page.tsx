@@ -26,7 +26,10 @@ import { getRecommendationExplanation } from "@/lib/matching/explanations";
 import { getRecommendedOpportunities } from "@/lib/matching/recommendations";
 import { EligibilityBadge } from "@/components/opportunities/eligibility-badge";
 import { OpportunityRelationshipBadge } from "@/components/opportunities/opportunity-relationship-badge";
-import { dismissRecommendation, saveOpportunity } from "@/app/dashboard/student/saved/actions";
+import {
+  dismissRecommendation,
+  saveOpportunity,
+} from "@/app/dashboard/student/saved/actions";
 import { startApplicationWorkspace } from "@/app/dashboard/student/applications/workspace-actions";
 import { cn } from "@/lib/utils";
 import { getStudentNavItems } from "@/lib/student/navigation";
@@ -72,7 +75,13 @@ export default async function StudentDashboardPage() {
           where: {
             studentProfileId: profile.id,
             status: {
-              in: ["SUBMITTED", "UNDER_REVIEW", "INTERVIEW", "ACCEPTED"],
+              in: [
+                "SUBMITTED",
+                "UNDER_REVIEW",
+                "INTERVIEW",
+                "WAITLISTED",
+                "ACCEPTED",
+              ],
             },
           },
         }),
@@ -121,7 +130,30 @@ export default async function StudentDashboardPage() {
   const recommendedOpportunities = profile
     ? await getRecommendedOpportunities(profile.id)
     : [];
-  const recentWorkspace = profile ? await prisma.application.findFirst({ where: { studentProfileId: profile.id, status: { in: ["DRAFT","SAVED","PLANNING","PREPARING","WAITING_FOR_RECOMMENDATION","READY_TO_SUBMIT"] } }, orderBy: { lastActivityAt: "desc" }, select: { id: true, completionPercent: true, nextAction: true, opportunity: { select: { title: true, deadline: true } } } }) : null;
+  const recentWorkspace = profile
+    ? await prisma.application.findFirst({
+        where: {
+          studentProfileId: profile.id,
+          status: {
+            in: [
+              "DRAFT",
+              "SAVED",
+              "PLANNING",
+              "PREPARING",
+              "WAITING_FOR_RECOMMENDATION",
+              "READY_TO_SUBMIT",
+            ],
+          },
+        },
+        orderBy: { lastActivityAt: "desc" },
+        select: {
+          id: true,
+          completionPercent: true,
+          nextAction: true,
+          opportunity: { select: { title: true, deadline: true } },
+        },
+      })
+    : null;
 
   return (
     <DashboardShell
@@ -257,7 +289,10 @@ export default async function StudentDashboardPage() {
                       key={opportunity.id}
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <EligibilityBadge category={eligibility.category}/><OpportunityRelationshipBadge relationshipType={opportunity.relationshipType}/>
+                        <EligibilityBadge category={eligibility.category} />
+                        <OpportunityRelationshipBadge
+                          relationshipType={opportunity.relationshipType}
+                        />
                         <p className="text-xs font-medium text-muted-foreground">
                           {opportunity.organization.name}
                         </p>
@@ -297,7 +332,47 @@ export default async function StudentDashboardPage() {
                         View details
                         <ArrowRight aria-hidden="true" className="h-4 w-4" />
                       </TrackedRecommendationLink>
-                      <div className="mt-3 flex flex-wrap gap-2"><form action={saveOpportunity}><input name="opportunityId" type="hidden" value={opportunity.id}/><button className="rounded-md border border-border px-3 py-2 text-sm" type="submit">Save</button></form><form action={dismissRecommendation}><input name="opportunityId" type="hidden" value={opportunity.id}/><button className="rounded-md border border-border px-3 py-2 text-sm" type="submit">Dismiss</button></form><form action={startApplicationWorkspace}><input name="opportunityId" type="hidden" value={opportunity.id}/><button className="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground" type="submit">Start application</button></form></div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <form action={saveOpportunity}>
+                          <input
+                            name="opportunityId"
+                            type="hidden"
+                            value={opportunity.id}
+                          />
+                          <button
+                            className="rounded-md border border-border px-3 py-2 text-sm"
+                            type="submit"
+                          >
+                            Save
+                          </button>
+                        </form>
+                        <form action={dismissRecommendation}>
+                          <input
+                            name="opportunityId"
+                            type="hidden"
+                            value={opportunity.id}
+                          />
+                          <button
+                            className="rounded-md border border-border px-3 py-2 text-sm"
+                            type="submit"
+                          >
+                            Dismiss
+                          </button>
+                        </form>
+                        <form action={startApplicationWorkspace}>
+                          <input
+                            name="opportunityId"
+                            type="hidden"
+                            value={opportunity.id}
+                          />
+                          <button
+                            className="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground"
+                            type="submit"
+                          >
+                            Start application
+                          </button>
+                        </form>
+                      </div>
                     </article>
                   ),
                 )}
@@ -311,7 +386,27 @@ export default async function StudentDashboardPage() {
           </section>
         ) : null}
 
-        {recentWorkspace ? <section className="rounded-xl border border-border bg-background p-6 shadow-sm"><p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">Continue where you left off</p><h2 className="mt-3 text-xl font-semibold">{recentWorkspace.opportunity.title}</h2><p className="mt-2 text-sm text-muted-foreground">{recentWorkspace.completionPercent}% complete · {recentWorkspace.nextAction ?? "Review your preparation checklist."}</p><Link className="mt-4 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" href={`/dashboard/student/applications/${recentWorkspace.id}`}>Continue application</Link></section> : null}
+        {recentWorkspace ? (
+          <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
+              Continue where you left off
+            </p>
+            <h2 className="mt-3 text-xl font-semibold">
+              {recentWorkspace.opportunity.title}
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {recentWorkspace.completionPercent}% complete ·{" "}
+              {recentWorkspace.nextAction ??
+                "Review your preparation checklist."}
+            </p>
+            <Link
+              className="mt-4 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+              href={`/dashboard/student/applications/${recentWorkspace.id}`}
+            >
+              Continue application
+            </Link>
+          </section>
+        ) : null}
 
         {profile ? (
           <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">

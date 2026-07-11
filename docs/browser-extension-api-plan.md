@@ -6,17 +6,17 @@ This document describes a possible future contract. No extension or public API i
 
 All endpoints would require short-lived, audience-bound authentication, CSRF/replay protection for writes, per-user rate limits, schema validation, and student ownership checks.
 
-| Capability | Proposed method and path | Constraints |
-| --- | --- | --- |
-| Approved profile read | `GET /api/extension/v1/profile` | Return only explicitly approved autofill facts; omit private notes and raw resume text. |
-| Field mapping | `GET /api/extension/v1/field-mappings` | Versioned allowlist; never infer or overwrite factual profile fields. |
-| Save external application | `POST /api/extension/v1/opportunities/save` | Store source URL, host, and student-approved facts as an unverified draft; never publish. |
-| Create/update workspace | `PUT /api/extension/v1/applications/{id}` | Owner-scoped status, deadline, checklist, and next action only. |
-| Save essay question | `POST /api/extension/v1/applications/{id}/questions` | Store the question only after user action; treat webpage content as untrusted. |
-| Create AI draft | `POST /api/extension/v1/applications/{id}/drafts` | Server-only optional model; use approved facts; label output as a draft. |
-| Save approved answer | `PUT /api/extension/v1/applications/{id}/answers/{id}` | Persist only after explicit student approval; exclude answer bodies from logs. |
-| Mark submitted | `POST /api/extension/v1/applications/{id}/submission-confirmations` | Require an explicit user gesture and confirmation; never submit a host form. |
-| Audit events | `POST /api/extension/v1/audit-events` | Allowlisted event types and minimal metadata; no page bodies, credentials, or browsing history. |
+| Capability                | Proposed method and path                                            | Constraints                                                                                     |
+| ------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Approved profile read     | `GET /api/extension/v1/profile`                                     | Return only explicitly approved autofill facts; omit private notes and raw resume text.         |
+| Field mapping             | `GET /api/extension/v1/field-mappings`                              | Versioned allowlist; never infer or overwrite factual profile fields.                           |
+| Save external application | `POST /api/extension/v1/opportunities/save`                         | Store source URL, host, and student-approved facts as an unverified draft; never publish.       |
+| Create/update workspace   | `PUT /api/extension/v1/applications/{id}`                           | Owner-scoped status, deadline, checklist, and next action only.                                 |
+| Save essay question       | `POST /api/extension/v1/applications/{id}/questions`                | Store the question only after user action; treat webpage content as untrusted.                  |
+| Create AI draft           | `POST /api/extension/v1/applications/{id}/drafts`                   | Server-only optional model; use approved facts; label output as a draft.                        |
+| Save approved answer      | `PUT /api/extension/v1/applications/{id}/answers/{id}`              | Persist only after explicit student approval; exclude answer bodies from logs.                  |
+| Mark submitted            | `POST /api/extension/v1/applications/{id}/submission-confirmations` | Require an explicit user gesture and confirmation; never submit a host form.                    |
+| Audit events              | `POST /api/extension/v1/audit-events`                               | Allowlisted event types and minimal metadata; no page bodies, credentials, or browsing history. |
 
 ## Browser security posture
 

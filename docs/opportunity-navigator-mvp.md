@@ -11,6 +11,7 @@ This MVP adds explicit opportunity provenance, source verification and availabil
 ## Entities and relationships
 
 - `Opportunity` remains attached to a host `PartnerOrganization` record, but `relationshipType` is independently `EXTERNAL_PUBLIC`, `FP_PARTNER`, or `FP_OWNED`. Existing records default to external public.
+- `applicationMethod` explicitly selects `EXTERNAL_PORTAL`, `FP_INTERNAL`, or `FP_REFERRAL`. External-public opportunities are always forced to the host-portal flow.
 - `Opportunity.verifiedBy` is a named optional relation to `User`; verification dates, notes, status, availability, cycle, location, eligibility, and effort are structured fields.
 - `SavedOpportunity` belongs to one student profile and one opportunity, with a unique pair and optional reopening follow state.
 - `Application` keeps all historical statuses and adds preparation statuses and workspace fields. `ApplicationChecklistItem` is separate from post-acceptance onboarding.
@@ -18,11 +19,11 @@ This MVP adds explicit opportunity provenance, source verification and availabil
 
 ## Migration notes
 
-Migration `20260711074500_opportunity_navigator_mvp` uses additive enums, nullable fields, conservative defaults, indexes, and cascading ownership relations. It does not rename existing columns or remove enum values. Apply it through the normal reviewed deployment pipeline; do not run it manually against production from a developer machine.
+Migration `20260711074500_opportunity_navigator_mvp` uses additive enums, nullable fields, conservative defaults, indexes, and cascading ownership relations. Existing published records are moved to `PENDING_APPROVAL` because they predate source verification; closed and archived records receive matching availability states. It does not rename existing columns or remove enum values. Apply it through the normal reviewed deployment pipeline; do not run it manually against production from a developer machine.
 
 ## Eligibility rules
 
-The pure eligibility engine checks only structured, explicit requirements. Closed, expired, archived, and past-deadline listings are unavailable. Explicit age, grade, geographic, and certification failures can produce `NOT_ELIGIBLE`; missing student data becomes a concern and missing listing data becomes unknown. Free-form prose, AI, and protected traits never make hard decisions. Soft specialty and opportunity-type alignment can strengthen a match but cannot override a blocker.
+The pure eligibility engine checks only structured, explicit requirements. Closed, expired, archived, and past-deadline listings are unavailable. Grade aliases are normalized to stable `GradeLevelCode` values; unrecognized values remain unknown. Explicit age, canonical grade, geographic, and certification failures can produce `NOT_ELIGIBLE`; missing student data becomes a concern and missing listing data becomes unknown. Material unknowns prevent `STRONG_MATCH`. Free-form prose, AI, and protected traits never make hard decisions. Soft specialty and opportunity-type alignment can strengthen a match but cannot override a blocker.
 
 ## Verification workflow
 
@@ -30,7 +31,7 @@ External and partner listings cannot publish unless they have a safe HTTP(S) off
 
 ## Application workspace workflow
 
-Starting an application upserts one student-owned `PREPARING` application, creates checklist items from known documents, resume selection, essays, and external confirmation, and redirects to the workspace. It sends no reviewer email and makes no submission claim. Students open the official host portal themselves. Explicit submission updates a preparatory record to `SUBMITTED`; later-state duplicates remain blocked.
+Starting an application upserts one student-owned `PREPARING` application, records the configured application method, creates checklist items from known documents, resume selection, essays, and external confirmation, and redirects to the workspace. It sends no reviewer email and makes no submission claim. For `EXTERNAL_PORTAL`, students open the official host portal themselves and explicitly confirm their own submission; this path does not require an FP statement or email host members. `FP_INTERNAL` and `FP_REFERRAL` retain the configured internal submission/email workflow. Explicit submission updates a preparatory record to `SUBMITTED`; submitted, review, interview, waitlist, outcome, and withdrawn states remain duplicate-blocked.
 
 ## Authorization and privacy
 

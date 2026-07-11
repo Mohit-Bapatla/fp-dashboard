@@ -296,7 +296,9 @@ async function updateOpportunityStatus(
     if (status === "PUBLISHED") {
       const readiness = validateOpportunityPublishReadiness(opportunity);
       if (!readiness.ready) {
-        redirect(`${redirectTo}?error=${encodeURIComponent(readiness.errors.join(" "))}`);
+        redirect(
+          `${redirectTo}?error=${encodeURIComponent(readiness.errors.join(" "))}`,
+        );
       }
     }
 
@@ -307,6 +309,13 @@ async function updateOpportunityStatus(
       data: {
         status,
         publishedAt: status === "PUBLISHED" ? new Date() : undefined,
+        availabilityStatus:
+          status === "ARCHIVED"
+            ? "ARCHIVED"
+            : status === "CLOSED"
+              ? "CLOSED"
+              : undefined,
+        verificationStatus: status === "ARCHIVED" ? "ARCHIVED" : undefined,
       },
     });
     await Promise.all([

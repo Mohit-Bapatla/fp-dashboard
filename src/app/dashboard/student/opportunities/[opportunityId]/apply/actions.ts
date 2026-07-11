@@ -24,6 +24,7 @@ import { validateStudentApplicationForm } from "@/lib/student/application-valida
 import { getCurrentStudentProfile } from "@/lib/student/profile";
 import { redirect } from "next/navigation";
 import { canSubmitExistingApplication } from "@/lib/student/application-workspace";
+import { studentApplicationOpportunityWhere } from "@/lib/opportunities/student-visibility";
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -80,10 +81,12 @@ export async function submitStudentApplication(
   const [opportunity, resume, existingApplication] = await Promise.all([
     prisma.opportunity.findFirst({
       where: {
-        id: opportunityId,
-        status: "PUBLISHED",
+        ...studentApplicationOpportunityWhere(opportunityId),
+        applicationMethod: { in: ["FP_INTERNAL", "FP_REFERRAL"] },
+        relationshipType: { in: ["FP_OWNED", "FP_PARTNER"] },
       },
       select: {
+        applicationMethod: true,
         description: true,
         eligibilityRequirements: true,
         id: true,
@@ -151,7 +154,10 @@ export async function submitStudentApplication(
     };
   }
 
-  if (existingApplication && !canSubmitExistingApplication(existingApplication.status)) {
+  if (
+    existingApplication &&
+    !canSubmitExistingApplication(existingApplication.status)
+  ) {
     redirect(
       `/dashboard/student/opportunities/${opportunityId}/apply?alreadyApplied=1`,
     );
@@ -161,30 +167,37 @@ export async function submitStudentApplication(
 
   try {
     const application = existingApplication
-      ? await prisma.application.update({ where: { id: existingApplication.id }, data: {
-        resumeId: resume.id,
-        status: "SUBMITTED",
-        statement: validation.data.statement,
-        submittedAt: new Date(),
-        submissionConfirmation: "Student confirmed submission",
-        completionPercent: 100,
-        lastActivityAt: new Date(),
-      }, select: { id: true } })
-      : await prisma.application.create({ data: {
-        studentProfileId: user.studentProfile.id,
-        opportunityId,
-        resumeId: resume.id,
-        status: "SUBMITTED",
-        statement: validation.data.statement,
-        submittedAt: new Date(),
-        submissionConfirmation: "Student confirmed submission",
-        completionPercent: 100,
-        lastActivityAt: new Date(),
-      },
-      select: {
-        id: true,
-      },
-    });
+      ? await prisma.application.update({
+          where: { id: existingApplication.id },
+          data: {
+            resumeId: resume.id,
+            applicationMethod: opportunity.applicationMethod,
+            status: "SUBMITTED",
+            statement: validation.data.statement,
+            submittedAt: new Date(),
+            submissionConfirmation: "Student confirmed submission",
+            completionPercent: 100,
+            lastActivityAt: new Date(),
+          },
+          select: { id: true },
+        })
+      : await prisma.application.create({
+          data: {
+            studentProfileId: user.studentProfile.id,
+            opportunityId,
+            applicationMethod: opportunity.applicationMethod,
+            resumeId: resume.id,
+            status: "SUBMITTED",
+            statement: validation.data.statement,
+            submittedAt: new Date(),
+            submissionConfirmation: "Student confirmed submission",
+            completionPercent: 100,
+            lastActivityAt: new Date(),
+          },
+          select: {
+            id: true,
+          },
+        });
 
     applicationId = application.id;
   } catch (error) {
@@ -278,4 +291,100 @@ export async function submitStudentApplication(
   });
 
   redirect(`/dashboard/student/opportunities/${opportunityId}/apply?success=1`);
+}
+
+export async function confirmExternalApplicationSubmission(formData: FormData) {
+  const { userId } = await assertStudentAccess();
+  const user = await getCurrentStudentProfile(userId);
+  const opportunityId = getString(formData, "opportunityId");
+  const confirmed = formData.get("confirmedExternalSubmission") === "on";
+
+  if (!user.studentProfile || !opportunityId || !confirmed) {
+    return;
+  }
+
+  const rateLimit = await enforceRateLimit({
+    action: "external_application_confirmation",
+    identifier: `user:${user.id}`,
+    limit: 20,
+    windowSeconds: 60 * 60,
+  });
+  if (!rateLimit.allowed) return;
+
+  const [opportunity, existingApplication] = await Promise.all([
+    prisma.opportunity.findFirst({
+      where: {
+        ...studentApplicationOpportunityWhere(opportunityId),
+        applicationMethod: "EXTERNAL_PORTAL",
+        officialApplicationUrl: { not: null },
+      },
+      select: { id: true, title: true },
+    }),
+    prisma.application.findUnique({
+      where: {
+        studentProfileId_opportunityId: {
+          studentProfileId: user.studentProfile.id,
+          opportunityId,
+        },
+      },
+      select: { id: true, status: true },
+    }),
+  ]);
+
+  if (!opportunity) return;
+  if (
+    existingApplication &&
+    !canSubmitExistingApplication(existingApplication.status)
+  ) {
+    redirect(
+      `/dashboard/student/opportunities/${opportunityId}/apply?alreadyApplied=1`,
+    );
+  }
+
+  const now = new Date();
+  const application = await prisma.application.upsert({
+    where: {
+      studentProfileId_opportunityId: {
+        studentProfileId: user.studentProfile.id,
+        opportunityId,
+      },
+    },
+    create: {
+      applicationMethod: "EXTERNAL_PORTAL",
+      completionPercent: 100,
+      lastActivityAt: now,
+      opportunityId,
+      status: "SUBMITTED",
+      studentProfileId: user.studentProfile.id,
+      submissionConfirmation:
+        "Student confirmed submission through the external host portal.",
+      submittedAt: now,
+    },
+    update: {
+      applicationMethod: "EXTERNAL_PORTAL",
+      completionPercent: 100,
+      lastActivityAt: now,
+      status: "SUBMITTED",
+      submissionConfirmation:
+        "Student confirmed submission through the external host portal.",
+      submittedAt: now,
+    },
+    select: { id: true },
+  });
+
+  await createAuditLog({
+    action: "EXTERNAL_APPLICATION_SUBMISSION_CONFIRMED",
+    actorId: user.id,
+    entityId: application.id,
+    entityType: "Application",
+    metadata: {
+      applicationMethod: "EXTERNAL_PORTAL",
+      opportunityId,
+      studentProfileId: user.studentProfile.id,
+    },
+  });
+
+  redirect(
+    `/dashboard/student/opportunities/${opportunityId}/apply?success=1&external=1`,
+  );
 }

@@ -1,4 +1,5 @@
 import type {
+  ApplicationMethod,
   OpportunityAvailabilityStatus,
   OpportunityRelationshipType,
   OpportunityStatus,
@@ -6,7 +7,11 @@ import type {
   OpportunityVerificationStatus,
   PartnerStatus,
 } from "@/generated/prisma/enums";
-import { isSafeExternalUrl, optionalSafeExternalUrl } from "@/lib/security/safe-url";
+import {
+  isSafeExternalUrl,
+  optionalSafeExternalUrl,
+} from "@/lib/security/safe-url";
+import { parseGradeLevelCodes } from "@/lib/matching/grade-levels";
 
 export type PublishReadinessInput = {
   relationshipType: OpportunityRelationshipType;
@@ -15,11 +20,16 @@ export type PublishReadinessInput = {
   lastVerifiedAt: Date | null;
 };
 
-export function validateOpportunityPublishReadiness(input: PublishReadinessInput) {
+export function validateOpportunityPublishReadiness(
+  input: PublishReadinessInput,
+) {
   const errors: string[] = [];
-  if (!isSafeExternalUrl(input.officialSourceUrl)) errors.push("A valid official source URL is required before publishing.");
-  if (input.verificationStatus !== "VERIFIED") errors.push("The opportunity must be verified before publishing.");
-  if (!input.lastVerifiedAt) errors.push("A last verified date is required before publishing.");
+  if (!isSafeExternalUrl(input.officialSourceUrl))
+    errors.push("A valid official source URL is required before publishing.");
+  if (input.verificationStatus !== "VERIFIED")
+    errors.push("The opportunity must be verified before publishing.");
+  if (!input.lastVerifiedAt)
+    errors.push("A last verified date is required before publishing.");
   return { errors, ready: errors.length === 0 };
 }
 
@@ -41,6 +51,33 @@ export const opportunityStatusOptions = [
   "CLOSED",
   "REJECTED",
 ] as const satisfies readonly OpportunityStatus[];
+
+export const opportunityRelationshipTypeOptions = [
+  "EXTERNAL_PUBLIC",
+  "FP_PARTNER",
+  "FP_OWNED",
+] as const satisfies readonly OpportunityRelationshipType[];
+export const opportunityVerificationStatusOptions = [
+  "NEEDS_REVIEW",
+  "VERIFIED",
+  "STALE",
+  "BROKEN_LINK",
+  "REJECTED",
+  "ARCHIVED",
+] as const satisfies readonly OpportunityVerificationStatus[];
+export const opportunityAvailabilityStatusOptions = [
+  "OPEN",
+  "OPENING_SOON",
+  "ROLLING",
+  "CLOSED",
+  "EXPIRED",
+  "ARCHIVED",
+] as const satisfies readonly OpportunityAvailabilityStatus[];
+export const applicationMethodOptions = [
+  "EXTERNAL_PORTAL",
+  "FP_INTERNAL",
+  "FP_REFERRAL",
+] as const satisfies readonly ApplicationMethod[];
 
 export const partnerStatusOptions = [
   "NOT_CONTACTED",
@@ -70,13 +107,14 @@ export type OpportunityFormValues = {
   requiredDocuments: string;
   applicationInstructions: string;
   status: OpportunityStatus | "";
-  relationshipType: OpportunityRelationshipType;
+  relationshipType: OpportunityRelationshipType | "";
+  applicationMethod: ApplicationMethod | "";
   officialSourceUrl: string;
   officialApplicationUrl: string;
-  verificationStatus: OpportunityVerificationStatus;
+  verificationStatus: OpportunityVerificationStatus | "";
   lastVerifiedAt: string;
   nextVerificationAt: string;
-  availabilityStatus: OpportunityAvailabilityStatus;
+  availabilityStatus: OpportunityAvailabilityStatus | "";
   opensAt: string;
   startsAt: string;
   endsAt: string;
@@ -140,6 +178,7 @@ export const emptyOpportunityFormValues: OpportunityFormValues = {
   applicationInstructions: "",
   status: "DRAFT",
   relationshipType: "EXTERNAL_PUBLIC",
+  applicationMethod: "EXTERNAL_PORTAL",
   officialSourceUrl: "",
   officialApplicationUrl: "",
   verificationStatus: "NEEDS_REVIEW",
@@ -233,6 +272,10 @@ function parseOpportunityStatus(value: string) {
     : "";
 }
 
+function parseEnum<T extends string>(value: string, options: readonly T[]) {
+  return options.includes(value as T) ? (value as T) : "";
+}
+
 function parsePartnerStatus(value: string) {
   return partnerStatusOptions.includes(value as PartnerStatus)
     ? (value as PartnerStatus)
@@ -258,13 +301,26 @@ export function opportunityValuesFromFormData(
     requiredDocuments: getString(formData, "requiredDocuments"),
     applicationInstructions: getString(formData, "applicationInstructions"),
     status: parseOpportunityStatus(getString(formData, "status")),
-    relationshipType: (getString(formData, "relationshipType") || "EXTERNAL_PUBLIC") as OpportunityRelationshipType,
+    relationshipType: parseEnum(
+      getString(formData, "relationshipType"),
+      opportunityRelationshipTypeOptions,
+    ),
+    applicationMethod: parseEnum(
+      getString(formData, "applicationMethod"),
+      applicationMethodOptions,
+    ),
     officialSourceUrl: getString(formData, "officialSourceUrl"),
     officialApplicationUrl: getString(formData, "officialApplicationUrl"),
-    verificationStatus: (getString(formData, "verificationStatus") || "NEEDS_REVIEW") as OpportunityVerificationStatus,
+    verificationStatus: parseEnum(
+      getString(formData, "verificationStatus"),
+      opportunityVerificationStatusOptions,
+    ),
     lastVerifiedAt: getString(formData, "lastVerifiedAt"),
     nextVerificationAt: getString(formData, "nextVerificationAt"),
-    availabilityStatus: (getString(formData, "availabilityStatus") || "OPEN") as OpportunityAvailabilityStatus,
+    availabilityStatus: parseEnum(
+      getString(formData, "availabilityStatus"),
+      opportunityAvailabilityStatusOptions,
+    ),
     opensAt: getString(formData, "opensAt"),
     startsAt: getString(formData, "startsAt"),
     endsAt: getString(formData, "endsAt"),
@@ -315,49 +371,107 @@ export function validateOpportunityForm(formData: FormData) {
   if (!values.status) {
     errors.status = "Choose a status.";
   }
+  if (!values.relationshipType)
+    errors.relationshipType = "Choose a relationship type.";
+  if (!values.applicationMethod)
+    errors.applicationMethod = "Choose an application method.";
+  if (!values.verificationStatus)
+    errors.verificationStatus = "Choose a verification status.";
+  if (!values.availabilityStatus)
+    errors.availabilityStatus = "Choose an availability status.";
+  if (
+    values.relationshipType === "EXTERNAL_PUBLIC" &&
+    values.applicationMethod !== "EXTERNAL_PORTAL"
+  ) {
+    errors.applicationMethod =
+      "External public opportunities must use the external portal method.";
+  }
+  const acceptedGrades = parseGradeLevelCodes(
+    splitList(values.acceptedGradeLevels),
+  );
+  if (acceptedGrades.unknownValues.length > 0) {
+    errors.acceptedGradeLevels = `Unrecognized grade level: ${acceptedGrades.unknownValues.join(", ")}.`;
+  }
 
-  if (!optionalSafeExternalUrl(values.officialSourceUrl)) errors.officialSourceUrl = "Enter a valid http:// or https:// URL.";
-  if (!optionalSafeExternalUrl(values.officialApplicationUrl)) errors.officialApplicationUrl = "Enter a valid http:// or https:// URL.";
+  if (!optionalSafeExternalUrl(values.officialSourceUrl))
+    errors.officialSourceUrl = "Enter a valid http:// or https:// URL.";
+  if (!optionalSafeExternalUrl(values.officialApplicationUrl))
+    errors.officialApplicationUrl = "Enter a valid http:// or https:// URL.";
 
-  const parseDate = (value: string) => (value ? new Date(`${value}T00:00:00`) : null);
-  const lastVerifiedAt = parseDate(values.lastVerifiedAt);
-  const nextVerificationAt = parseDate(values.nextVerificationAt);
-  const opensAt = parseDate(values.opensAt);
-  const startsAt = parseDate(values.startsAt);
-  const endsAt = parseDate(values.endsAt);
-  const minimumAge = values.minimumAge ? Number.parseInt(values.minimumAge, 10) : null;
-  const maximumAge = values.maximumAge ? Number.parseInt(values.maximumAge, 10) : null;
-  if (minimumAge != null && (minimumAge < 13 || minimumAge > 100)) errors.minimumAge = "Minimum age must be between 13 and 100.";
-  if (maximumAge != null && (maximumAge < 13 || maximumAge > 100)) errors.maximumAge = "Maximum age must be between 13 and 100.";
-  if (minimumAge != null && maximumAge != null && maximumAge < minimumAge) errors.maximumAge = "Maximum age must be at least the minimum age.";
+  const parseDate = (value: string, field: keyof OpportunityFormValues) => {
+    if (!value) return null;
+    const parsed = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) errors[field] = "Enter a valid date.";
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
+  const lastVerifiedAt = parseDate(values.lastVerifiedAt, "lastVerifiedAt");
+  const nextVerificationAt = parseDate(
+    values.nextVerificationAt,
+    "nextVerificationAt",
+  );
+  const opensAt = parseDate(values.opensAt, "opensAt");
+  const startsAt = parseDate(values.startsAt, "startsAt");
+  const endsAt = parseDate(values.endsAt, "endsAt");
+  const parseInteger = (value: string) => (value ? Number(value) : null);
+  const minimumAge = parseInteger(values.minimumAge);
+  const maximumAge = parseInteger(values.maximumAge);
+  if (
+    minimumAge != null &&
+    (!Number.isInteger(minimumAge) || minimumAge < 13 || minimumAge > 100)
+  )
+    errors.minimumAge =
+      "Minimum age must be a whole number between 13 and 100.";
+  if (
+    maximumAge != null &&
+    (!Number.isInteger(maximumAge) || maximumAge < 13 || maximumAge > 100)
+  )
+    errors.maximumAge =
+      "Maximum age must be a whole number between 13 and 100.";
+  if (minimumAge != null && maximumAge != null && maximumAge < minimumAge)
+    errors.maximumAge = "Maximum age must be at least the minimum age.";
 
   let deadline: Date | null = null;
 
   if (values.deadline) {
-    deadline = new Date(`${values.deadline}T00:00:00`);
-
-    if (Number.isNaN(deadline.getTime())) {
-      errors.deadline = "Enter a valid deadline.";
-    }
+    deadline = parseDate(values.deadline, "deadline");
   }
-  if (opensAt && deadline && deadline < opensAt) errors.deadline = "Deadline must be on or after the opening date.";
-  if (startsAt && endsAt && endsAt < startsAt) errors.endsAt = "Program end must be on or after the start date.";
-  if (values.status === "PUBLISHED") {
-    const readiness = validateOpportunityPublishReadiness({ relationshipType: values.relationshipType, officialSourceUrl: values.officialSourceUrl || null, verificationStatus: values.verificationStatus, lastVerifiedAt });
+  if (opensAt && deadline && deadline < opensAt)
+    errors.deadline = "Deadline must be on or after the opening date.";
+  if (startsAt && endsAt && endsAt < startsAt)
+    errors.endsAt = "Program end must be on or after the start date.";
+  if (
+    values.status === "PUBLISHED" &&
+    values.relationshipType &&
+    values.verificationStatus
+  ) {
+    const readiness = validateOpportunityPublishReadiness({
+      relationshipType: values.relationshipType,
+      officialSourceUrl: values.officialSourceUrl || null,
+      verificationStatus: values.verificationStatus,
+      lastVerifiedAt,
+    });
     if (!readiness.ready) errors.status = readiness.errors.join(" ");
   }
 
   let capacity: number | null = null;
 
   if (values.capacity) {
-    capacity = Number.parseInt(values.capacity, 10);
+    capacity = Number(values.capacity);
 
     if (!Number.isInteger(capacity) || capacity < 1) {
       errors.capacity = "Capacity must be a positive number.";
     }
   }
 
-  if (Object.keys(errors).length > 0 || !values.type || !values.status) {
+  if (
+    Object.keys(errors).length > 0 ||
+    !values.type ||
+    !values.status ||
+    !values.relationshipType ||
+    !values.applicationMethod ||
+    !values.verificationStatus ||
+    !values.availabilityStatus
+  ) {
     return {
       success: false as const,
       errors,
@@ -384,12 +498,19 @@ export function validateOpportunityForm(formData: FormData) {
       applicationInstructions: values.applicationInstructions || null,
       status: values.status,
       relationshipType: values.relationshipType,
+      applicationMethod: values.applicationMethod,
       officialSourceUrl: values.officialSourceUrl || null,
       officialApplicationUrl: values.officialApplicationUrl || null,
-      verificationStatus: values.verificationStatus,
+      verificationStatus:
+        values.status === "ARCHIVED" ? "ARCHIVED" : values.verificationStatus,
       lastVerifiedAt,
       nextVerificationAt,
-      availabilityStatus: values.availabilityStatus,
+      availabilityStatus:
+        values.status === "ARCHIVED"
+          ? "ARCHIVED"
+          : values.status === "CLOSED"
+            ? "CLOSED"
+            : values.availabilityStatus,
       opensAt,
       startsAt,
       endsAt,
@@ -398,7 +519,7 @@ export function validateOpportunityForm(formData: FormData) {
       country: values.country || null,
       minimumAge,
       maximumAge,
-      acceptedGradeLevels: splitList(values.acceptedGradeLevels),
+      acceptedGradeLevels: acceptedGrades.codes,
       requiredCertifications: splitList(values.requiredCertifications),
     },
   };

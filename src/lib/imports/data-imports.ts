@@ -1,12 +1,15 @@
 import "server-only";
 
 import type {
+  ApplicationMethod,
+  GradeLevelCode,
   OpportunityAvailabilityStatus,
   OpportunityRelationshipType,
   OpportunityStatus,
   OpportunityType,
   PartnerStatus,
 } from "@/generated/prisma/enums";
+import { parseGradeLevelCodes } from "@/lib/matching/grade-levels";
 import { optionalSafeExternalUrl } from "@/lib/security/safe-url";
 import { prisma } from "@/lib/db/prisma";
 import {
@@ -50,8 +53,24 @@ const opportunityTypes = [
   "EVENT",
   "PROGRAM",
 ] as const satisfies readonly OpportunityType[];
-const relationshipTypes = ["EXTERNAL_PUBLIC", "FP_PARTNER", "FP_OWNED"] as const satisfies readonly OpportunityRelationshipType[];
-const availabilityStatuses = ["OPEN", "OPENING_SOON", "ROLLING", "CLOSED", "EXPIRED", "ARCHIVED"] as const satisfies readonly OpportunityAvailabilityStatus[];
+const relationshipTypes = [
+  "EXTERNAL_PUBLIC",
+  "FP_PARTNER",
+  "FP_OWNED",
+] as const satisfies readonly OpportunityRelationshipType[];
+const availabilityStatuses = [
+  "OPEN",
+  "OPENING_SOON",
+  "ROLLING",
+  "CLOSED",
+  "EXPIRED",
+  "ARCHIVED",
+] as const satisfies readonly OpportunityAvailabilityStatus[];
+const applicationMethods = [
+  "EXTERNAL_PORTAL",
+  "FP_INTERNAL",
+  "FP_REFERRAL",
+] as const satisfies readonly ApplicationMethod[];
 
 const partnerStatuses = [
   "NOT_CONTACTED",
@@ -94,7 +113,7 @@ function normalizeUrl(value: string) {
 function parseIntValue(value: string) {
   if (!value) return null;
 
-  const parsed = Number.parseInt(value, 10);
+  const parsed = Number(value);
 
   return Number.isInteger(parsed) ? parsed : Number.NaN;
 }
@@ -383,16 +402,55 @@ async function previewOpportunities(
     );
     const deadlineValue = getAliasedValue(row.values, ["deadline"]);
     const deadline = parseDateValue(deadlineValue);
-    const opensAtValue=getAliasedValue(row.values,["opensAt"]);const opensAt=parseDateValue(opensAtValue);
+    const opensAtValue = getAliasedValue(row.values, ["opensAt"]);
+    const opensAt = parseDateValue(opensAtValue);
     const capacity = parseIntValue(getAliasedValue(row.values, ["capacity"]));
-    const relationshipRaw=(getAliasedValue(row.values,["relationshipType"])||"EXTERNAL_PUBLIC").toUpperCase();
-    const relationshipType=relationshipTypes.includes(relationshipRaw as OpportunityRelationshipType)?relationshipRaw as OpportunityRelationshipType:null;
-    const availabilityRaw=(getAliasedValue(row.values,["availabilityStatus"])||"OPEN").toUpperCase();
-    const availabilityStatus=availabilityStatuses.includes(availabilityRaw as OpportunityAvailabilityStatus)?availabilityRaw as OpportunityAvailabilityStatus:null;
-    const officialSourceUrl=getAliasedValue(row.values,["officialSourceUrl","sourceUrl"]);
-    const officialApplicationUrl=getAliasedValue(row.values,["officialApplicationUrl","applicationUrl"]);
-    const cycleLabel=getAliasedValue(row.values,["cycleLabel"]);
-    const location=getAliasedValue(row.values,["location"]);
+    const relationshipRaw = (
+      getAliasedValue(row.values, ["relationshipType"]) || "EXTERNAL_PUBLIC"
+    ).toUpperCase();
+    const relationshipType = relationshipTypes.includes(
+      relationshipRaw as OpportunityRelationshipType,
+    )
+      ? (relationshipRaw as OpportunityRelationshipType)
+      : null;
+    const availabilityRaw = (
+      getAliasedValue(row.values, ["availabilityStatus"]) || "OPEN"
+    ).toUpperCase();
+    const availabilityStatus = availabilityStatuses.includes(
+      availabilityRaw as OpportunityAvailabilityStatus,
+    )
+      ? (availabilityRaw as OpportunityAvailabilityStatus)
+      : null;
+    const applicationMethodRaw = (
+      getAliasedValue(row.values, ["applicationMethod"]) || "EXTERNAL_PORTAL"
+    ).toUpperCase();
+    const applicationMethod = applicationMethods.includes(
+      applicationMethodRaw as ApplicationMethod,
+    )
+      ? (applicationMethodRaw as ApplicationMethod)
+      : null;
+    const officialSourceUrl = getAliasedValue(row.values, [
+      "officialSourceUrl",
+      "sourceUrl",
+    ]);
+    const officialApplicationUrl = getAliasedValue(row.values, [
+      "officialApplicationUrl",
+      "applicationUrl",
+    ]);
+    const cycleLabel = getAliasedValue(row.values, ["cycleLabel"]);
+    const location = getAliasedValue(row.values, ["location"]);
+    const minimumAge = parseIntValue(
+      getAliasedValue(row.values, ["minimumAge"]),
+    );
+    const maximumAge = parseIntValue(
+      getAliasedValue(row.values, ["maximumAge"]),
+    );
+    const estimatedApplicationMinutes = parseIntValue(
+      getAliasedValue(row.values, ["estimatedApplicationMinutes"]),
+    );
+    const acceptedGrades = parseGradeLevelCodes(
+      splitImportList(getAliasedValue(row.values, ["acceptedGradeLevels"])),
+    );
     const duplicateKey = organization
       ? `${organization.id}:${normalizeDuplicateKey(title)}:${normalizeDuplicateKey(cycleLabel)}:${normalizeDuplicateKey(location)}:${normalizeUrl(officialApplicationUrl)}`
       : "";
@@ -403,12 +461,51 @@ async function previewOpportunities(
     if (!type) errors.push("Opportunity type is required or invalid.");
     if (!organization) errors.push("Matching organization was not found.");
     if (deadlineValue && !deadline) errors.push("Deadline is invalid.");
-    if(opensAtValue&&!opensAt)errors.push("Opening date is invalid.");
+    if (opensAtValue && !opensAt) errors.push("Opening date is invalid.");
     if (Number.isNaN(capacity)) errors.push("Capacity must be a number.");
-    if(!relationshipType) errors.push("Relationship type is invalid.");
-    if(!availabilityStatus) errors.push("Availability status is invalid.");
-    if(!optionalSafeExternalUrl(officialSourceUrl)) errors.push("Official source URL is invalid.");
-    if(!optionalSafeExternalUrl(officialApplicationUrl)) errors.push("Official application URL is invalid.");
+    if (!relationshipType) errors.push("Relationship type is invalid.");
+    if (!availabilityStatus) errors.push("Availability status is invalid.");
+    if (!applicationMethod) errors.push("Application method is invalid.");
+    if (
+      relationshipType === "EXTERNAL_PUBLIC" &&
+      applicationMethod !== "EXTERNAL_PORTAL"
+    )
+      errors.push("External public opportunities must use EXTERNAL_PORTAL.");
+    if (
+      Number.isNaN(minimumAge) ||
+      (minimumAge != null && (minimumAge < 13 || minimumAge > 100))
+    )
+      errors.push("Minimum age must be a whole number between 13 and 100.");
+    if (
+      Number.isNaN(maximumAge) ||
+      (maximumAge != null && (maximumAge < 13 || maximumAge > 100))
+    )
+      errors.push("Maximum age must be a whole number between 13 and 100.");
+    if (
+      minimumAge != null &&
+      maximumAge != null &&
+      !Number.isNaN(minimumAge) &&
+      !Number.isNaN(maximumAge) &&
+      maximumAge < minimumAge
+    )
+      errors.push("Maximum age must be at least minimum age.");
+    if (
+      Number.isNaN(estimatedApplicationMinutes) ||
+      (estimatedApplicationMinutes != null &&
+        (estimatedApplicationMinutes < 1 ||
+          estimatedApplicationMinutes > 10_000))
+    )
+      errors.push(
+        "Estimated application minutes must be a whole number between 1 and 10000.",
+      );
+    if (acceptedGrades.unknownValues.length > 0)
+      errors.push(
+        `Unrecognized grade level: ${acceptedGrades.unknownValues.join(", ")}.`,
+      );
+    if (!optionalSafeExternalUrl(officialSourceUrl))
+      errors.push("Official source URL is invalid.");
+    if (!optionalSafeExternalUrl(officialApplicationUrl))
+      errors.push("Official application URL is invalid.");
     if (duplicateKey && seenKeys.has(duplicateKey)) {
       warnings.push("Duplicate opportunity title + organization in this CSV.");
     }
@@ -440,10 +537,24 @@ async function previewOpportunities(
           "eligibility",
         ]),
         location,
-        city:getAliasedValue(row.values,["city"]),state:getAliasedValue(row.values,["state"]),country:getAliasedValue(row.values,["country"]),
-        relationshipType:relationshipType??"",officialSourceUrl,officialApplicationUrl,availabilityStatus:availabilityStatus??"",cycleLabel,
-        minimumAge:parseIntValue(getAliasedValue(row.values,["minimumAge"])),maximumAge:parseIntValue(getAliasedValue(row.values,["maximumAge"])),
-        acceptedGradeLevels:splitImportList(getAliasedValue(row.values,["acceptedGradeLevels"])),requiredCertifications:splitImportList(getAliasedValue(row.values,["requiredCertifications"])),estimatedApplicationMinutes:parseIntValue(getAliasedValue(row.values,["estimatedApplicationMinutes"])),
+        city: getAliasedValue(row.values, ["city"]),
+        state: getAliasedValue(row.values, ["state"]),
+        country: getAliasedValue(row.values, ["country"]),
+        relationshipType: relationshipType ?? "",
+        applicationMethod: applicationMethod ?? "",
+        officialSourceUrl,
+        officialApplicationUrl,
+        availabilityStatus: availabilityStatus ?? "",
+        cycleLabel,
+        minimumAge: Number.isNaN(minimumAge) ? null : minimumAge,
+        maximumAge: Number.isNaN(maximumAge) ? null : maximumAge,
+        acceptedGradeLevels: acceptedGrades.codes,
+        requiredCertifications: splitImportList(
+          getAliasedValue(row.values, ["requiredCertifications"]),
+        ),
+        estimatedApplicationMinutes: Number.isNaN(estimatedApplicationMinutes)
+          ? null
+          : estimatedApplicationMinutes,
         organizationId: organization?.id ?? null,
         organizationName: organization?.name ?? organizationName,
         paidStatus: getAliasedValue(row.values, ["paidStatus"]),
@@ -742,7 +853,11 @@ export async function importPreviewRows({
               row.normalized.deadline
                 ? new Date(row.normalized.deadline)
                 : null,
-            opensAt:typeof row.normalized.opensAt==="string"&&row.normalized.opensAt?new Date(row.normalized.opensAt):null,
+            opensAt:
+              typeof row.normalized.opensAt === "string" &&
+              row.normalized.opensAt
+                ? new Date(row.normalized.opensAt)
+                : null,
             description: getStringValue(row, "description") || null,
             eligibilityRequirements:
               getStringValue(row, "eligibilityRequirements") || null,
@@ -755,13 +870,46 @@ export async function importPreviewRows({
             status: status as OpportunityStatus,
             title,
             type: getStringValue(row, "type") as OpportunityType,
-            relationshipType: getStringValue(row,"relationshipType") as OpportunityRelationshipType,
-            officialSourceUrl:getStringValue(row,"officialSourceUrl")||null,officialApplicationUrl:getStringValue(row,"officialApplicationUrl")||null,
-            availabilityStatus:getStringValue(row,"availabilityStatus") as OpportunityAvailabilityStatus,
-            verificationStatus:"NEEDS_REVIEW",
-            cycleLabel:getStringValue(row,"cycleLabel")||null,city:getStringValue(row,"city")||null,state:getStringValue(row,"state")||null,country:getStringValue(row,"country")||null,
-            minimumAge:typeof row.normalized.minimumAge==="number"?row.normalized.minimumAge:null,maximumAge:typeof row.normalized.maximumAge==="number"?row.normalized.maximumAge:null,
-            acceptedGradeLevels:getStringArrayValue(row,"acceptedGradeLevels"),requiredCertifications:getStringArrayValue(row,"requiredCertifications"),estimatedApplicationMinutes:typeof row.normalized.estimatedApplicationMinutes==="number"?row.normalized.estimatedApplicationMinutes:null,
+            relationshipType: getStringValue(
+              row,
+              "relationshipType",
+            ) as OpportunityRelationshipType,
+            applicationMethod: getStringValue(
+              row,
+              "applicationMethod",
+            ) as ApplicationMethod,
+            officialSourceUrl: getStringValue(row, "officialSourceUrl") || null,
+            officialApplicationUrl:
+              getStringValue(row, "officialApplicationUrl") || null,
+            availabilityStatus: getStringValue(
+              row,
+              "availabilityStatus",
+            ) as OpportunityAvailabilityStatus,
+            verificationStatus: "NEEDS_REVIEW",
+            cycleLabel: getStringValue(row, "cycleLabel") || null,
+            city: getStringValue(row, "city") || null,
+            state: getStringValue(row, "state") || null,
+            country: getStringValue(row, "country") || null,
+            minimumAge:
+              typeof row.normalized.minimumAge === "number"
+                ? row.normalized.minimumAge
+                : null,
+            maximumAge:
+              typeof row.normalized.maximumAge === "number"
+                ? row.normalized.maximumAge
+                : null,
+            acceptedGradeLevels: getStringArrayValue(
+              row,
+              "acceptedGradeLevels",
+            ) as GradeLevelCode[],
+            requiredCertifications: getStringArrayValue(
+              row,
+              "requiredCertifications",
+            ),
+            estimatedApplicationMinutes:
+              typeof row.normalized.estimatedApplicationMinutes === "number"
+                ? row.normalized.estimatedApplicationMinutes
+                : null,
           },
         });
         summary.created += 1;
