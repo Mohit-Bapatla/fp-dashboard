@@ -1,6 +1,11 @@
 name: Source snapshot
 
 on:
+  push:
+    branches:
+      - agent/opportunity-navigator-mvp
+    paths:
+      - ".github/workflows/source-snapshot.yml"
   pull_request:
     branches:
       - main
@@ -14,7 +19,7 @@ jobs:
   snapshot:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out pull request branch
+      - name: Check out implementation branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
