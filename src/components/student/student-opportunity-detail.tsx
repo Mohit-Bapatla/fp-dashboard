@@ -11,6 +11,13 @@ import Link from "next/link";
 
 import { MatchExplanationPanel } from "@/components/matching/match-explanation-panel";
 import type { OpportunityType } from "@/generated/prisma/enums";
+import type { OpportunityAvailabilityStatus, OpportunityRelationshipType, OpportunityVerificationStatus } from "@/generated/prisma/enums";
+import { EligibilityBadge } from "@/components/opportunities/eligibility-badge";
+import { OpportunityRelationshipBadge, OpportunityRelationshipDisclaimer } from "@/components/opportunities/opportunity-relationship-badge";
+import type { EligibilityResult } from "@/lib/matching/opportunity-eligibility";
+import { saveOpportunity, setFollowReopening, unsaveOpportunity } from "@/app/dashboard/student/saved/actions";
+import { startApplicationWorkspace } from "@/app/dashboard/student/applications/workspace-actions";
+import { reportIncorrectOpportunity } from "@/app/dashboard/student/opportunities/[opportunityId]/correction-actions";
 import type { MatchExplanation } from "@/lib/matching/explanations";
 import type { MatchScoreResult } from "@/lib/matching/match-score";
 
@@ -30,6 +37,19 @@ export type StudentOpportunityDetailData = {
   applicationInstructions: string | null;
   publishedAt: Date | null;
   createdAt: Date;
+  relationshipType: OpportunityRelationshipType;
+  officialSourceUrl: string | null;
+  officialApplicationUrl: string | null;
+  verificationStatus: OpportunityVerificationStatus;
+  lastVerifiedAt: Date | null;
+  nextVerificationAt: Date | null;
+  availabilityStatus: OpportunityAvailabilityStatus;
+  opensAt: Date | null;
+  startsAt: Date | null;
+  endsAt: Date | null;
+  city: string | null; state: string | null; country: string | null; geographicScope: string | null;
+  minimumAge: number | null; maximumAge: number | null; acceptedGradeLevels: string[]; requiredCertifications: string[]; eligibilityUnknowns: string[];
+  estimatedApplicationMinutes: number | null; essayQuestionCount: number | null; scheduleRequirements: string | null; estimatedWeeklyHours: number | null;
   organization: {
     name: string;
     website: string | null;
@@ -54,6 +74,7 @@ export type StudentOpportunityApplyState =
   | {
       kind: "canApply";
     }
+  | { kind: "workspace"; applicationId: string }
   | {
       kind: "needsProfile";
     }
@@ -89,14 +110,18 @@ export function StudentOpportunityDetail({
   match,
   opportunity,
   similarOpportunities,
-  source,
+  eligibility,
+  isSaved,
+  followReopening,
 }: {
   applyState: StudentOpportunityApplyState;
   explanation: MatchExplanation | null;
   match: MatchScoreResult | null;
   opportunity: StudentOpportunityDetailData;
   similarOpportunities: SimilarOpportunityData[];
-  source?: string;
+  eligibility: EligibilityResult;
+  isSaved: boolean;
+  followReopening: boolean;
 }) {
   return (
     <div className="space-y-8">
@@ -122,11 +147,13 @@ export function StudentOpportunityDetail({
                 {formatEnumLabel(opportunity.type)}
               </span>
               <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-                Published
+                {formatEnumLabel(opportunity.availabilityStatus)}
               </span>
+              <OpportunityRelationshipBadge relationshipType={opportunity.relationshipType} />
+              <EligibilityBadge category={eligibility.category} />
               {match ? (
                 <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                  {match.score}% fit
+                  Ranking score {match.score}
                 </span>
               ) : null}
             </div>
@@ -139,9 +166,9 @@ export function StudentOpportunityDetail({
           </div>
           <ApplyCallToAction
             opportunityId={opportunity.id}
-            source={source}
             state={applyState}
           />
+          <form action={isSaved ? unsaveOpportunity : saveOpportunity}><input name="opportunityId" type="hidden" value={opportunity.id}/><button className="inline-flex min-h-10 rounded-lg border border-border px-4 py-2 text-sm font-medium" type="submit">{isSaved ? "Unsave" : "Save"}</button></form>
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -180,8 +207,19 @@ export function StudentOpportunityDetail({
             label="Published"
             value={formatDate(opportunity.publishedAt ?? opportunity.createdAt)}
           />
+          <DetailFact label="Last verified" value={formatDate(opportunity.lastVerifiedAt)} />
+          <DetailFact label="Program dates" value={`${formatDate(opportunity.startsAt)} – ${formatDate(opportunity.endsAt)}`} />
+          <DetailFact label="Weekly commitment" value={opportunity.estimatedWeeklyHours == null ? "Not specified" : `${opportunity.estimatedWeeklyHours} hours`} />
+          <DetailFact label="Application effort" value={opportunity.estimatedApplicationMinutes == null ? "Not specified" : `${opportunity.estimatedApplicationMinutes} minutes`} />
         </div>
+        <div className="mt-5 rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground"><OpportunityRelationshipDisclaimer relationshipType={opportunity.relationshipType} /></div>
+        <div className="mt-4 flex flex-wrap gap-3">{opportunity.officialSourceUrl ? <a className="text-sm font-medium text-primary underline" href={opportunity.officialSourceUrl} rel="noreferrer" target="_blank">Official source</a> : <span className="text-sm text-muted-foreground">Official source not published</span>}{opportunity.officialApplicationUrl ? <a className="text-sm font-medium text-primary underline" href={opportunity.officialApplicationUrl} rel="noreferrer" target="_blank">Official application</a> : null}</div>
+        {isSaved ? <form action={setFollowReopening} className="mt-4"><input name="opportunityId" type="hidden" value={opportunity.id}/><input name="followReopening" type="hidden" value={String(!followReopening)}/><button className="rounded-lg border border-border px-4 py-2 text-sm" type="submit">{followReopening ? "Stop reopening alerts" : "Follow for reopening"}</button></form> : null}
       </section>
+
+      <details className="rounded-xl border border-border bg-background p-6"><summary className="cursor-pointer font-semibold">Report incorrect information</summary><form action={reportIncorrectOpportunity} className="mt-4 grid gap-3"><input name="opportunityId" type="hidden" value={opportunity.id}/><select className="rounded-lg border border-border p-2 text-sm" name="category"><option value="BROKEN_LINK">Broken link</option><option value="INCORRECT_DEADLINE">Incorrect deadline</option><option value="ELIGIBILITY_ERROR">Eligibility error</option><option value="PROGRAM_CLOSED">Program closed</option><option value="DUPLICATE">Duplicate</option><option value="OTHER">Other</option></select><textarea className="rounded-lg border border-border p-2 text-sm" name="details" placeholder="What should the team verify?" rows={4}/><input className="rounded-lg border border-border p-2 text-sm" name="sourceUrl" placeholder="Supporting source URL (optional)" type="url"/><button className="w-fit rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground" type="submit">Send report</button></form></details>
+
+      <section className="rounded-xl border border-border bg-background p-6 shadow-sm"><div className="flex flex-wrap items-center gap-3"><h2 className="text-lg font-semibold">Eligibility</h2><EligibilityBadge category={eligibility.category}/></div><div className="mt-4 grid gap-4 md:grid-cols-2"><MatchPanel empty="No confirmed requirements yet." items={eligibility.confirmedMatches} title="Confirmed matches"/><MatchPanel empty="No explicit concerns found." items={[...eligibility.blockingReasons, ...eligibility.concerns]} title="Concerns"/><MatchPanel empty="No unknown requirements recorded." items={[...eligibility.unknowns, ...opportunity.eligibilityUnknowns]} title="Unknown requirements"/></div></section>
 
       {match ? (
         <section className="space-y-4">
@@ -248,14 +286,14 @@ export function StudentOpportunityDetail({
 
           <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
             <h2 className="text-base font-semibold text-foreground">
-              Partner organization
+              Host organization
             </h2>
             <p className="mt-3 text-sm font-medium text-foreground">
               {opportunity.organization.name}
             </p>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               {opportunity.organization.description ||
-                "More partner details will be added later."}
+                "More host details will be added later."}
             </p>
             {opportunity.organization.website ? (
               <a
@@ -330,11 +368,9 @@ function MatchPanel({
 
 function ApplyCallToAction({
   opportunityId,
-  source,
   state,
 }: {
   opportunityId: string;
-  source?: string;
   state: StudentOpportunityApplyState;
 }) {
   if (state.kind === "alreadyApplied") {
@@ -361,6 +397,7 @@ function ApplyCallToAction({
       </div>
     );
   }
+  if (state.kind === "workspace") return <Link className="inline-flex min-h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground" href={`/dashboard/student/applications/${state.applicationId}`}>Continue application</Link>;
 
   if (state.kind === "needsProfile") {
     return (
@@ -387,14 +424,14 @@ function ApplyCallToAction({
   }
 
   return (
-    <Link
+    <form action={startApplicationWorkspace}>
+      <input name="opportunityId" type="hidden" value={opportunityId}/>
+    <button
       className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-      href={`/dashboard/student/opportunities/${opportunityId}/apply${
-        source === "recommendation" ? "?source=recommendation" : ""
-      }`}
+      type="submit"
     >
-      Apply now
-    </Link>
+      Start application plan
+    </button></form>
   );
 }
 

@@ -49,6 +49,7 @@ export default async function EditAdminOpportunityPage({
         requiredDocuments: true,
         applicationInstructions: true,
         status: true,
+        relationshipType: true, officialSourceUrl: true, officialApplicationUrl: true, verificationStatus: true, lastVerifiedAt: true, nextVerificationAt: true, availabilityStatus: true, opensAt: true, startsAt: true, endsAt: true, city: true, state: true, country: true, minimumAge: true, maximumAge: true, acceptedGradeLevels: true, requiredCertifications: true,
       },
     }),
     prisma.partnerOrganization.findMany({
@@ -83,6 +84,17 @@ export default async function EditAdminOpportunityPage({
     requiredDocuments: opportunity.requiredDocuments.join("\n"),
     applicationInstructions: opportunity.applicationInstructions ?? "",
     status: opportunity.status,
+    relationshipType: opportunity.relationshipType,
+    officialSourceUrl: opportunity.officialSourceUrl ?? "",
+    officialApplicationUrl: opportunity.officialApplicationUrl ?? "",
+    verificationStatus: opportunity.verificationStatus,
+    lastVerifiedAt: formatDateInput(opportunity.lastVerifiedAt),
+    nextVerificationAt: formatDateInput(opportunity.nextVerificationAt),
+    availabilityStatus: opportunity.availabilityStatus,
+    opensAt: formatDateInput(opportunity.opensAt), startsAt: formatDateInput(opportunity.startsAt), endsAt: formatDateInput(opportunity.endsAt),
+    city: opportunity.city ?? "", state: opportunity.state ?? "", country: opportunity.country ?? "",
+    minimumAge: opportunity.minimumAge?.toString() ?? "", maximumAge: opportunity.maximumAge?.toString() ?? "",
+    acceptedGradeLevels: opportunity.acceptedGradeLevels.join(", "), requiredCertifications: opportunity.requiredCertifications.join(", "),
   };
 
   return (

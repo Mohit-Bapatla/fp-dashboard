@@ -80,6 +80,12 @@ export default async function StudentOnboardingPage() {
       linkedinUrl: profile?.linkedinUrl ?? "",
       githubUrl: profile?.githubUrl ?? "",
       portfolioUrl: profile?.portfolioUrl ?? "",
+      ageYears: profile?.ageYears?.toString() ?? "",
+      maximumTravelMiles: profile?.maximumTravelMiles?.toString() ?? "",
+      paidOnlyPreference: profile?.paidOnlyPreference == null ? "" : String(profile.paidOnlyPreference),
+      preferredSeasons: listToText(profile?.preferredSeasons ?? []),
+      certifications: listToText(profile?.certifications ?? []),
+      transportationNotes: profile?.transportationNotes ?? "",
     },
   };
 

@@ -29,6 +29,12 @@ export type StudentProfileFormValues = {
   linkedinUrl: string;
   githubUrl: string;
   portfolioUrl: string;
+  ageYears: string;
+  maximumTravelMiles: string;
+  paidOnlyPreference: string;
+  preferredSeasons: string;
+  certifications: string;
+  transportationNotes: string;
 };
 
 export type StudentProfileFieldErrors = Partial<
@@ -56,6 +62,12 @@ export type StudentProfileValidationResult =
         linkedinUrl: string | null;
         githubUrl: string | null;
         portfolioUrl: string | null;
+        ageYears: number | null;
+        maximumTravelMiles: number | null;
+        paidOnlyPreference: boolean | null;
+        preferredSeasons: string[];
+        certifications: string[];
+        transportationNotes: string | null;
       };
       values: StudentProfileFormValues;
     }
@@ -84,6 +96,12 @@ export const emptyStudentProfileFormValues: StudentProfileFormValues = {
   linkedinUrl: "",
   githubUrl: "",
   portfolioUrl: "",
+  ageYears: "",
+  maximumTravelMiles: "",
+  paidOnlyPreference: "",
+  preferredSeasons: "",
+  certifications: "",
+  transportationNotes: "",
 };
 
 const requiredFields = [
@@ -207,6 +225,12 @@ export function valuesFromFormData(
     linkedinUrl: getString(formData, "linkedinUrl"),
     githubUrl: getString(formData, "githubUrl"),
     portfolioUrl: getString(formData, "portfolioUrl"),
+    ageYears: getString(formData, "ageYears"),
+    maximumTravelMiles: getString(formData, "maximumTravelMiles"),
+    paidOnlyPreference: getString(formData, "paidOnlyPreference"),
+    preferredSeasons: getString(formData, "preferredSeasons"),
+    certifications: getString(formData, "certifications"),
+    transportationNotes: getString(formData, "transportationNotes"),
   };
 }
 
@@ -245,6 +269,10 @@ export function validateStudentProfileForm(
       errors[field] = "Enter a valid URL starting with http:// or https://.";
     }
   }
+  const ageYears = values.ageYears ? Number.parseInt(values.ageYears, 10) : null;
+  const maximumTravelMiles = values.maximumTravelMiles ? Number.parseInt(values.maximumTravelMiles, 10) : null;
+  if (ageYears != null && (!Number.isInteger(ageYears) || ageYears < 13 || ageYears > 100)) errors.ageYears = "Age must be between 13 and 100.";
+  if (maximumTravelMiles != null && (!Number.isInteger(maximumTravelMiles) || maximumTravelMiles < 1 || maximumTravelMiles > 500)) errors.maximumTravelMiles = "Travel distance must be between 1 and 500 miles.";
 
   if (Object.keys(errors).length > 0) {
     return {
@@ -278,6 +306,12 @@ export function validateStudentProfileForm(
       linkedinUrl: values.linkedinUrl || null,
       githubUrl: values.githubUrl || null,
       portfolioUrl: values.portfolioUrl || null,
+      ageYears,
+      maximumTravelMiles,
+      paidOnlyPreference: values.paidOnlyPreference === "" ? null : values.paidOnlyPreference === "true",
+      preferredSeasons: splitList(values.preferredSeasons),
+      certifications: splitList(values.certifications),
+      transportationNotes: values.transportationNotes || null,
     },
   };
 }

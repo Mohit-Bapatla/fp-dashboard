@@ -7,6 +7,8 @@ import {
 } from "@/components/student/student-opportunity-detail";
 import { getOpportunityMatchExplanation } from "@/lib/matching/explanations";
 import { getOpportunityMatchScore } from "@/lib/matching/match-score";
+import { evaluateOpportunityEligibility } from "@/lib/matching/opportunity-eligibility";
+import { isSafeExternalUrl } from "@/lib/security/safe-url";
 import {
   cosineSimilarity,
   getEmbeddingVectorForEntity,
@@ -21,19 +23,14 @@ type StudentOpportunityDetailPageProps = {
   params: Promise<{
     opportunityId: string;
   }>;
-  searchParams: Promise<{
-    source?: string;
-  }>;
 };
 
 export default async function StudentOpportunityDetailPage({
   params,
-  searchParams,
 }: StudentOpportunityDetailPageProps) {
   const { userId } = await assertStudentAccess();
 
   const { opportunityId } = await params;
-  const query = await searchParams;
   const [user, opportunity] = await Promise.all([
     getCurrentStudentProfile(userId),
     prisma.opportunity.findFirst({
@@ -57,6 +54,29 @@ export default async function StudentOpportunityDetailPage({
         applicationInstructions: true,
         publishedAt: true,
         createdAt: true,
+        relationshipType: true,
+        officialSourceUrl: true,
+        officialApplicationUrl: true,
+        verificationStatus: true,
+        lastVerifiedAt: true,
+        nextVerificationAt: true,
+        availabilityStatus: true,
+        opensAt: true,
+        startsAt: true,
+        endsAt: true,
+        city: true,
+        state: true,
+        country: true,
+        geographicScope: true,
+        minimumAge: true,
+        maximumAge: true,
+        acceptedGradeLevels: true,
+        requiredCertifications: true,
+        eligibilityUnknowns: true,
+        estimatedApplicationMinutes: true,
+        essayQuestionCount: true,
+        scheduleRequirements: true,
+        estimatedWeeklyHours: true,
         organization: {
           select: {
             name: true,
@@ -83,6 +103,8 @@ export default async function StudentOpportunityDetailPage({
             },
           },
           select: {
+            id: true,
+            status: true,
             submittedAt: true,
           },
         }),
@@ -101,6 +123,8 @@ export default async function StudentOpportunityDetailPage({
     : null;
   const applyState = !profile
     ? ({ kind: "needsProfile" } as const)
+    : applicationState?.[0] && ["DRAFT", "SAVED", "PLANNING", "PREPARING", "WAITING_FOR_RECOMMENDATION", "READY_TO_SUBMIT"].includes(applicationState[0].status)
+      ? ({ kind: "workspace", applicationId: applicationState[0].id } as const)
     : applicationState?.[0]
       ? ({
           kind: "alreadyApplied",
@@ -123,6 +147,9 @@ export default async function StudentOpportunityDetailPage({
         resumeSkills: applicationState?.[1]?.extractedSkills ?? [],
       })
     : null;
+  const eligibility = evaluateOpportunityEligibility({ opportunity, student: profile });
+  const saved = profile ? await prisma.savedOpportunity.findUnique({ where: { studentProfileId_opportunityId: { studentProfileId: profile.id, opportunityId } }, select: { followReopening: true } }) : null;
+  const safeOpportunity = { ...opportunity, officialSourceUrl: isSafeExternalUrl(opportunity.officialSourceUrl) ? opportunity.officialSourceUrl : null, officialApplicationUrl: isSafeExternalUrl(opportunity.officialApplicationUrl) ? opportunity.officialApplicationUrl : null };
   const currentOpportunityVector = await getEmbeddingVectorForEntity({
     entityId: opportunity.id,
     entityType: "OPPORTUNITY",
@@ -200,9 +227,11 @@ export default async function StudentOpportunityDetailPage({
           applyState={applyState}
           explanation={explanation}
           match={match}
-          opportunity={opportunity}
+          opportunity={safeOpportunity}
+          eligibility={eligibility}
+          isSaved={Boolean(saved)}
+          followReopening={saved?.followReopening ?? false}
           similarOpportunities={similarOpportunities}
-          source={query.source}
         />
       </div>
     </DashboardShell>

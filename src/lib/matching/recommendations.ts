@@ -3,6 +3,7 @@ import "server-only";
 import { prisma } from "@/lib/db/prisma";
 import { createStructuredJsonResponse } from "@/lib/ai/openai";
 import { getOpportunityMatchScore } from "@/lib/matching/match-score";
+import { evaluateOpportunityEligibility } from "@/lib/matching/opportunity-eligibility";
 import {
   cosineSimilarity,
   parseEmbedding,
@@ -68,6 +69,9 @@ export async function getRecommendedOpportunities(studentProfileId: string) {
       opportunityTypes: true,
       remotePreference: true,
       state: true,
+      ageYears: true,
+      gradeYear: true,
+      certifications: true,
       resumes: {
         orderBy: {
           updatedAt: "desc",
@@ -106,6 +110,7 @@ export async function getRecommendedOpportunities(studentProfileId: string) {
       specialty: true,
       title: true,
       type: true,
+      availabilityStatus: true, minimumAge: true, maximumAge: true, acceptedGradeLevels: true, requiredCertifications: true, city: true, state: true, country: true, geographicScope: true, scheduleRequirements: true, relationshipType: true,
       organization: {
         select: {
           name: true,
@@ -209,11 +214,12 @@ export async function getRecommendedOpportunities(studentProfileId: string) {
         getTime(first.opportunity.publishedAt)
       );
     })
-    .slice(0, 3);
+    .slice(0, 6);
 
   return Promise.all(
     ranked.map(async (item) => ({
       ...item,
+      eligibility: evaluateOpportunityEligibility({ opportunity: item.opportunity, student: profile }),
       match: {
         ...item.match,
         reasons: await polishReasons(item.match.reasons),

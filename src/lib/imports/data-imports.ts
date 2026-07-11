@@ -1,10 +1,13 @@
 import "server-only";
 
 import type {
+  OpportunityAvailabilityStatus,
+  OpportunityRelationshipType,
   OpportunityStatus,
   OpportunityType,
   PartnerStatus,
 } from "@/generated/prisma/enums";
+import { optionalSafeExternalUrl } from "@/lib/security/safe-url";
 import { prisma } from "@/lib/db/prisma";
 import {
   getAliasedValue,
@@ -47,6 +50,8 @@ const opportunityTypes = [
   "EVENT",
   "PROGRAM",
 ] as const satisfies readonly OpportunityType[];
+const relationshipTypes = ["EXTERNAL_PUBLIC", "FP_PARTNER", "FP_OWNED"] as const satisfies readonly OpportunityRelationshipType[];
+const availabilityStatuses = ["OPEN", "OPENING_SOON", "ROLLING", "CLOSED", "EXPIRED", "ARCHIVED"] as const satisfies readonly OpportunityAvailabilityStatus[];
 
 const partnerStatuses = [
   "NOT_CONTACTED",
@@ -347,12 +352,15 @@ async function previewOpportunities(
     select: {
       organizationId: true,
       title: true,
+      cycleLabel: true,
+      location: true,
+      officialApplicationUrl: true,
     },
   });
   const existingKeys = new Set(
     existingOpportunities.map(
       (opportunity) =>
-        `${opportunity.organizationId}:${normalizeDuplicateKey(opportunity.title)}`,
+        `${opportunity.organizationId}:${normalizeDuplicateKey(opportunity.title)}:${normalizeDuplicateKey(opportunity.cycleLabel ?? "")}:${normalizeDuplicateKey(opportunity.location ?? "")}:${normalizeUrl(opportunity.officialApplicationUrl ?? "")}`,
     ),
   );
   const seenKeys = new Set<string>();
@@ -375,9 +383,18 @@ async function previewOpportunities(
     );
     const deadlineValue = getAliasedValue(row.values, ["deadline"]);
     const deadline = parseDateValue(deadlineValue);
+    const opensAtValue=getAliasedValue(row.values,["opensAt"]);const opensAt=parseDateValue(opensAtValue);
     const capacity = parseIntValue(getAliasedValue(row.values, ["capacity"]));
+    const relationshipRaw=(getAliasedValue(row.values,["relationshipType"])||"EXTERNAL_PUBLIC").toUpperCase();
+    const relationshipType=relationshipTypes.includes(relationshipRaw as OpportunityRelationshipType)?relationshipRaw as OpportunityRelationshipType:null;
+    const availabilityRaw=(getAliasedValue(row.values,["availabilityStatus"])||"OPEN").toUpperCase();
+    const availabilityStatus=availabilityStatuses.includes(availabilityRaw as OpportunityAvailabilityStatus)?availabilityRaw as OpportunityAvailabilityStatus:null;
+    const officialSourceUrl=getAliasedValue(row.values,["officialSourceUrl","sourceUrl"]);
+    const officialApplicationUrl=getAliasedValue(row.values,["officialApplicationUrl","applicationUrl"]);
+    const cycleLabel=getAliasedValue(row.values,["cycleLabel"]);
+    const location=getAliasedValue(row.values,["location"]);
     const duplicateKey = organization
-      ? `${organization.id}:${normalizeDuplicateKey(title)}`
+      ? `${organization.id}:${normalizeDuplicateKey(title)}:${normalizeDuplicateKey(cycleLabel)}:${normalizeDuplicateKey(location)}:${normalizeUrl(officialApplicationUrl)}`
       : "";
     const errors: string[] = [];
     const warnings: string[] = [];
@@ -386,7 +403,12 @@ async function previewOpportunities(
     if (!type) errors.push("Opportunity type is required or invalid.");
     if (!organization) errors.push("Matching organization was not found.");
     if (deadlineValue && !deadline) errors.push("Deadline is invalid.");
+    if(opensAtValue&&!opensAt)errors.push("Opening date is invalid.");
     if (Number.isNaN(capacity)) errors.push("Capacity must be a number.");
+    if(!relationshipType) errors.push("Relationship type is invalid.");
+    if(!availabilityStatus) errors.push("Availability status is invalid.");
+    if(!optionalSafeExternalUrl(officialSourceUrl)) errors.push("Official source URL is invalid.");
+    if(!optionalSafeExternalUrl(officialApplicationUrl)) errors.push("Official application URL is invalid.");
     if (duplicateKey && seenKeys.has(duplicateKey)) {
       warnings.push("Duplicate opportunity title + organization in this CSV.");
     }
@@ -411,12 +433,17 @@ async function previewOpportunities(
         ]),
         capacity: Number.isNaN(capacity) ? null : capacity,
         deadline: deadline ? deadline.toISOString() : null,
+        opensAt: opensAt ? opensAt.toISOString() : null,
         description: getAliasedValue(row.values, ["description"]),
         eligibilityRequirements: getAliasedValue(row.values, [
           "eligibilityRequirements",
           "eligibility",
         ]),
-        location: getAliasedValue(row.values, ["location"]),
+        location,
+        city:getAliasedValue(row.values,["city"]),state:getAliasedValue(row.values,["state"]),country:getAliasedValue(row.values,["country"]),
+        relationshipType:relationshipType??"",officialSourceUrl,officialApplicationUrl,availabilityStatus:availabilityStatus??"",cycleLabel,
+        minimumAge:parseIntValue(getAliasedValue(row.values,["minimumAge"])),maximumAge:parseIntValue(getAliasedValue(row.values,["maximumAge"])),
+        acceptedGradeLevels:splitImportList(getAliasedValue(row.values,["acceptedGradeLevels"])),requiredCertifications:splitImportList(getAliasedValue(row.values,["requiredCertifications"])),estimatedApplicationMinutes:parseIntValue(getAliasedValue(row.values,["estimatedApplicationMinutes"])),
         organizationId: organization?.id ?? null,
         organizationName: organization?.name ?? organizationName,
         paidStatus: getAliasedValue(row.values, ["paidStatus"]),
@@ -715,6 +742,7 @@ export async function importPreviewRows({
               row.normalized.deadline
                 ? new Date(row.normalized.deadline)
                 : null,
+            opensAt:typeof row.normalized.opensAt==="string"&&row.normalized.opensAt?new Date(row.normalized.opensAt):null,
             description: getStringValue(row, "description") || null,
             eligibilityRequirements:
               getStringValue(row, "eligibilityRequirements") || null,
@@ -727,6 +755,13 @@ export async function importPreviewRows({
             status: status as OpportunityStatus,
             title,
             type: getStringValue(row, "type") as OpportunityType,
+            relationshipType: getStringValue(row,"relationshipType") as OpportunityRelationshipType,
+            officialSourceUrl:getStringValue(row,"officialSourceUrl")||null,officialApplicationUrl:getStringValue(row,"officialApplicationUrl")||null,
+            availabilityStatus:getStringValue(row,"availabilityStatus") as OpportunityAvailabilityStatus,
+            verificationStatus:"NEEDS_REVIEW",
+            cycleLabel:getStringValue(row,"cycleLabel")||null,city:getStringValue(row,"city")||null,state:getStringValue(row,"state")||null,country:getStringValue(row,"country")||null,
+            minimumAge:typeof row.normalized.minimumAge==="number"?row.normalized.minimumAge:null,maximumAge:typeof row.normalized.maximumAge==="number"?row.normalized.maximumAge:null,
+            acceptedGradeLevels:getStringArrayValue(row,"acceptedGradeLevels"),requiredCertifications:getStringArrayValue(row,"requiredCertifications"),estimatedApplicationMinutes:typeof row.normalized.estimatedApplicationMinutes==="number"?row.normalized.estimatedApplicationMinutes:null,
           },
         });
         summary.created += 1;

@@ -21,6 +21,7 @@ type StudentApplicationsPageProps = {
 };
 
 const activeStatuses: ApplicationStatus[] = [
+  "SAVED", "PLANNING", "PREPARING", "WAITING_FOR_RECOMMENDATION", "READY_TO_SUBMIT",
   "SUBMITTED",
   "UNDER_REVIEW",
   "INTERVIEW",
@@ -28,6 +29,7 @@ const activeStatuses: ApplicationStatus[] = [
 ];
 const historyStatuses: ApplicationStatus[] = ["REJECTED", "WITHDRAWN"];
 const statusOptions: ApplicationStatus[] = [
+  "SAVED", "PLANNING", "PREPARING", "WAITING_FOR_RECOMMENDATION", "READY_TO_SUBMIT", "WAITLISTED",
   "SUBMITTED",
   "UNDER_REVIEW",
   "INTERVIEW",

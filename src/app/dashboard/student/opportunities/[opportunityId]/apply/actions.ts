@@ -23,6 +23,7 @@ import type { StudentApplicationActionState } from "@/lib/student/application-va
 import { validateStudentApplicationForm } from "@/lib/student/application-validation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
 import { redirect } from "next/navigation";
+import { canSubmitExistingApplication } from "@/lib/student/application-workspace";
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -127,6 +128,7 @@ export async function submitStudentApplication(
       },
       select: {
         id: true,
+        status: true,
       },
     }),
   ]);
@@ -149,7 +151,7 @@ export async function submitStudentApplication(
     };
   }
 
-  if (existingApplication) {
+  if (existingApplication && !canSubmitExistingApplication(existingApplication.status)) {
     redirect(
       `/dashboard/student/opportunities/${opportunityId}/apply?alreadyApplied=1`,
     );
@@ -158,14 +160,26 @@ export async function submitStudentApplication(
   let applicationId: string;
 
   try {
-    const application = await prisma.application.create({
-      data: {
+    const application = existingApplication
+      ? await prisma.application.update({ where: { id: existingApplication.id }, data: {
+        resumeId: resume.id,
+        status: "SUBMITTED",
+        statement: validation.data.statement,
+        submittedAt: new Date(),
+        submissionConfirmation: "Student confirmed submission",
+        completionPercent: 100,
+        lastActivityAt: new Date(),
+      }, select: { id: true } })
+      : await prisma.application.create({ data: {
         studentProfileId: user.studentProfile.id,
         opportunityId,
         resumeId: resume.id,
         status: "SUBMITTED",
         statement: validation.data.statement,
         submittedAt: new Date(),
+        submissionConfirmation: "Student confirmed submission",
+        completionPercent: 100,
+        lastActivityAt: new Date(),
       },
       select: {
         id: true,

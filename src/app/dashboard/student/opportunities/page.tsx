@@ -9,6 +9,7 @@ import { RecommendationEventTracker } from "@/components/student/recommendation-
 import { Prisma } from "@/generated/prisma/client";
 import { createEmbeddingForText } from "@/lib/ai/embeddings";
 import { getOpportunityMatchScore } from "@/lib/matching/match-score";
+import { evaluateOpportunityEligibility } from "@/lib/matching/opportunity-eligibility";
 import {
   cosineSimilarity,
   parseEmbedding,
@@ -167,6 +168,17 @@ export default async function StudentOpportunitiesPage({
         applicationInstructions: true,
         publishedAt: true,
         createdAt: true,
+        relationshipType: true,
+        availabilityStatus: true,
+        minimumAge: true,
+        maximumAge: true,
+        acceptedGradeLevels: true,
+        requiredCertifications: true,
+        city: true,
+        state: true,
+        country: true,
+        geographicScope: true,
+        scheduleRequirements: true,
         organization: {
           select: {
             name: true,
@@ -210,6 +222,8 @@ export default async function StudentOpportunitiesPage({
       },
     }),
   ]);
+  const savedRecords = profile ? await prisma.savedOpportunity.findMany({ where: { studentProfileId: profile.id, dismissedAt: null }, select: { opportunityId: true } }) : [];
+  const savedOpportunityIds = new Set(savedRecords.map((item) => item.opportunityId));
   const queryVector =
     queryEmbedding?.available === true ? queryEmbedding.embedding : [];
   const opportunityEmbeddingById = new Map(
@@ -230,6 +244,8 @@ export default async function StudentOpportunitiesPage({
       queryVector,
       opportunityEmbeddingById.get(opportunity.id) ?? [],
     ),
+    eligibility: evaluateOpportunityEligibility({ opportunity, student: profile }),
+    isSaved: savedOpportunityIds.has(opportunity.id),
   }));
   const visibleOpportunities =
     effectiveFilters.sort === "best-fit"

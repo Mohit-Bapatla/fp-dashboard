@@ -1,0 +1,2 @@
+organizationName,title,type,relationshipType,officialSourceUrl,officialApplicationUrl,availabilityStatus,opensAt,deadline,city,state,country,minimumAge,maximumAge,acceptedGradeLevels,requiredCertifications,estimatedApplicationMinutes,cycleLabel
+Demo Host Organization,DEMO Opportunity,SHADOWING,EXTERNAL_PUBLIC,https://example.org/demo-source,https://example.org/demo-apply,OPEN,2026-08-01,2026-09-01,Demo City,IL,USA,16,18,High school junior|High school senior,CPR,45,Demo 2026
