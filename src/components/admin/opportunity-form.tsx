@@ -13,6 +13,7 @@ import type {
 } from "@/lib/admin/opportunity-validation";
 import {
   emptyPartnerOrganizationActionState,
+  applicationMethodOptions,
   opportunityStatusOptions,
   opportunityTypeOptions,
   partnerStatusOptions,
@@ -129,7 +130,7 @@ export function OpportunityForm({
           </label>
 
           <label className="text-sm font-medium text-foreground">
-            Partner organization
+            Host organization
             <select
               className={inputClassName(
                 Boolean(opportunityState.fieldErrors.organizationId),
@@ -145,6 +146,222 @@ export function OpportunityForm({
               ))}
             </select>
             <FieldError message={opportunityState.fieldErrors.organizationId} />
+          </label>
+
+          <label className="text-sm font-medium text-foreground">
+            Relationship
+            <select
+              className={inputClassName()}
+              defaultValue={values.relationshipType}
+              name="relationshipType"
+            >
+              <option value="EXTERNAL_PUBLIC">External public</option>
+              <option value="FP_PARTNER">FP Partner</option>
+              <option value="FP_OWNED">FP-Owned</option>
+            </select>
+          </label>
+          <label className="text-sm font-medium text-foreground">
+            Application method
+            <select
+              className={inputClassName(
+                Boolean(opportunityState.fieldErrors.applicationMethod),
+              )}
+              defaultValue={values.applicationMethod}
+              name="applicationMethod"
+            >
+              {applicationMethodOptions.map((item) => (
+                <option key={item} value={item}>
+                  {formatEnumLabel(item)}
+                </option>
+              ))}
+            </select>
+            <FieldError
+              message={opportunityState.fieldErrors.applicationMethod}
+            />
+          </label>
+          <label className="text-sm font-medium text-foreground">
+            Availability
+            <select
+              className={inputClassName()}
+              defaultValue={values.availabilityStatus}
+              name="availabilityStatus"
+            >
+              {[
+                "OPEN",
+                "OPENING_SOON",
+                "ROLLING",
+                "CLOSED",
+                "EXPIRED",
+                "ARCHIVED",
+              ].map((item) => (
+                <option key={item} value={item}>
+                  {formatEnumLabel(item)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm font-medium text-foreground md:col-span-2">
+            Official source URL
+            <input
+              className={inputClassName(
+                Boolean(opportunityState.fieldErrors.officialSourceUrl),
+              )}
+              defaultValue={values.officialSourceUrl}
+              name="officialSourceUrl"
+              type="url"
+            />
+            <FieldError
+              message={opportunityState.fieldErrors.officialSourceUrl}
+            />
+          </label>
+          <label className="text-sm font-medium text-foreground md:col-span-2">
+            Official application URL
+            <input
+              className={inputClassName(
+                Boolean(opportunityState.fieldErrors.officialApplicationUrl),
+              )}
+              defaultValue={values.officialApplicationUrl}
+              name="officialApplicationUrl"
+              type="url"
+            />
+            <FieldError
+              message={opportunityState.fieldErrors.officialApplicationUrl}
+            />
+          </label>
+          <label className="text-sm font-medium text-foreground">
+            Verification status
+            <select
+              className={inputClassName()}
+              defaultValue={values.verificationStatus}
+              name="verificationStatus"
+            >
+              {[
+                "NEEDS_REVIEW",
+                "VERIFIED",
+                "STALE",
+                "BROKEN_LINK",
+                "REJECTED",
+                "ARCHIVED",
+              ].map((item) => (
+                <option key={item} value={item}>
+                  {formatEnumLabel(item)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm font-medium text-foreground">
+            Last verified
+            <input
+              className={inputClassName()}
+              defaultValue={values.lastVerifiedAt}
+              name="lastVerifiedAt"
+              type="date"
+            />
+          </label>
+          <label className="text-sm font-medium text-foreground">
+            Next verification
+            <input
+              className={inputClassName()}
+              defaultValue={values.nextVerificationAt}
+              name="nextVerificationAt"
+              type="date"
+            />
+          </label>
+          <label className="text-sm font-medium text-foreground">
+            Opens
+            <input
+              className={inputClassName()}
+              defaultValue={values.opensAt}
+              name="opensAt"
+              type="date"
+            />
+          </label>
+          <label className="text-sm font-medium text-foreground">
+            Program starts
+            <input
+              className={inputClassName()}
+              defaultValue={values.startsAt}
+              name="startsAt"
+              type="date"
+            />
+          </label>
+          <label className="text-sm font-medium text-foreground">
+            Program ends
+            <input
+              className={inputClassName(
+                Boolean(opportunityState.fieldErrors.endsAt),
+              )}
+              defaultValue={values.endsAt}
+              name="endsAt"
+              type="date"
+            />
+            <FieldError message={opportunityState.fieldErrors.endsAt} />
+          </label>
+          <label className="text-sm font-medium text-foreground">
+            City
+            <input
+              className={inputClassName()}
+              defaultValue={values.city}
+              name="city"
+            />
+          </label>
+          <label className="text-sm font-medium text-foreground">
+            State
+            <input
+              className={inputClassName()}
+              defaultValue={values.state}
+              name="state"
+            />
+          </label>
+          <label className="text-sm font-medium text-foreground">
+            Country
+            <input
+              className={inputClassName()}
+              defaultValue={values.country}
+              name="country"
+            />
+          </label>
+          <label className="text-sm font-medium text-foreground">
+            Minimum age
+            <input
+              className={inputClassName(
+                Boolean(opportunityState.fieldErrors.minimumAge),
+              )}
+              defaultValue={values.minimumAge}
+              name="minimumAge"
+              type="number"
+            />
+            <FieldError message={opportunityState.fieldErrors.minimumAge} />
+          </label>
+          <label className="text-sm font-medium text-foreground">
+            Maximum age
+            <input
+              className={inputClassName(
+                Boolean(opportunityState.fieldErrors.maximumAge),
+              )}
+              defaultValue={values.maximumAge}
+              name="maximumAge"
+              type="number"
+            />
+            <FieldError message={opportunityState.fieldErrors.maximumAge} />
+          </label>
+          <label className="text-sm font-medium text-foreground md:col-span-2">
+            Accepted grade levels
+            <input
+              className={inputClassName()}
+              defaultValue={values.acceptedGradeLevels}
+              name="acceptedGradeLevels"
+              placeholder="High school junior, High school senior"
+            />
+          </label>
+          <label className="text-sm font-medium text-foreground md:col-span-2">
+            Required certifications
+            <input
+              className={inputClassName()}
+              defaultValue={values.requiredCertifications}
+              name="requiredCertifications"
+              placeholder="CPR, BLS"
+            />
           </label>
 
           <label className="text-sm font-medium text-foreground">
@@ -311,11 +528,11 @@ export function OpportunityForm({
       <aside className="space-y-6">
         <section className="rounded-xl border border-border bg-background p-5 shadow-sm">
           <h2 className="text-base font-semibold text-foreground">
-            Partner organization
+            Host organization record
           </h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Add a partner here when the opportunity belongs to a new
-            organization.
+            Add a host record here. This does not make the organization an FP
+            partner.
           </p>
           <form action={partnerAction} className="mt-5 space-y-4">
             <input name="redirectTo" type="hidden" value={currentPath} />

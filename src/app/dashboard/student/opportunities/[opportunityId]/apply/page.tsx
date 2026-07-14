@@ -6,10 +6,17 @@ import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StudentApplicationForm } from "@/components/student/student-application-form";
+import { ExternalApplicationConfirmationForm } from "@/components/student/external-application-confirmation-form";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
 import { prisma } from "@/lib/db/prisma";
+import {
+  getApplyPageDecision,
+  getEffectiveApplicationMethod,
+} from "@/lib/student/application-workspace";
+import { studentApplicationOpportunityWhere } from "@/lib/opportunities/student-visibility";
+import { isSafeExternalUrl } from "@/lib/security/safe-url";
 
 type StudentOpportunityApplyPageProps = {
   params: Promise<{
@@ -19,6 +26,7 @@ type StudentOpportunityApplyPageProps = {
     alreadyApplied?: string;
     source?: string;
     success?: string;
+    external?: string;
   }>;
 };
 
@@ -43,10 +51,12 @@ export default async function StudentOpportunityApplyPage({
     getCurrentStudentProfile(userId),
     prisma.opportunity.findFirst({
       where: {
-        id: opportunityId,
-        status: "PUBLISHED",
+        ...studentApplicationOpportunityWhere(opportunityId),
       },
       select: {
+        applicationMethod: true,
+        relationshipType: true,
+        officialApplicationUrl: true,
         id: true,
         title: true,
         deadline: true,
@@ -91,6 +101,8 @@ export default async function StudentOpportunityApplyPage({
           },
           select: {
             id: true,
+            status: true,
+            applicationMethod: true,
             submittedAt: true,
             resume: {
               select: {
@@ -103,7 +115,20 @@ export default async function StudentOpportunityApplyPage({
     : [[], null];
 
   const isSuccess = query.success === "1";
-  const isAlreadyApplied = query.alreadyApplied === "1" || existingApplication;
+  const decision = getApplyPageDecision({
+    applicationMethod: getEffectiveApplicationMethod(
+      opportunity.relationshipType,
+      opportunity.applicationMethod,
+    ),
+    existingStatus: existingApplication?.status ?? null,
+  });
+  const isAlreadyApplied =
+    query.alreadyApplied === "1" || decision.kind === "BLOCKED";
+  const officialApplicationUrl = isSafeExternalUrl(
+    opportunity.officialApplicationUrl,
+  )
+    ? opportunity.officialApplicationUrl
+    : null;
 
   return (
     <DashboardShell
@@ -159,8 +184,11 @@ export default async function StudentOpportunityApplyPage({
               Application submitted
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6">
-              Your application has been submitted. You can track your status in
-              the Applications section of your dashboard.
+              {query.external === "1"
+                ? "You confirmed submission through the host organization’s portal. Future Physicians did not submit the external form."
+                : "Your application has been submitted through the configured Future Physicians workflow."}{" "}
+              You can track your status in the Applications section of your
+              dashboard.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
@@ -231,6 +259,20 @@ export default async function StudentOpportunityApplyPage({
               Go to onboarding
             </Link>
           </section>
+        ) : decision.kind === "EXTERNAL_CONFIRMATION" &&
+          officialApplicationUrl ? (
+          <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
+            <ExternalApplicationConfirmationForm
+              officialApplicationUrl={officialApplicationUrl}
+              opportunityId={opportunity.id}
+            />
+          </section>
+        ) : decision.kind === "EXTERNAL_CONFIRMATION" ? (
+          <EmptyState
+            description="The host application link is missing or invalid. Save this listing and report the issue so Future Physicians can verify it."
+            icon={FileText}
+            title="Official application link unavailable"
+          />
         ) : resumes.length === 0 ? (
           <section className="space-y-4">
             <EmptyState

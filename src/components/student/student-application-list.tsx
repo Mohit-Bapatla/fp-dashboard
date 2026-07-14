@@ -52,6 +52,14 @@ const withdrawableStatuses = new Set<ApplicationStatus>([
   "SUBMITTED",
   "UNDER_REVIEW",
 ]);
+const workspaceStatuses = new Set<ApplicationStatus>([
+  "DRAFT",
+  "SAVED",
+  "PLANNING",
+  "PREPARING",
+  "WAITING_FOR_RECOMMENDATION",
+  "READY_TO_SUBMIT",
+]);
 
 function formatDate(value: Date | null) {
   if (!value) {
@@ -105,7 +113,9 @@ export function StudentApplicationList({
               <div className="flex flex-wrap items-center gap-2">
                 <StudentApplicationStatusBadge status={application.status} />
                 <span className="text-xs font-medium text-muted-foreground">
-                  Submitted{" "}
+                  {workspaceStatuses.has(application.status)
+                    ? "Updated "
+                    : "Submitted "}
                   {formatDate(application.submittedAt ?? application.createdAt)}
                 </span>
               </div>
@@ -123,6 +133,14 @@ export function StudentApplicationList({
               View opportunity
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </Link>
+            {workspaceStatuses.has(application.status) ? (
+              <Link
+                className="inline-flex min-h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground"
+                href={`/dashboard/student/applications/${application.id}`}
+              >
+                Continue workspace
+              </Link>
+            ) : null}
           </div>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">

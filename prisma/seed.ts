@@ -119,6 +119,12 @@ async function seedDemoData() {
       remotePreference: "Hybrid",
       school: "Demo High School",
       state: "TX",
+      ageYears: 16,
+      maximumTravelMiles: 25,
+      paidOnlyPreference: false,
+      preferredSeasons: ["Summer", "Fall"],
+      certifications: ["Demo CPR"],
+      transportationNotes: "Fake demo transportation note.",
     },
     create: {
       id: "student_profile_demo",
@@ -139,6 +145,12 @@ async function seedDemoData() {
       remotePreference: "Hybrid",
       school: "Demo High School",
       state: "TX",
+      ageYears: 16,
+      maximumTravelMiles: 25,
+      paidOnlyPreference: false,
+      preferredSeasons: ["Summer", "Fall"],
+      certifications: ["Demo CPR"],
+      transportationNotes: "Fake demo transportation note.",
     },
   });
 
@@ -304,6 +316,16 @@ async function seedDemoData() {
       status: "PUBLISHED",
       title: "Primary Care Shadowing Rotation",
       type: "SHADOWING",
+      relationshipType: "FP_OWNED",
+      officialSourceUrl: "https://example.org/future-physicians-demo-shadowing",
+      officialApplicationUrl:
+        "https://example.org/future-physicians-demo-shadowing/apply",
+      verificationStatus: "VERIFIED",
+      lastVerifiedAt: new Date("2026-07-01T12:00:00.000Z"),
+      availabilityStatus: "OPEN",
+      acceptedGradeLevels: ["HS_11", "HS_12"],
+      applicationMethod: "FP_INTERNAL",
+      minimumAge: 15,
     },
     create: {
       id: "opportunity_demo_shadowing",
@@ -325,6 +347,16 @@ async function seedDemoData() {
       status: "PUBLISHED",
       title: "Primary Care Shadowing Rotation",
       type: "SHADOWING",
+      relationshipType: "FP_OWNED",
+      officialSourceUrl: "https://example.org/future-physicians-demo-shadowing",
+      officialApplicationUrl:
+        "https://example.org/future-physicians-demo-shadowing/apply",
+      verificationStatus: "VERIFIED",
+      lastVerifiedAt: new Date("2026-07-01T12:00:00.000Z"),
+      availabilityStatus: "OPEN",
+      acceptedGradeLevels: ["HS_11", "HS_12"],
+      applicationMethod: "FP_INTERNAL",
+      minimumAge: 15,
     },
   });
   await prisma.opportunity.upsert({
@@ -375,6 +407,7 @@ async function seedDemoData() {
       },
     },
     update: {
+      applicationMethod: "FP_INTERNAL",
       resumeId: resume.id,
       reviewedAt: new Date("2026-02-04T16:00:00.000Z"),
       statement:
@@ -383,6 +416,7 @@ async function seedDemoData() {
       submittedAt: new Date("2026-02-01T15:00:00.000Z"),
     },
     create: {
+      applicationMethod: "FP_INTERNAL",
       id: "application_demo_shadowing",
       opportunityId: shadowing.id,
       resumeId: resume.id,

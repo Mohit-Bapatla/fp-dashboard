@@ -8,6 +8,17 @@ import Link from "next/link";
 
 import type { OpportunityType } from "@/generated/prisma/enums";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { EligibilityBadge } from "@/components/opportunities/eligibility-badge";
+import { OpportunityRelationshipBadge } from "@/components/opportunities/opportunity-relationship-badge";
+import {
+  saveOpportunity,
+  unsaveOpportunity,
+} from "@/app/dashboard/student/saved/actions";
+import type { EligibilityResult } from "@/lib/matching/opportunity-eligibility";
+import type {
+  OpportunityAvailabilityStatus,
+  OpportunityRelationshipType,
+} from "@/generated/prisma/enums";
 import type { MatchScoreResult } from "@/lib/matching/match-score";
 
 export type StudentOpportunityListItem = {
@@ -29,6 +40,10 @@ export type StudentOpportunityListItem = {
   };
   match?: MatchScoreResult;
   vectorSimilarity?: number;
+  relationshipType: OpportunityRelationshipType;
+  availabilityStatus: OpportunityAvailabilityStatus;
+  eligibility: EligibilityResult;
+  isSaved: boolean;
 };
 
 type StudentOpportunityListProps = {
@@ -102,11 +117,15 @@ export function StudentOpportunityList({
                   {formatEnumLabel(opportunity.type)}
                 </span>
                 <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-                  Published
+                  {formatEnumLabel(opportunity.availabilityStatus)}
                 </span>
+                <OpportunityRelationshipBadge
+                  relationshipType={opportunity.relationshipType}
+                />
+                <EligibilityBadge category={opportunity.eligibility.category} />
                 {opportunity.match ? (
-                  <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                    {opportunity.match.score}% fit
+                  <span className="rounded-md border border-border bg-muted px-2 py-1 text-xs text-muted-foreground">
+                    Ranking score {opportunity.match.score}
                   </span>
                 ) : null}
                 {opportunity.vectorSimilarity &&
@@ -133,6 +152,21 @@ export function StudentOpportunityList({
               View details
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </Link>
+            <form
+              action={opportunity.isSaved ? unsaveOpportunity : saveOpportunity}
+            >
+              <input
+                name="opportunityId"
+                type="hidden"
+                value={opportunity.id}
+              />
+              <button
+                className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-medium"
+                type="submit"
+              >
+                {opportunity.isSaved ? "Saved" : "Save"}
+              </button>
+            </form>
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -186,6 +220,21 @@ export function StudentOpportunityList({
           {opportunity.match ? (
             <MatchExplanation match={opportunity.match} />
           ) : null}
+          <div className="mt-4 rounded-lg border border-border bg-muted/30 p-4">
+            <p className="text-sm font-semibold">Eligibility check</p>
+            <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+              {[
+                ...opportunity.eligibility.blockingReasons,
+                ...opportunity.eligibility.confirmedMatches,
+                ...opportunity.eligibility.concerns,
+                ...opportunity.eligibility.unknowns,
+              ]
+                .slice(0, 3)
+                .map((reason) => (
+                  <li key={reason}>{reason}</li>
+                ))}
+            </ul>
+          </div>
         </article>
       ))}
     </div>

@@ -1,12 +1,13 @@
 import "server-only";
 
 import { prisma } from "@/lib/db/prisma";
+import { studentDirectoryOpportunityWhere } from "@/lib/opportunities/student-visibility";
 
 export async function getPublicOpportunity(opportunityId: string) {
   return prisma.opportunity.findFirst({
     where: {
       id: opportunityId,
-      status: "PUBLISHED",
+      ...studentDirectoryOpportunityWhere(),
     },
     select: {
       applicationInstructions: true,

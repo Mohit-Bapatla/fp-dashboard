@@ -9,6 +9,7 @@ import { RecommendationEventTracker } from "@/components/student/recommendation-
 import { Prisma } from "@/generated/prisma/client";
 import { createEmbeddingForText } from "@/lib/ai/embeddings";
 import { getOpportunityMatchScore } from "@/lib/matching/match-score";
+import { evaluateOpportunityEligibility } from "@/lib/matching/opportunity-eligibility";
 import {
   cosineSimilarity,
   parseEmbedding,
@@ -26,6 +27,7 @@ import {
 } from "@/lib/student/opportunity-filters";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
 import { prisma } from "@/lib/db/prisma";
+import { studentDirectoryOpportunityWhere } from "@/lib/opportunities/student-visibility";
 
 type StudentOpportunitiesPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -65,7 +67,7 @@ function getEffectiveFilters(
 
 function buildWhere(filters: StudentOpportunityFiltersType) {
   const where: Prisma.OpportunityWhereInput = {
-    status: "PUBLISHED",
+    AND: [studentDirectoryOpportunityWhere()],
   };
 
   if (filters.q) {
@@ -131,7 +133,7 @@ export default async function StudentOpportunitiesPage({
   const profile = user.studentProfile;
   const filterSource = await prisma.opportunity.findMany({
     where: {
-      status: "PUBLISHED",
+      ...studentDirectoryOpportunityWhere(),
     },
     select: {
       specialty: true,
@@ -167,6 +169,17 @@ export default async function StudentOpportunitiesPage({
         applicationInstructions: true,
         publishedAt: true,
         createdAt: true,
+        relationshipType: true,
+        availabilityStatus: true,
+        minimumAge: true,
+        maximumAge: true,
+        acceptedGradeLevels: true,
+        requiredCertifications: true,
+        city: true,
+        state: true,
+        country: true,
+        geographicScope: true,
+        scheduleRequirements: true,
         organization: {
           select: {
             name: true,
@@ -176,7 +189,7 @@ export default async function StudentOpportunitiesPage({
     }),
     prisma.opportunity.count({
       where: {
-        status: "PUBLISHED",
+        ...studentDirectoryOpportunityWhere(),
       },
     }),
     profile
@@ -210,6 +223,15 @@ export default async function StudentOpportunitiesPage({
       },
     }),
   ]);
+  const savedRecords = profile
+    ? await prisma.savedOpportunity.findMany({
+        where: { studentProfileId: profile.id, dismissedAt: null },
+        select: { opportunityId: true },
+      })
+    : [];
+  const savedOpportunityIds = new Set(
+    savedRecords.map((item) => item.opportunityId),
+  );
   const queryVector =
     queryEmbedding?.available === true ? queryEmbedding.embedding : [];
   const opportunityEmbeddingById = new Map(
@@ -230,18 +252,33 @@ export default async function StudentOpportunitiesPage({
       queryVector,
       opportunityEmbeddingById.get(opportunity.id) ?? [],
     ),
+    eligibility: evaluateOpportunityEligibility({
+      opportunity,
+      student: profile,
+    }),
+    isSaved: savedOpportunityIds.has(opportunity.id),
   }));
   const visibleOpportunities =
     effectiveFilters.sort === "best-fit"
-      ? [...opportunitiesWithMatches].sort(
-          (first, second) =>
+      ? [...opportunitiesWithMatches].sort((first, second) => {
+          const eligibilityOrder = {
+            STRONG_MATCH: 0,
+            POSSIBLE_MATCH: 1,
+            NOT_ELIGIBLE: 2,
+          } as const;
+          const categoryDifference =
+            eligibilityOrder[first.eligibility.category] -
+            eligibilityOrder[second.eligibility.category];
+          if (categoryDifference !== 0) return categoryDifference;
+          return (
             second.match.score +
             second.semanticScore +
             similarityToBoost(second.vectorSimilarity, 8) -
             (first.match.score +
               first.semanticScore +
-              similarityToBoost(first.vectorSimilarity, 8)),
-        )
+              similarityToBoost(first.vectorSimilarity, 8))
+          );
+        })
       : effectiveFilters.q
         ? [...opportunitiesWithMatches].sort(
             (first, second) =>

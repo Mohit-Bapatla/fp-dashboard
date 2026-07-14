@@ -14,6 +14,7 @@ import type {
 } from "@/lib/admin/opportunity-validation";
 import {
   validateOpportunityForm,
+  validateOpportunityPublishReadiness,
   validatePartnerOrganizationForm,
 } from "@/lib/admin/opportunity-validation";
 import { prisma } from "@/lib/db/prisma";
@@ -99,6 +100,10 @@ export async function saveOpportunity(
         publishedAt: true,
         status: true,
         title: true,
+        relationshipType: true,
+        officialSourceUrl: true,
+        verificationStatus: true,
+        lastVerifiedAt: true,
       },
     });
 
@@ -266,6 +271,10 @@ async function updateOpportunityStatus(
         id: true,
         status: true,
         title: true,
+        relationshipType: true,
+        officialSourceUrl: true,
+        verificationStatus: true,
+        lastVerifiedAt: true,
         organization: {
           select: {
             members: {
@@ -284,6 +293,15 @@ async function updateOpportunityStatus(
       redirect(redirectTo);
     }
 
+    if (status === "PUBLISHED") {
+      const readiness = validateOpportunityPublishReadiness(opportunity);
+      if (!readiness.ready) {
+        redirect(
+          `${redirectTo}?error=${encodeURIComponent(readiness.errors.join(" "))}`,
+        );
+      }
+    }
+
     await prisma.opportunity.update({
       where: {
         id: opportunityId,
@@ -291,6 +309,13 @@ async function updateOpportunityStatus(
       data: {
         status,
         publishedAt: status === "PUBLISHED" ? new Date() : undefined,
+        availabilityStatus:
+          status === "ARCHIVED"
+            ? "ARCHIVED"
+            : status === "CLOSED"
+              ? "CLOSED"
+              : undefined,
+        verificationStatus: status === "ARCHIVED" ? "ARCHIVED" : undefined,
       },
     });
     await Promise.all([
