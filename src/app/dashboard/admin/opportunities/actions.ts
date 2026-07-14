@@ -23,6 +23,7 @@ import {
   enforceRateLimit,
   formatRateLimitMessage,
 } from "@/lib/security/rate-limit";
+import { isStudentExternalOrganizationName } from "@/lib/student/external-opportunity";
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -67,9 +68,10 @@ export async function saveOpportunity(
     };
   }
 
-  const organization = await prisma.partnerOrganization.findUnique({
+  const organization = await prisma.partnerOrganization.findFirst({
     where: {
       id: validation.data.organizationId,
+      isSystemPlaceholder: false,
     },
     select: {
       id: true,
@@ -91,9 +93,11 @@ export async function saveOpportunity(
     validation.data.status === "PUBLISHED" ? new Date() : undefined;
 
   if (opportunityId) {
-    const existingOpportunity = await prisma.opportunity.findUnique({
+    const existingOpportunity = await prisma.opportunity.findFirst({
       where: {
         id: opportunityId,
+        organization: { isSystemPlaceholder: false },
+        visibility: "PUBLIC_DIRECTORY",
       },
       select: {
         id: true,
@@ -148,6 +152,8 @@ export async function saveOpportunity(
     data: {
       ...validation.data,
       publishedAt,
+      sourceType: "FP_CATALOG",
+      visibility: "PUBLIC_DIRECTORY",
     },
     select: {
       id: true,
@@ -200,6 +206,16 @@ export async function createPartnerOrganization(
     };
   }
 
+  if (isStudentExternalOrganizationName(validation.data.name)) {
+    return {
+      fieldErrors: {
+        name: "Choose a different organization name.",
+      },
+      formError: "This organization name is reserved for private workspaces.",
+      values: validation.values,
+    };
+  }
+
   const redirectTo =
     getString(formData, "redirectTo") || "/dashboard/admin/opportunities/new";
 
@@ -207,7 +223,7 @@ export async function createPartnerOrganization(
 
   try {
     const organization = await prisma.partnerOrganization.create({
-      data: validation.data,
+      data: { ...validation.data, isSystemPlaceholder: false },
       select: {
         id: true,
       },
@@ -263,9 +279,11 @@ async function updateOpportunityStatus(
   }
 
   if (opportunityId) {
-    const opportunity = await prisma.opportunity.findUnique({
+    const opportunity = await prisma.opportunity.findFirst({
       where: {
         id: opportunityId,
+        organization: { isSystemPlaceholder: false },
+        visibility: "PUBLIC_DIRECTORY",
       },
       select: {
         id: true,

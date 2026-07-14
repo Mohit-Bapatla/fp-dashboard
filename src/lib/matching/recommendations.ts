@@ -60,7 +60,6 @@ export async function getRecommendedOpportunities(studentProfileId: string) {
         },
       },
       savedOpportunities: {
-        where: { dismissedAt: { not: null } },
         select: { opportunityId: true },
       },
       availability: true,
@@ -94,17 +93,14 @@ export async function getRecommendedOpportunities(studentProfileId: string) {
   const appliedOpportunityIds = new Set(
     profile.applications.map((application) => application.opportunityId),
   );
-  const dismissedOpportunityIds = profile.savedOpportunities.map(
+  const savedOpportunityIds = profile.savedOpportunities.map(
     (saved) => saved.opportunityId,
   );
   const opportunities = await prisma.opportunity.findMany({
     where: {
       ...studentDirectoryOpportunityWhere(),
       id: {
-        notIn: [
-          ...Array.from(appliedOpportunityIds),
-          ...dismissedOpportunityIds,
-        ],
+        notIn: [...Array.from(appliedOpportunityIds), ...savedOpportunityIds],
       },
     },
     select: {
@@ -113,6 +109,7 @@ export async function getRecommendedOpportunities(studentProfileId: string) {
       eligibilityRequirements: true,
       id: true,
       location: true,
+      opensAt: true,
       publishedAt: true,
       remoteType: true,
       specialty: true,

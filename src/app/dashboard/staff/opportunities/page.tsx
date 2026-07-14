@@ -12,9 +12,26 @@ import { getStaffNavItems } from "@/lib/staff/navigation";
 export default async function StaffOpportunitiesPage() {
   await assertPlacementQueueAccess();
   const [total, published, pending] = await Promise.all([
-    prisma.opportunity.count(),
-    prisma.opportunity.count({ where: { status: "PUBLISHED" } }),
-    prisma.opportunity.count({ where: { status: "PENDING_APPROVAL" } }),
+    prisma.opportunity.count({
+      where: {
+        organization: { isSystemPlaceholder: false },
+        visibility: "PUBLIC_DIRECTORY",
+      },
+    }),
+    prisma.opportunity.count({
+      where: {
+        organization: { isSystemPlaceholder: false },
+        status: "PUBLISHED",
+        visibility: "PUBLIC_DIRECTORY",
+      },
+    }),
+    prisma.opportunity.count({
+      where: {
+        organization: { isSystemPlaceholder: false },
+        status: "PENDING_APPROVAL",
+        visibility: "PUBLIC_DIRECTORY",
+      },
+    }),
   ]);
 
   return (

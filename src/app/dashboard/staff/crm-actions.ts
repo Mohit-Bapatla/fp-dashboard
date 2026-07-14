@@ -45,9 +45,10 @@ export async function updatePartnerOutreach(formData: FormData) {
     redirect(redirectTo);
   }
 
-  const organization = await prisma.partnerOrganization.findUnique({
+  const organization = await prisma.partnerOrganization.findFirst({
     where: {
       id: organizationId,
+      isSystemPlaceholder: false,
     },
     select: {
       id: true,
@@ -104,9 +105,10 @@ export async function saveOutreachContact(formData: FormData) {
     redirect(redirectTo);
   }
 
-  const organization = await prisma.partnerOrganization.findUnique({
+  const organization = await prisma.partnerOrganization.findFirst({
     where: {
       id: organizationId,
+      isSystemPlaceholder: false,
     },
     select: {
       id: true,
@@ -115,6 +117,17 @@ export async function saveOutreachContact(formData: FormData) {
 
   if (!organization) {
     redirect(redirectTo);
+  }
+
+  if (contactId) {
+    const existingContact = await prisma.outreachContact.findFirst({
+      where: {
+        id: contactId,
+        organization: { isSystemPlaceholder: false },
+      },
+      select: { id: true },
+    });
+    if (!existingContact) redirect(redirectTo);
   }
 
   const data = {
@@ -213,9 +226,10 @@ export async function saveOutreachTask(formData: FormData) {
           })
         : Promise.resolve(null),
       getString(formData, "partnerOrganizationId")
-        ? prisma.partnerOrganization.findUnique({
+        ? prisma.partnerOrganization.findFirst({
             where: {
               id: getString(formData, "partnerOrganizationId"),
+              isSystemPlaceholder: false,
             },
             select: {
               id: true,
@@ -223,9 +237,10 @@ export async function saveOutreachTask(formData: FormData) {
           })
         : Promise.resolve(null),
       getString(formData, "contactId")
-        ? prisma.outreachContact.findUnique({
+        ? prisma.outreachContact.findFirst({
             where: {
               id: getString(formData, "contactId"),
+              organization: { isSystemPlaceholder: false },
             },
             select: {
               id: true,
@@ -262,9 +277,27 @@ export async function saveOutreachTask(formData: FormData) {
     title,
   };
   const existingTask = taskId
-    ? await prisma.outreachTask.findUnique({
+    ? await prisma.outreachTask.findFirst({
         where: {
           id: taskId,
+          AND: [
+            {
+              OR: [
+                { partnerOrganizationId: null },
+                { partnerOrganization: { isSystemPlaceholder: false } },
+              ],
+            },
+            {
+              OR: [
+                { contactId: null },
+                {
+                  contact: {
+                    organization: { isSystemPlaceholder: false },
+                  },
+                },
+              ],
+            },
+          ],
         },
         select: {
           assignedToId: true,
@@ -273,6 +306,8 @@ export async function saveOutreachTask(formData: FormData) {
         },
       })
     : null;
+
+  if (taskId && !existingTask) redirect(redirectTo);
 
   if (taskId) {
     await prisma.outreachTask.update({

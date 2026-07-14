@@ -56,14 +56,17 @@ export async function generateOutreachDraft(
   const placementRequestId = getString(formData, "placementRequestId");
   const [organization, contact, placementRequest] = await Promise.all([
     organizationId
-      ? prisma.partnerOrganization.findUnique({
-          where: { id: organizationId },
+      ? prisma.partnerOrganization.findFirst({
+          where: { id: organizationId, isSystemPlaceholder: false },
           select: { name: true, specialtyAreas: true },
         })
       : Promise.resolve(null),
     contactId
-      ? prisma.outreachContact.findUnique({
-          where: { id: contactId },
+      ? prisma.outreachContact.findFirst({
+          where: {
+            id: contactId,
+            organization: { isSystemPlaceholder: false },
+          },
           select: { firstName: true, lastName: true },
         })
       : Promise.resolve(null),

@@ -19,7 +19,8 @@ export function canSubmitExistingApplication(status: ApplicationStatus) {
 export type ApplyPageDecision =
   | { kind: "BLOCKED" }
   | { kind: "EXTERNAL_CONFIRMATION" }
-  | { kind: "INTERNAL_SUBMISSION" };
+  | { kind: "INTERNAL_SUBMISSION" }
+  | { kind: "PREPARATION_ONLY" };
 
 export function getEffectiveApplicationMethod(
   relationshipType: OpportunityRelationshipType,
@@ -33,12 +34,17 @@ export function getEffectiveApplicationMethod(
 export function getApplyPageDecision({
   applicationMethod,
   existingStatus,
+  submissionAllowed,
 }: {
   applicationMethod: ApplicationMethod;
   existingStatus: ApplicationStatus | null;
+  submissionAllowed: boolean;
 }): ApplyPageDecision {
   if (existingStatus && !canSubmitExistingApplication(existingStatus)) {
     return { kind: "BLOCKED" };
+  }
+  if (!submissionAllowed) {
+    return { kind: "PREPARATION_ONLY" };
   }
   return applicationMethod === "EXTERNAL_PORTAL"
     ? { kind: "EXTERNAL_CONFIRMATION" }

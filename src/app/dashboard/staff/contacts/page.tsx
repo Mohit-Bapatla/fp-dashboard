@@ -29,6 +29,7 @@ export default async function StaffContactsPage({
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const organizations = await prisma.partnerOrganization.findMany({
+    where: { isSystemPlaceholder: false },
     orderBy: { name: "asc" },
     select: { id: true, name: true },
   });
@@ -37,7 +38,9 @@ export default async function StaffContactsPage({
     params.organizationId && organizationIds.has(params.organizationId)
       ? params.organizationId
       : "";
-  const where: Prisma.OutreachContactWhereInput = {};
+  const where: Prisma.OutreachContactWhereInput = {
+    organization: { isSystemPlaceholder: false },
+  };
 
   if (query) {
     where.OR = [
@@ -71,9 +74,14 @@ export default async function StaffContactsPage({
         title: true,
       },
     }),
-    prisma.outreachContact.count(),
     prisma.outreachContact.count({
-      where: { nextFollowUpAt: { lte: new Date() } },
+      where: { organization: { isSystemPlaceholder: false } },
+    }),
+    prisma.outreachContact.count({
+      where: {
+        nextFollowUpAt: { lte: new Date() },
+        organization: { isSystemPlaceholder: false },
+      },
     }),
   ]);
   const redirectParams = new URLSearchParams();

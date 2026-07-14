@@ -1,6 +1,7 @@
 import { Bookmark } from "lucide-react";
 import Link from "next/link";
 import { setFollowReopening, unsaveOpportunity } from "./actions";
+import { startApplicationWorkspace } from "@/app/dashboard/student/applications/workspace-actions";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { RoleBadge } from "@/components/dashboard/role-badge";
@@ -11,7 +12,10 @@ import { evaluateOpportunityEligibility } from "@/lib/matching/opportunity-eligi
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
-import { isOpportunityCurrentlyAvailable } from "@/lib/opportunities/student-visibility";
+import {
+  isOpportunityPreparable,
+  isOpportunitySubmittable,
+} from "@/lib/opportunities/student-visibility";
 
 function date(value: Date | null) {
   return value
@@ -25,7 +29,15 @@ export default async function StudentSavedPage() {
   const profile = user.studentProfile;
   const saved = profile
     ? await prisma.savedOpportunity.findMany({
-        where: { studentProfileId: profile.id, dismissedAt: null },
+        where: {
+          studentProfileId: profile.id,
+          dismissedAt: null,
+          opportunity: {
+            status: { in: ["PUBLISHED", "CLOSED", "ARCHIVED"] },
+            verificationStatus: { in: ["VERIFIED", "ARCHIVED"] },
+            visibility: "PUBLIC_DIRECTORY",
+          },
+        },
         orderBy: { updatedAt: "desc" },
         include: {
           opportunity: {
@@ -34,6 +46,7 @@ export default async function StudentSavedPage() {
         },
       })
     : [];
+  const now = new Date();
   return (
     <DashboardShell
       navItems={getStudentNavItems("/dashboard/student/saved")}
@@ -72,6 +85,18 @@ export default async function StudentSavedPage() {
                 opportunity,
                 student: profile,
               });
+              const preparationAllowed = isOpportunityPreparable(
+                opportunity,
+                now,
+              );
+              const submissionAllowed = isOpportunitySubmittable(
+                opportunity,
+                now,
+              );
+              const awaitingOpening =
+                !submissionAllowed &&
+                (opportunity.availabilityStatus === "OPENING_SOON" ||
+                  Boolean(opportunity.opensAt && opportunity.opensAt > now));
               return (
                 <article
                   className="rounded-xl border border-border bg-background p-5 shadow-sm"
@@ -96,7 +121,15 @@ export default async function StudentSavedPage() {
                   <p className="mt-1 text-sm text-muted-foreground">
                     {opportunity.organization.name}
                   </p>
-                  <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+                  <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                      <dt className="text-muted-foreground">
+                        Applications open
+                      </dt>
+                      <dd className="font-medium">
+                        {date(opportunity.opensAt)}
+                      </dd>
+                    </div>
                     <div>
                       <dt className="text-muted-foreground">Deadline</dt>
                       <dd className="font-medium">
@@ -123,17 +156,22 @@ export default async function StudentSavedPage() {
                     </div>
                   </dl>
                   <div className="mt-5 flex flex-wrap gap-2">
-                    {isOpportunityCurrentlyAvailable(
-                      opportunity.availabilityStatus,
-                    ) &&
-                    opportunity.status === "PUBLISHED" &&
-                    opportunity.verificationStatus === "VERIFIED" ? (
-                      <Link
-                        className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-                        href={`/dashboard/student/opportunities/${opportunity.id}/apply`}
-                      >
-                        Start or continue application
-                      </Link>
+                    {preparationAllowed ? (
+                      <form action={startApplicationWorkspace}>
+                        <input
+                          name="opportunityId"
+                          type="hidden"
+                          value={opportunity.id}
+                        />
+                        <button
+                          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+                          type="submit"
+                        >
+                          {submissionAllowed
+                            ? "Start or continue application"
+                            : "Start or continue preparation"}
+                        </button>
+                      </form>
                     ) : (
                       <span className="rounded-lg border border-border bg-muted px-4 py-2 text-sm text-muted-foreground">
                         Applications unavailable
@@ -155,8 +193,12 @@ export default async function StudentSavedPage() {
                         type="submit"
                       >
                         {followReopening
-                          ? "Stop reopening alerts"
-                          : "Follow for reopening"}
+                          ? awaitingOpening
+                            ? "Stop opening alerts"
+                            : "Stop reopening alerts"
+                          : awaitingOpening
+                            ? "Follow for opening alert"
+                            : "Follow for reopening"}
                       </button>
                     </form>
                     <form action={unsaveOpportunity}>

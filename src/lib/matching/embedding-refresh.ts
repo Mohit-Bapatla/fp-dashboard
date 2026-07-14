@@ -44,6 +44,10 @@ function emptyResult(): EmbeddingRefreshResult {
 
 async function getOpportunityCandidates(): Promise<EmbeddingCandidate[]> {
   const opportunities = await prisma.opportunity.findMany({
+    where: {
+      visibility: "PUBLIC_DIRECTORY",
+      organization: { isSystemPlaceholder: false },
+    },
     select: {
       applicationInstructions: true,
       description: true,
@@ -106,6 +110,7 @@ async function getResumeCandidates(): Promise<EmbeddingCandidate[]> {
 
 async function getPartnerCandidates(): Promise<EmbeddingCandidate[]> {
   const partners = await prisma.partnerOrganization.findMany({
+    where: { isSystemPlaceholder: false },
     select: {
       description: true,
       healthcareFocus: true,

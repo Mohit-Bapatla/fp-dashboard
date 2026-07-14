@@ -64,7 +64,9 @@ export default async function AdminPartnersPage({
   const status = getStatusFilter(params.status);
   const page = getPageParam(params.page);
   const pagination = getPagination(page);
-  const where: Prisma.PartnerOrganizationWhereInput = {};
+  const where: Prisma.PartnerOrganizationWhereInput = {
+    isSystemPlaceholder: false,
+  };
 
   if (query) {
     where.OR = [
@@ -156,16 +158,24 @@ export default async function AdminPartnersPage({
         },
       },
     }),
-    prisma.partnerOrganization.count(),
+    prisma.partnerOrganization.count({
+      where: { isSystemPlaceholder: false },
+    }),
     prisma.partnerOrganization.count({
       where,
     }),
     prisma.partnerOrganization.count({
       where: {
+        isSystemPlaceholder: false,
         status: "PARTNERED",
       },
     }),
-    prisma.opportunity.count(),
+    prisma.opportunity.count({
+      where: {
+        visibility: "PUBLIC_DIRECTORY",
+        organization: { isSystemPlaceholder: false },
+      },
+    }),
     prisma.user.findMany({
       where: {
         role: "PARTNER",
@@ -184,6 +194,7 @@ export default async function AdminPartnersPage({
       },
     }),
     prisma.partnerOrganization.findMany({
+      where: { isSystemPlaceholder: false },
       orderBy: {
         name: "asc",
       },

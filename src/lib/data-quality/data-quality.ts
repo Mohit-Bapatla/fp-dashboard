@@ -167,6 +167,7 @@ export async function getDataQualityBuckets(): Promise<
       },
     }),
     prisma.partnerOrganization.findMany({
+      where: { isSystemPlaceholder: false },
       orderBy: {
         updatedAt: "desc",
       },
@@ -187,6 +188,10 @@ export async function getDataQualityBuckets(): Promise<
       },
     }),
     prisma.opportunity.findMany({
+      where: {
+        visibility: "PUBLIC_DIRECTORY",
+        organization: { isSystemPlaceholder: false },
+      },
       orderBy: {
         updatedAt: "desc",
       },
@@ -208,6 +213,10 @@ export async function getDataQualityBuckets(): Promise<
     }),
     prisma.application.findMany({
       where: {
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
+        },
         status: {
           in: ["SUBMITTED", "UNDER_REVIEW"],
         },

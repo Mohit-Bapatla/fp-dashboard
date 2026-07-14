@@ -30,6 +30,7 @@ export type StudentOpportunityListItem = {
   location: string | null;
   remoteType: string | null;
   paidStatus: string | null;
+  opensAt: Date | null;
   deadline: Date | null;
   capacity: number | null;
   eligibilityRequirements: string | null;
@@ -42,6 +43,7 @@ export type StudentOpportunityListItem = {
   vectorSimilarity?: number;
   relationshipType: OpportunityRelationshipType;
   availabilityStatus: OpportunityAvailabilityStatus;
+  preparationOnly: boolean;
   eligibility: EligibilityResult;
   isSaved: boolean;
 };
@@ -161,10 +163,15 @@ export function StudentOpportunityList({
                 value={opportunity.id}
               />
               <button
+                aria-label={
+                  opportunity.isSaved
+                    ? `Unsave ${opportunity.title}`
+                    : `Save ${opportunity.title}`
+                }
                 className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-medium"
                 type="submit"
               >
-                {opportunity.isSaved ? "Saved" : "Save"}
+                {opportunity.isSaved ? "Unsave" : "Save"}
               </button>
             </form>
           </div>
@@ -189,6 +196,11 @@ export function StudentOpportunityList({
             />
             <OpportunityFact
               icon={CalendarDays}
+              label="Applications open"
+              value={formatDate(opportunity.opensAt)}
+            />
+            <OpportunityFact
+              icon={CalendarDays}
               label="Deadline"
               value={formatDate(opportunity.deadline)}
             />
@@ -207,6 +219,20 @@ export function StudentOpportunityList({
               )}
             />
           </div>
+
+          {opportunity.preparationOnly ? (
+            <div className="mt-5 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
+              <p className="font-semibold text-foreground">
+                {opportunity.opensAt
+                  ? `Applications open ${formatDate(opportunity.opensAt)}`
+                  : "Applications are opening soon"}
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                Save this opportunity or start preparation from its details.
+                Submission controls will appear after it opens.
+              </p>
+            </div>
+          ) : null}
 
           <div className="mt-5 rounded-lg border border-border bg-muted/30 p-4">
             <p className="text-sm font-medium text-foreground">

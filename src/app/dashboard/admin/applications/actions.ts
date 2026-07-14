@@ -79,6 +79,10 @@ export async function updateAdminApplicationStatus(formData: FormData) {
       status: {
         not: "WITHDRAWN",
       },
+      opportunity: {
+        visibility: "PUBLIC_DIRECTORY",
+        organization: { isSystemPlaceholder: false },
+      },
     },
     select: {
       id: true,

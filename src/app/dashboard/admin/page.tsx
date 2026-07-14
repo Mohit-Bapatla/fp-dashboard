@@ -44,17 +44,37 @@ export default async function AdminDashboardPage() {
         role: "STUDENT",
       },
     }),
-    prisma.partnerOrganization.count(),
-    prisma.opportunity.count(),
+    prisma.partnerOrganization.count({
+      where: { isSystemPlaceholder: false },
+    }),
     prisma.opportunity.count({
       where: {
-        status: "PUBLISHED",
+        organization: { isSystemPlaceholder: false },
+        visibility: "PUBLIC_DIRECTORY",
       },
     }),
-    prisma.application.count(),
+    prisma.opportunity.count({
+      where: {
+        organization: { isSystemPlaceholder: false },
+        status: "PUBLISHED",
+        visibility: "PUBLIC_DIRECTORY",
+      },
+    }),
+    prisma.application.count({
+      where: {
+        opportunity: {
+          organization: { isSystemPlaceholder: false },
+          visibility: "PUBLIC_DIRECTORY",
+        },
+      },
+    }),
     prisma.placementRequest.count(),
     prisma.application.count({
       where: {
+        opportunity: {
+          organization: { isSystemPlaceholder: false },
+          visibility: "PUBLIC_DIRECTORY",
+        },
         status: {
           in: ["SUBMITTED", "UNDER_REVIEW"],
         },
@@ -62,10 +82,18 @@ export default async function AdminDashboardPage() {
     }),
     prisma.opportunity.count({
       where: {
+        organization: { isSystemPlaceholder: false },
         status: "DRAFT",
+        visibility: "PUBLIC_DIRECTORY",
       },
     }),
     prisma.application.findMany({
+      where: {
+        opportunity: {
+          organization: { isSystemPlaceholder: false },
+          visibility: "PUBLIC_DIRECTORY",
+        },
+      },
       orderBy: [
         {
           submittedAt: "desc",
@@ -102,6 +130,7 @@ export default async function AdminDashboardPage() {
       },
     }),
     prisma.partnerOrganization.findMany({
+      where: { isSystemPlaceholder: false },
       orderBy: {
         createdAt: "desc",
       },
@@ -119,6 +148,10 @@ export default async function AdminDashboardPage() {
       },
     }),
     prisma.opportunity.findMany({
+      where: {
+        organization: { isSystemPlaceholder: false },
+        visibility: "PUBLIC_DIRECTORY",
+      },
       orderBy: {
         updatedAt: "desc",
       },

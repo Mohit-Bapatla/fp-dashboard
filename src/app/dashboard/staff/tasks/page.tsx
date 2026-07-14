@@ -35,6 +35,23 @@ type StaffTasksPageProps = {
   }>;
 };
 
+const visibleOutreachTaskScope: Prisma.OutreachTaskWhereInput = {
+  AND: [
+    {
+      OR: [
+        { partnerOrganizationId: null },
+        { partnerOrganization: { isSystemPlaceholder: false } },
+      ],
+    },
+    {
+      OR: [
+        { contactId: null },
+        { contact: { organization: { isSystemPlaceholder: false } } },
+      ],
+    },
+  ],
+};
+
 const taskViews = [
   "all",
   "mine",
@@ -194,10 +211,12 @@ export default async function StaffTasksPage({
         },
       }),
       prisma.partnerOrganization.findMany({
+        where: { isSystemPlaceholder: false },
         orderBy: { name: "asc" },
         select: { id: true, name: true },
       }),
       prisma.outreachContact.findMany({
+        where: { organization: { isSystemPlaceholder: false } },
         orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
         select: {
           id: true,
@@ -239,7 +258,9 @@ export default async function StaffTasksPage({
       ? params.assignedToId
       : "";
   const currentUserId = currentUser?.id ?? null;
-  const where: Prisma.OutreachTaskWhereInput = {};
+  const where: Prisma.OutreachTaskWhereInput = {
+    ...visibleOutreachTaskScope,
+  };
 
   applyViewFilter({
     currentUserId,
@@ -307,10 +328,11 @@ export default async function StaffTasksPage({
     prisma.outreachTask.count({
       where,
     }),
-    prisma.outreachTask.count(),
+    prisma.outreachTask.count({ where: visibleOutreachTaskScope }),
     currentUserId
       ? prisma.outreachTask.count({
           where: {
+            ...visibleOutreachTaskScope,
             assignedToId: currentUserId,
             status: {
               not: "COMPLETED",
@@ -320,6 +342,7 @@ export default async function StaffTasksPage({
       : Promise.resolve(0),
     prisma.outreachTask.count({
       where: {
+        ...visibleOutreachTaskScope,
         dueAt: {
           gte: today,
           lt: dueSoonEnd,
@@ -331,6 +354,7 @@ export default async function StaffTasksPage({
     }),
     prisma.outreachTask.count({
       where: {
+        ...visibleOutreachTaskScope,
         dueAt: {
           lt: today,
         },
@@ -341,11 +365,13 @@ export default async function StaffTasksPage({
     }),
     prisma.outreachTask.count({
       where: {
+        ...visibleOutreachTaskScope,
         status: "BLOCKED",
       },
     }),
     prisma.outreachTask.count({
       where: {
+        ...visibleOutreachTaskScope,
         status: "COMPLETED",
       },
     }),

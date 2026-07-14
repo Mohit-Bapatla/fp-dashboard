@@ -81,14 +81,38 @@ export async function savePartnerOpportunity(
     };
   }
 
+  const manageableOrganization = await prisma.partnerOrganization.findFirst({
+    where: {
+      id: validation.data.organizationId,
+      isSystemPlaceholder: false,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!manageableOrganization) {
+    return {
+      fieldErrors: {
+        organizationId: "Choose one of your linked organizations.",
+      },
+      formError: "You cannot manage opportunities for that organization.",
+      values: validation.values,
+    };
+  }
+
   const opportunityId = validation.values.opportunityId;
 
   if (opportunityId) {
     const existingOpportunity = await prisma.opportunity.findFirst({
       where: {
         id: opportunityId,
+        visibility: "PUBLIC_DIRECTORY",
         organizationId: {
           in: context.organizationIds,
+        },
+        organization: {
+          isSystemPlaceholder: false,
         },
       },
       select: {
@@ -146,7 +170,9 @@ export async function savePartnerOpportunity(
   const opportunity = await prisma.opportunity.create({
     data: {
       ...validation.data,
+      sourceType: "FP_CATALOG",
       status: "DRAFT",
+      visibility: "PUBLIC_DIRECTORY",
     },
     select: {
       id: true,
@@ -192,8 +218,12 @@ export async function submitPartnerOpportunityForApproval(formData: FormData) {
   const opportunity = await prisma.opportunity.findFirst({
     where: {
       id: opportunityId,
+      visibility: "PUBLIC_DIRECTORY",
       organizationId: {
         in: context.organizationIds,
+      },
+      organization: {
+        isSystemPlaceholder: false,
       },
       status: {
         in: ["DRAFT", "REJECTED"],
@@ -266,8 +296,12 @@ async function updatePublishedPartnerOpportunityStatus(
     const opportunity = await prisma.opportunity.findFirst({
       where: {
         id: opportunityId,
+        visibility: "PUBLIC_DIRECTORY",
         organizationId: {
           in: context.organizationIds,
+        },
+        organization: {
+          isSystemPlaceholder: false,
         },
         status: "PUBLISHED",
       },

@@ -227,7 +227,9 @@ export default async function StudentApplicationsPage({
           opportunity: {
             select: {
               id: true,
+              studentOrganizationName: true,
               title: true,
+              visibility: true,
               organization: {
                 select: {
                   name: true,
@@ -305,8 +307,8 @@ export default async function StudentApplicationsPage({
               Applications
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
-              Track your submitted opportunity applications, attached resume,
-              statements, and current review status.
+              Track preparation workspaces and submitted applications, along
+              with their materials and current status.
             </p>
           </div>
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-primary">
@@ -319,7 +321,7 @@ export default async function StudentApplicationsPage({
           className="grid gap-4 md:grid-cols-3"
         >
           <StatCard
-            helper="All applications submitted from your student profile."
+            helper="All preparation and submitted application records."
             label="Total applications"
             value={totalCount.toString()}
           />

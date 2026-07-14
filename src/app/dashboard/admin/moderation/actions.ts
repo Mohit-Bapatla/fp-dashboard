@@ -64,9 +64,10 @@ export async function updatePartnerVerification(formData: FormData) {
     redirect(redirectTo);
   }
 
-  const organization = await prisma.partnerOrganization.findUnique({
+  const organization = await prisma.partnerOrganization.findFirst({
     where: {
       id: organizationId,
+      isSystemPlaceholder: false,
     },
     select: {
       id: true,
@@ -135,9 +136,11 @@ export async function flagOpportunity(formData: FormData) {
     redirect(redirectTo);
   }
 
-  const opportunity = await prisma.opportunity.findUnique({
+  const opportunity = await prisma.opportunity.findFirst({
     where: {
       id: opportunityId,
+      organization: { isSystemPlaceholder: false },
+      visibility: "PUBLIC_DIRECTORY",
     },
     select: {
       id: true,
@@ -213,9 +216,11 @@ export async function clearOpportunityFlags(formData: FormData) {
     redirect(redirectTo);
   }
 
-  const opportunity = await prisma.opportunity.findUnique({
+  const opportunity = await prisma.opportunity.findFirst({
     where: {
       id: opportunityId,
+      organization: { isSystemPlaceholder: false },
+      visibility: "PUBLIC_DIRECTORY",
     },
     select: {
       id: true,
@@ -268,9 +273,11 @@ async function updateOpportunityModerationStatus(
     redirect(redirectTo);
   }
 
-  const opportunity = await prisma.opportunity.findUnique({
+  const opportunity = await prisma.opportunity.findFirst({
     where: {
       id: opportunityId,
+      organization: { isSystemPlaceholder: false },
+      visibility: "PUBLIC_DIRECTORY",
     },
     select: {
       id: true,

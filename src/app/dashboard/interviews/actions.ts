@@ -77,8 +77,12 @@ export async function createInterviewRequest(formData: FormData) {
     where: {
       id: applicationId,
       opportunity: {
+        visibility: "PUBLIC_DIRECTORY",
         organizationId: {
           in: context.organizationIds,
+        },
+        organization: {
+          isSystemPlaceholder: false,
         },
       },
       status: {
@@ -165,8 +169,12 @@ export async function cancelInterviewRequest(formData: FormData) {
       id: interviewId,
       application: {
         opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
           organizationId: {
             in: context.organizationIds,
+          },
+          organization: {
+            isSystemPlaceholder: false,
           },
         },
       },
@@ -239,8 +247,12 @@ export async function completeInterviewRequest(formData: FormData) {
       id: interviewId,
       application: {
         opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
           organizationId: {
             in: context.organizationIds,
+          },
+          organization: {
+            isSystemPlaceholder: false,
           },
         },
       },
@@ -320,6 +332,12 @@ export async function respondToInterviewRequest(formData: FormData) {
       id: interviewId,
       application: {
         studentProfileId: user.studentProfile.id,
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: {
+            isSystemPlaceholder: false,
+          },
+        },
       },
       status: {
         in: ["REQUESTED", "STUDENT_RESPONDED", "SCHEDULED"],

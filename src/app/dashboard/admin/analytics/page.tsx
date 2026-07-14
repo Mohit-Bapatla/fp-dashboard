@@ -109,9 +109,23 @@ export default async function AdminAnalyticsPage() {
         },
       },
     }),
-    prisma.partnerOrganization.count(),
-    prisma.opportunity.count(),
-    prisma.application.count(),
+    prisma.partnerOrganization.count({
+      where: { isSystemPlaceholder: false },
+    }),
+    prisma.opportunity.count({
+      where: {
+        visibility: "PUBLIC_DIRECTORY",
+        organization: { isSystemPlaceholder: false },
+      },
+    }),
+    prisma.application.count({
+      where: {
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
+        },
+      },
+    }),
     prisma.outreachTask.count({
       where: {
         status: "COMPLETED",
@@ -119,12 +133,22 @@ export default async function AdminAnalyticsPage() {
     }),
     prisma.opportunity.groupBy({
       by: ["status"],
+      where: {
+        visibility: "PUBLIC_DIRECTORY",
+        organization: { isSystemPlaceholder: false },
+      },
       _count: {
         _all: true,
       },
     }),
     prisma.application.groupBy({
       by: ["status"],
+      where: {
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
+        },
+      },
       _count: {
         _all: true,
       },
@@ -142,6 +166,7 @@ export default async function AdminAnalyticsPage() {
       },
     }),
     prisma.partnerOrganization.findMany({
+      where: { isSystemPlaceholder: false },
       orderBy: {
         name: "asc",
       },
@@ -157,6 +182,10 @@ export default async function AdminAnalyticsPage() {
       },
     }),
     prisma.opportunity.findMany({
+      where: {
+        visibility: "PUBLIC_DIRECTORY",
+        organization: { isSystemPlaceholder: false },
+      },
       orderBy: {
         applications: {
           _count: "desc",
@@ -180,6 +209,12 @@ export default async function AdminAnalyticsPage() {
       },
     }),
     prisma.application.findMany({
+      where: {
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
+        },
+      },
       orderBy: [
         {
           submittedAt: "desc",

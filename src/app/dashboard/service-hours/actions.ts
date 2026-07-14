@@ -61,8 +61,12 @@ export async function upsertPartnerServiceHours(formData: FormData) {
     where: {
       id: applicationId,
       opportunity: {
+        visibility: "PUBLIC_DIRECTORY",
         organizationId: {
           in: context.organizationIds,
+        },
+        organization: {
+          isSystemPlaceholder: false,
         },
       },
       status: "ACCEPTED",
@@ -114,6 +118,15 @@ export async function upsertPartnerServiceHours(formData: FormData) {
         id: recordId,
         partnerOrganizationId: {
           in: context.organizationIds,
+        },
+        partnerOrganization: {
+          isSystemPlaceholder: false,
+        },
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: {
+            isSystemPlaceholder: false,
+          },
         },
       },
       select: {
@@ -183,9 +196,18 @@ export async function updateCertificateStatus(formData: FormData) {
     redirect(redirectTo);
   }
 
-  const record = await prisma.serviceHourRecord.findUnique({
+  const record = await prisma.serviceHourRecord.findFirst({
     where: {
       id: recordId,
+      opportunity: {
+        visibility: "PUBLIC_DIRECTORY",
+        organization: {
+          isSystemPlaceholder: false,
+        },
+      },
+      partnerOrganization: {
+        isSystemPlaceholder: false,
+      },
     },
     select: {
       id: true,

@@ -3,16 +3,18 @@ import { confirmExternalApplicationSubmission } from "@/app/dashboard/student/op
 export function ExternalApplicationConfirmationForm({
   officialApplicationUrl,
   opportunityId,
+  studentProvided = false,
 }: {
   officialApplicationUrl: string;
   opportunityId: string;
+  studentProvided?: boolean;
 }) {
   return (
     <div className="space-y-5">
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        This application is submitted directly on the host organization&apos;s
-        website. Future Physicians does not submit the form or control the host
-        portal.
+        {studentProvided
+          ? "This private link was added by you and is not verified by Future Physicians. Confirm where the application is submitted before continuing."
+          : "This application is submitted directly on the host organization’s website. Future Physicians does not submit the form or control the host portal."}
       </div>
       <a
         className="inline-flex min-h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground"
@@ -20,7 +22,9 @@ export function ExternalApplicationConfirmationForm({
         rel="noreferrer"
         target="_blank"
       >
-        Open official application
+        {studentProvided
+          ? "Open student-provided link"
+          : "Open official application"}
       </a>
       <form action={confirmExternalApplicationSubmission} className="space-y-4">
         <input name="opportunityId" type="hidden" value={opportunityId} />
@@ -32,8 +36,9 @@ export function ExternalApplicationConfirmationForm({
             type="checkbox"
           />
           <span>
-            I confirm that I personally submitted this application through the
-            host organization&apos;s portal.
+            {studentProvided
+              ? "I confirm that I personally submitted this application outside Future Physicians."
+              : "I confirm that I personally submitted this application through the host organization’s portal."}
           </span>
         </label>
         <button

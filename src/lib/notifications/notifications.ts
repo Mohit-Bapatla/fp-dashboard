@@ -2,13 +2,28 @@ import "server-only";
 
 import { auth } from "@clerk/nextjs/server";
 
-import type { UserRole } from "@/generated/prisma/enums";
+import type {
+  StudentNotificationType,
+  UserRole,
+} from "@/generated/prisma/enums";
 import { prisma } from "@/lib/db/prisma";
 
 export type NotificationPayload = {
+  actionUrl?: string | null;
+  applicationId?: string | null;
+  applicationTaskId?: string | null;
   body?: string | null;
+  deduplicationKey?: string | null;
+  opportunityId?: string | null;
   title: string;
+  type?: StudentNotificationType;
 };
+
+export function safeNotificationActionUrl(value: string | null | undefined) {
+  return value?.startsWith("/dashboard/") && !value.startsWith("//")
+    ? value
+    : null;
+}
 
 export async function getCurrentUserNotificationSummary() {
   const { userId } = await auth();
@@ -36,6 +51,7 @@ export async function getCurrentUserNotificationSummary() {
 
   const unreadCount = await prisma.notification.count({
     where: {
+      dismissedAt: null,
       readAt: null,
       userId: user.id,
     },
@@ -102,13 +118,29 @@ export async function createNotifications(
 
   const result = await prisma.notification.createMany({
     data: userIds.map((userId) => ({
+      actionUrl: safeNotificationActionUrl(payload.actionUrl),
+      applicationId: payload.applicationId ?? null,
+      applicationTaskId: payload.applicationTaskId ?? null,
       body: payload.body ?? null,
+      deduplicationKey: payload.deduplicationKey ?? null,
+      opportunityId: payload.opportunityId ?? null,
       title: payload.title,
+      type: payload.type ?? "GENERAL",
       userId,
     })),
+    skipDuplicates: Boolean(payload.deduplicationKey),
   });
 
   return result.count;
+}
+
+export async function createDeduplicatedNotification(
+  userId: string,
+  payload: NotificationPayload & { deduplicationKey: string },
+) {
+  const created = await createNotifications([userId], payload);
+
+  return created === 1;
 }
 
 export async function markCurrentUserNotificationRead(notificationId: string) {
@@ -139,11 +171,33 @@ export async function markCurrentUserNotificationsRead() {
 
   await prisma.notification.updateMany({
     where: {
+      dismissedAt: null,
       userId: user.id,
       readAt: null,
     },
     data: {
       readAt: new Date(),
+    },
+  });
+}
+
+export async function dismissCurrentUserNotification(notificationId: string) {
+  const user = await getCurrentAppUser();
+
+  if (!user) {
+    return;
+  }
+
+  const now = new Date();
+  await prisma.notification.updateMany({
+    where: {
+      dismissedAt: null,
+      id: notificationId,
+      userId: user.id,
+    },
+    data: {
+      dismissedAt: now,
+      readAt: now,
     },
   });
 }

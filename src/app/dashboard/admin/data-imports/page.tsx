@@ -17,8 +17,12 @@ export default async function AdminDataImportsPage() {
         claimedAt: null,
       },
     }),
-    prisma.partnerOrganization.count(),
-    prisma.opportunity.count(),
+    prisma.partnerOrganization.count({
+      where: { isSystemPlaceholder: false },
+    }),
+    prisma.opportunity.count({
+      where: { visibility: "PUBLIC_DIRECTORY" },
+    }),
   ]);
 
   return (

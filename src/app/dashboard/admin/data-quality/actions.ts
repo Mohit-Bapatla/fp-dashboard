@@ -86,6 +86,8 @@ export async function archiveExpiredOpportunity(formData: FormData) {
         lt: new Date(),
       },
       id: opportunityId,
+      organization: { isSystemPlaceholder: false },
+      visibility: "PUBLIC_DIRECTORY",
       status: "PUBLISHED",
     },
     select: {

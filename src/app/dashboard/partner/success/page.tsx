@@ -71,8 +71,12 @@ export default async function PartnerSuccessPage() {
   ] = await Promise.all([
     prisma.opportunity.findMany({
       where: {
+        visibility: "PUBLIC_DIRECTORY",
         organizationId: {
           in: context.organizationIds,
+        },
+        organization: {
+          isSystemPlaceholder: false,
         },
       },
       orderBy: {
@@ -96,8 +100,12 @@ export default async function PartnerSuccessPage() {
       by: ["status"],
       where: {
         opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
           organizationId: {
             in: context.organizationIds,
+          },
+          organization: {
+            isSystemPlaceholder: false,
           },
         },
       },
@@ -110,8 +118,12 @@ export default async function PartnerSuccessPage() {
       where: {
         application: {
           opportunity: {
+            visibility: "PUBLIC_DIRECTORY",
             organizationId: {
               in: context.organizationIds,
+            },
+            organization: {
+              isSystemPlaceholder: false,
             },
           },
         },
@@ -124,6 +136,15 @@ export default async function PartnerSuccessPage() {
       where: {
         partnerOrganizationId: {
           in: context.organizationIds,
+        },
+        partnerOrganization: {
+          isSystemPlaceholder: false,
+        },
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: {
+            isSystemPlaceholder: false,
+          },
         },
         verificationStatus: "VERIFIED",
       },
@@ -144,8 +165,12 @@ export default async function PartnerSuccessPage() {
     prisma.application.findMany({
       where: {
         opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
           organizationId: {
             in: context.organizationIds,
+          },
+          organization: {
+            isSystemPlaceholder: false,
           },
         },
         status: {
@@ -161,8 +186,12 @@ export default async function PartnerSuccessPage() {
     prisma.application.count({
       where: {
         opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
           organizationId: {
             in: context.organizationIds,
+          },
+          organization: {
+            isSystemPlaceholder: false,
           },
         },
         status: "ACCEPTED",

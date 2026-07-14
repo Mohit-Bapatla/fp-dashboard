@@ -39,17 +39,31 @@ describe("persistent recommendation dismissal", () => {
       gradeYear: null,
       certifications: [],
       resumes: [],
-      savedOpportunities: [{ opportunityId: "dismissed-1" }],
+      savedOpportunities: [
+        { opportunityId: "bookmarked-1" },
+        { opportunityId: "dismissed-1" },
+      ],
     });
     mocks.opportunityFindMany.mockResolvedValue([]);
     mocks.embeddingFindMany.mockResolvedValue([]);
     mocks.embeddingFindUnique.mockResolvedValue(null);
   });
-  it("excludes SavedOpportunity rows with dismissedAt from subsequent recommendation queries", async () => {
+  it("excludes every SavedOpportunity so a bookmark is never offered as dismissible", async () => {
     await expect(getRecommendedOpportunities("profile-1")).resolves.toEqual([]);
+    expect(mocks.profileFindUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: expect.objectContaining({
+          savedOpportunities: {
+            select: { opportunityId: true },
+          },
+        }),
+      }),
+    );
     expect(mocks.opportunityFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ id: { notIn: ["dismissed-1"] } }),
+        where: expect.objectContaining({
+          id: { notIn: ["bookmarked-1", "dismissed-1"] },
+        }),
       }),
     );
   });

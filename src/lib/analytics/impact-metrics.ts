@@ -74,6 +74,10 @@ function submittedApplicationWhere(range: ImpactRange) {
   const cutoff = getCutoff(range);
 
   return {
+    opportunity: {
+      visibility: "PUBLIC_DIRECTORY" as const,
+      organization: { isSystemPlaceholder: false },
+    },
     status: {
       not: "DRAFT" as const,
     },
@@ -155,11 +159,17 @@ export async function getImpactMetrics(
       where: inRangeWhere(range),
     }),
     prisma.opportunity.count({
-      where: inRangeWhere(range),
+      where: {
+        visibility: "PUBLIC_DIRECTORY",
+        organization: { isSystemPlaceholder: false },
+        ...inRangeWhere(range),
+      },
     }),
     prisma.opportunity.count({
       where: {
         status: "PUBLISHED",
+        visibility: "PUBLIC_DIRECTORY",
+        organization: { isSystemPlaceholder: false },
         ...inRangeWhere(range, "publishedAt"),
       },
     }),
@@ -195,7 +205,10 @@ export async function getImpactMetrics(
       },
     }),
     prisma.partnerOrganization.count({
-      where: inRangeWhere(range),
+      where: {
+        isSystemPlaceholder: false,
+        ...inRangeWhere(range),
+      },
     }),
     prisma.outreachContact.count({
       where: inRangeWhere(range),
@@ -217,6 +230,11 @@ export async function getImpactMetrics(
     }),
     prisma.serviceHourRecord.aggregate({
       where: {
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
+        },
+        partnerOrganization: { isSystemPlaceholder: false },
         verificationStatus: "VERIFIED",
         ...inRangeWhere(range, "verifiedAt"),
       },
@@ -254,15 +272,33 @@ export async function getImpactMetrics(
     }),
     prisma.application.count({
       where: {
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
+        },
         status: "ACCEPTED",
         ...inRangeWhere(range, "updatedAt"),
       },
     }),
     prisma.interviewRequest.count({
-      where: inRangeWhere(range),
+      where: {
+        application: {
+          opportunity: {
+            visibility: "PUBLIC_DIRECTORY",
+            organization: { isSystemPlaceholder: false },
+          },
+        },
+        ...inRangeWhere(range),
+      },
     }),
     prisma.interviewRequest.count({
       where: {
+        application: {
+          opportunity: {
+            visibility: "PUBLIC_DIRECTORY",
+            organization: { isSystemPlaceholder: false },
+          },
+        },
         status: "SCHEDULED",
         ...inRangeWhere(range, "scheduledAt"),
       },

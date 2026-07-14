@@ -66,6 +66,7 @@ async function canReviewApplication(applicationId: string, userId: string) {
     },
     select: {
       partnerMemberships: {
+        where: { organization: { isSystemPlaceholder: false } },
         select: {
           organizationId: true,
         },
@@ -78,15 +79,14 @@ async function canReviewApplication(applicationId: string, userId: string) {
     return false;
   }
 
-  if (["STAFF", "ADMIN", "SUPER_ADMIN"].includes(user.role)) {
-    return true;
-  }
-
   const organizationIds = user.partnerMemberships.map(
     (membership) => membership.organizationId,
   );
 
-  if (organizationIds.length === 0) {
+  if (
+    organizationIds.length === 0 &&
+    !["STAFF", "ADMIN", "SUPER_ADMIN"].includes(user.role)
+  ) {
     return false;
   }
 
@@ -94,9 +94,11 @@ async function canReviewApplication(applicationId: string, userId: string) {
     where: {
       id: applicationId,
       opportunity: {
-        organizationId: {
-          in: organizationIds,
-        },
+        visibility: "PUBLIC_DIRECTORY",
+        organization: { isSystemPlaceholder: false },
+        ...(!["STAFF", "ADMIN", "SUPER_ADMIN"].includes(user.role)
+          ? { organizationId: { in: organizationIds } }
+          : {}),
       },
     },
     select: {
