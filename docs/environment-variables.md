@@ -5,7 +5,9 @@
 ## Application
 
 - `NEXT_PUBLIC_APP_NAME`: display name.
-- `NEXT_PUBLIC_APP_URL`: canonical app URL for links and metadata.
+- `NEXT_PUBLIC_APP_URL`: canonical app URL for links, metadata, and absolute
+  reminder/digest email links. Set this to the production HTTPS origin before
+  enabling email.
 
 ## Clerk
 
@@ -32,7 +34,7 @@
 - `RESEND_API_KEY`: server-only Resend key.
 - `EMAIL_FROM`: sender identity.
 - `EMAIL_REPLY_TO`: optional reply-to address.
-- `EMAIL_NOTIFICATIONS_ENABLED`: set to `true` only when email sending is intentionally enabled.
+- `EMAIL_NOTIFICATIONS_ENABLED`: set to `true` only when email sending is intentionally enabled. Student reminder preferences are an additional per-account gate.
 
 ## OpenAI
 
@@ -42,7 +44,9 @@ The app must build and run without this key by using deterministic fallbacks.
 
 ## Cron
 
-- `CRON_SECRET`: bearer token for internal scheduled job endpoints.
+- `CRON_SECRET`: bearer token for internal scheduled job endpoints. Both
+  `/api/jobs/operational-workflows` and `/api/jobs/student-reminders` reject
+  requests without `Authorization: Bearer ${CRON_SECRET}`.
 
 ## Monitoring
 
