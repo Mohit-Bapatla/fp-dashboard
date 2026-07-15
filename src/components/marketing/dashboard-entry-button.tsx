@@ -1,12 +1,8 @@
-import { auth } from "@clerk/nextjs/server";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
-import {
-  type AppRole,
-  getDashboardPathForRole,
-  getRoleFromSessionClaims,
-} from "@/lib/auth/roles";
+import { type AppRole, getDashboardPathForRole } from "@/lib/auth/roles";
+import { getMarketingViewer } from "@/lib/auth/marketing-viewer";
 import { PARTNER_ONBOARDING_PATH } from "@/lib/partner/onboarding";
 import { safeInternalPath } from "@/lib/security/safe-url";
 import { cn } from "@/lib/utils";
@@ -77,11 +73,11 @@ export async function DashboardEntryButton({
   returnTo?: string;
   variant?: "primary" | "secondary";
 }) {
-  const { sessionClaims, userId } = await auth();
+  const { role } = await getMarketingViewer();
   const action = getDashboardEntryAction({
     intent,
     returnTo,
-    role: userId ? getRoleFromSessionClaims(sessionClaims) : null,
+    role,
   });
   const buttonClassName = cn(
     variant === "primary" ? primaryButtonClass : secondaryButtonClass,

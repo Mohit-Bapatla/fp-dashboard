@@ -37,6 +37,9 @@ const recordingId = new URL(siteConfig.links.seminarRecording).searchParams.get(
 const privacyEnhancedEmbed = recordingId
   ? `https://www.youtube-nocookie.com/embed/${recordingId}?rel=0`
   : undefined;
+const countriesRepresented = seminar.metrics.find(
+  (metric) => metric.label === "Countries represented",
+);
 
 const eventJsonLd = {
   "@context": "https://schema.org",
@@ -115,11 +118,10 @@ export default function GlobalHealthcareSeminarPage() {
               />
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                  Featured perspectives
+                  Program focus
                 </p>
                 <p className="mt-1 text-sm leading-6 text-brand-navy">
-                  Doctors, admissions officers, and Harvard students shared
-                  their journeys in medicine.
+                  {seminar.description}
                 </p>
               </div>
             </div>
@@ -133,7 +135,9 @@ export default function GlobalHealthcareSeminarPage() {
                   Global participation
                 </p>
                 <p className="mt-1 text-sm leading-6 text-brand-navy">
-                  FP reports participation representing more than 50 countries.
+                  {countriesRepresented
+                    ? `FP reports participation representing ${countriesRepresented.value} countries for this event.`
+                    : "FP reports global participation for this event."}
                 </p>
               </div>
             </div>
@@ -178,12 +182,20 @@ export default function GlobalHealthcareSeminarPage() {
         <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {seminar.metrics.map((metric) => (
             <MetricCard
+              definition={metric.definition}
               key={metric.label}
               label={metric.label}
               value={metric.value}
             />
           ))}
         </div>
+        <p className="mt-6 text-xs leading-5 text-muted-foreground">
+          These event-specific figures are reported by Future Physicians as of{" "}
+          <time dateTime={seminar.metricsAsOf.isoDate}>
+            {seminar.metricsAsOf.date}
+          </time>
+          . They are not organization-wide totals.
+        </p>
       </MarketingSection>
 
       <MarketingSection>

@@ -1,4 +1,3 @@
-import { auth } from "@clerk/nextjs/server";
 import { SearchX, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -16,24 +15,29 @@ import {
 } from "@/components/opportunities/public-opportunity-filters";
 import { PublicOpportunityCard } from "@/components/opportunities/public-opportunity-card";
 import { PublicOpportunityDirectorySkeleton } from "@/components/opportunities/public-opportunity-loading";
+import { PaginationControls } from "@/components/dashboard/pagination-controls";
 import type {
   ApplicationMethod,
   GradeLevelCode,
   OpportunityAvailabilityStatus,
   OpportunityType,
 } from "@/generated/prisma/enums";
-import { getRoleFromSessionClaims } from "@/lib/auth/roles";
+import { getMarketingViewer } from "@/lib/auth/marketing-viewer";
 import { prisma } from "@/lib/db/prisma";
 import {
   evaluateOpportunityEligibility,
   type EligibilityCategory,
 } from "@/lib/matching/opportunity-eligibility";
 import { gradeLevelCodes } from "@/lib/matching/grade-levels";
+import { getPageParam, getPagination, getTotalPages } from "@/lib/pagination";
 import {
-  getPublicOpportunities,
+  getPublicOpportunitiesForEligibility,
+  getPublicOpportunityPage,
   getPublicOpportunityFilterOptions,
+  publicOpportunityPageSize,
   publicOpportunityDeadlineOptions,
   publicOpportunitySortOptions,
+  type PublicOpportunity,
   type PublicOpportunityDeadline,
   type PublicOpportunitySort,
 } from "@/lib/public/opportunities";
@@ -136,6 +140,14 @@ function parseFilters(
   };
 }
 
+function getPaginationSearchParams(filters: PublicOpportunityFilterValues) {
+  return Object.fromEntries(
+    Object.entries(filters).filter(
+      ([key, value]) => value && !(key === "sort" && value === "newest"),
+    ),
+  );
+}
+
 export default function PublicOpportunitiesPage(
   props: PublicOpportunitiesPageProps,
 ) {
@@ -149,39 +161,37 @@ export default function PublicOpportunitiesPage(
 async function PublicOpportunitiesContent({
   searchParams,
 }: PublicOpportunitiesPageProps) {
-  const [params, options, authState] = await Promise.all([
+  const [params, options, viewer] = await Promise.all([
     searchParams,
     getPublicOpportunityFilterOptions(),
-    auth(),
+    getMarketingViewer(),
   ]);
   const filters = parseFilters(params, options);
-  const role = authState.userId
-    ? getRoleFromSessionClaims(authState.sessionClaims)
-    : null;
-  const isSignedInStudent = Boolean(authState.userId && role === "STUDENT");
+  const requestedPage = getPageParam(params.page);
+  const role = viewer.role;
+  const isSignedInStudent = Boolean(viewer.userId && role === "STUDENT");
 
-  const [opportunities, student] = await Promise.all([
-    getPublicOpportunities({
-      applicationMethod: (filters.applicationMethod || undefined) as
-        | ApplicationMethod
-        | undefined,
-      availabilityStatus: (filters.availabilityStatus || undefined) as
-        | OpportunityAvailabilityStatus
-        | undefined,
-      deadline: (filters.deadline || undefined) as
-        | PublicOpportunityDeadline
-        | undefined,
-      grade: (filters.grade || undefined) as GradeLevelCode | undefined,
-      limit: 100,
-      location: filters.location || undefined,
-      paidStatus: filters.paidStatus || undefined,
-      q: filters.q || undefined,
-      remoteType: filters.remoteType || undefined,
-      sort: filters.sort as PublicOpportunitySort,
-      specialty: filters.specialty || undefined,
-      type: (filters.type || undefined) as OpportunityType | undefined,
-    }),
-    isSignedInStudent && authState.userId
+  const opportunityQuery = {
+    applicationMethod: (filters.applicationMethod || undefined) as
+      | ApplicationMethod
+      | undefined,
+    availabilityStatus: (filters.availabilityStatus || undefined) as
+      | OpportunityAvailabilityStatus
+      | undefined,
+    deadline: (filters.deadline || undefined) as
+      | PublicOpportunityDeadline
+      | undefined,
+    grade: (filters.grade || undefined) as GradeLevelCode | undefined,
+    location: filters.location || undefined,
+    paidStatus: filters.paidStatus || undefined,
+    q: filters.q || undefined,
+    remoteType: filters.remoteType || undefined,
+    sort: filters.sort as PublicOpportunitySort,
+    specialty: filters.specialty || undefined,
+    type: (filters.type || undefined) as OpportunityType | undefined,
+  };
+  const studentPromise =
+    isSignedInStudent && viewer.userId
       ? prisma.user.findUnique({
           select: {
             studentProfile: {
@@ -197,25 +207,68 @@ async function PublicOpportunitiesContent({
               },
             },
           },
-          where: { clerkUserId: authState.userId },
+          where: { clerkUserId: viewer.userId },
         })
-      : Promise.resolve(null),
+      : Promise.resolve(null);
+  const needsEligibilityScan = Boolean(
+    filters.eligibility && isSignedInStudent,
+  );
+  const initialPagePromise = needsEligibilityScan
+    ? Promise.resolve(null)
+    : getPublicOpportunityPage({
+        ...opportunityQuery,
+        page: requestedPage,
+        pageSize: publicOpportunityPageSize,
+      });
+  const [student, initialPage] = await Promise.all([
+    studentPromise,
+    initialPagePromise,
   ]);
-
   const profile = student?.studentProfile ?? null;
+  const effectiveEligibility = profile ? filters.eligibility : "";
+
+  let opportunities: PublicOpportunity[];
+  let page: number;
+  let totalCount: number;
+  let totalPages: number;
+
+  if (effectiveEligibility) {
+    const eligibleOpportunities = (
+      await getPublicOpportunitiesForEligibility(opportunityQuery)
+    ).filter(
+      (opportunity) =>
+        evaluateOpportunityEligibility({ opportunity, student: profile })
+          .category === effectiveEligibility,
+    );
+    totalCount = eligibleOpportunities.length;
+    totalPages = getTotalPages(totalCount, publicOpportunityPageSize);
+    page = Math.min(requestedPage, totalPages);
+    const { skip, take } = getPagination(page, publicOpportunityPageSize);
+    opportunities = eligibleOpportunities.slice(skip, skip + take);
+  } else {
+    const opportunityPage =
+      initialPage ??
+      (await getPublicOpportunityPage({
+        ...opportunityQuery,
+        page: requestedPage,
+        pageSize: publicOpportunityPageSize,
+      }));
+    opportunities = opportunityPage.opportunities;
+    page = opportunityPage.page;
+    totalCount = opportunityPage.totalCount;
+    totalPages = opportunityPage.totalPages;
+  }
+
   const withEligibility = opportunities.map((opportunity) => ({
     eligibility: profile
       ? evaluateOpportunityEligibility({ opportunity, student: profile })
       : null,
     opportunity,
   }));
-  const effectiveEligibility = profile ? filters.eligibility : "";
   const effectiveFilters = { ...filters, eligibility: effectiveEligibility };
-  const visibleOpportunities = effectiveEligibility
-    ? withEligibility.filter(
-        ({ eligibility }) => eligibility?.category === effectiveEligibility,
-      )
-    : withEligibility;
+  const paginationSearchParams = getPaginationSearchParams(effectiveFilters);
+  const hasActiveFilters = Object.keys(paginationSearchParams).length > 0;
+  const showFilters = hasActiveFilters || totalCount > 0;
 
   return (
     <>
@@ -245,13 +298,21 @@ async function PublicOpportunitiesContent({
       </section>
 
       <MarketingContainer className="py-10 sm:py-12">
-        <div className="grid items-start gap-7 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <PublicOpportunityFilters
-            filters={effectiveFilters}
-            options={options}
-            resultCount={visibleOpportunities.length}
-            showEligibility={Boolean(profile)}
-          />
+        <div
+          className={
+            showFilters
+              ? "grid items-start gap-7 lg:grid-cols-[280px_minmax(0,1fr)]"
+              : "grid items-start gap-7"
+          }
+        >
+          {showFilters ? (
+            <PublicOpportunityFilters
+              filters={effectiveFilters}
+              options={options}
+              resultCount={totalCount}
+              showEligibility={Boolean(profile)}
+            />
+          ) : null}
 
           <section
             aria-labelledby="directory-results-heading"
@@ -266,8 +327,8 @@ async function PublicOpportunitiesContent({
                   className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-brand-navy"
                   id="directory-results-heading"
                 >
-                  {visibleOpportunities.length}{" "}
-                  {visibleOpportunities.length === 1
+                  {totalCount}{" "}
+                  {totalCount === 1
                     ? "verified opportunity"
                     : "verified opportunities"}
                 </h2>
@@ -280,9 +341,15 @@ async function PublicOpportunitiesContent({
               ) : null}
             </div>
 
-            {visibleOpportunities.length > 0 ? (
-              <div className="mt-6 grid gap-5 md:grid-cols-2">
-                {visibleOpportunities.map(({ eligibility, opportunity }) => (
+            {withEligibility.length > 0 ? (
+              <div
+                className={
+                  withEligibility.length === 1
+                    ? "mt-6 max-w-3xl"
+                    : "mt-6 grid gap-5 md:grid-cols-2"
+                }
+              >
+                {withEligibility.map(({ eligibility, opportunity }) => (
                   <PublicOpportunityCard
                     eligibility={eligibility}
                     key={opportunity.id}
@@ -298,24 +365,38 @@ async function PublicOpportunitiesContent({
                   className="mx-auto size-9 text-muted-foreground"
                 />
                 <h3 className="mt-5 text-xl font-semibold text-brand-navy">
-                  No opportunities match these filters
+                  {hasActiveFilters
+                    ? "No opportunities match these filters"
+                    : "No public listings are open right now"}
                 </h3>
                 <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-                  Try a broader search or reset the filters. New listings appear
-                  only after they are published, verified, and currently
-                  available.
+                  {hasActiveFilters
+                    ? "Try a broader search or reset the filters. New listings appear only after they are published, verified, and currently available."
+                    : "New listings appear here only after they are published, verified, and currently available."}
                 </p>
                 <div className="mt-6 flex flex-wrap justify-center gap-3">
-                  <Link className={primaryButtonClass} href="/opportunities">
-                    Reset filters
-                  </Link>
+                  {hasActiveFilters ? (
+                    <Link className={primaryButtonClass} href="/opportunities">
+                      Reset filters
+                    </Link>
+                  ) : null}
                   <DashboardEntryButton
                     returnTo="/dashboard/student/opportunities"
-                    variant="secondary"
+                    variant={hasActiveFilters ? "secondary" : "primary"}
                   />
                 </div>
               </div>
             )}
+
+            <div className="mt-8">
+              <PaginationControls
+                page={page}
+                pathname="/opportunities"
+                searchParams={paginationSearchParams}
+                totalCount={totalCount}
+                totalPages={totalPages}
+              />
+            </div>
           </section>
         </div>
       </MarketingContainer>

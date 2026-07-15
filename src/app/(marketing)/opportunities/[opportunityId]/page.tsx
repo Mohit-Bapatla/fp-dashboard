@@ -1,4 +1,3 @@
-import { auth } from "@clerk/nextjs/server";
 import {
   ArrowLeft,
   ArrowRight,
@@ -32,7 +31,7 @@ import {
   getPublicApplicationMethod,
   PublicOpportunityCard,
 } from "@/components/opportunities/public-opportunity-card";
-import { getRoleFromSessionClaims } from "@/lib/auth/roles";
+import { getMarketingViewer } from "@/lib/auth/marketing-viewer";
 import { prisma } from "@/lib/db/prisma";
 import { formatGradeLevelCode } from "@/lib/matching/grade-levels";
 import {
@@ -135,19 +134,17 @@ export default async function PublicOpportunityPage({
   params,
 }: PublicOpportunityPageProps) {
   const { opportunityId } = await params;
-  const [opportunity, authState] = await Promise.all([
+  const [opportunity, viewer] = await Promise.all([
     getOpportunity(opportunityId),
-    auth(),
+    getMarketingViewer(),
   ]);
 
   if (!opportunity) notFound();
 
-  const role = authState.userId
-    ? getRoleFromSessionClaims(authState.sessionClaims)
-    : null;
-  const isSignedInStudent = Boolean(authState.userId && role === "STUDENT");
+  const role = viewer.role;
+  const isSignedInStudent = Boolean(viewer.userId && role === "STUDENT");
   const [student, related] = await Promise.all([
-    isSignedInStudent && authState.userId
+    isSignedInStudent && viewer.userId
       ? prisma.user.findUnique({
           select: {
             studentProfile: {
@@ -163,7 +160,7 @@ export default async function PublicOpportunityPage({
               },
             },
           },
-          where: { clerkUserId: authState.userId },
+          where: { clerkUserId: viewer.userId },
         })
       : Promise.resolve(null),
     getPublicOpportunities({ limit: 4, type: opportunity.type }),
@@ -269,7 +266,7 @@ export default async function PublicOpportunityPage({
                       Save or review in dashboard
                     </Link>
                   </>
-                ) : authState.userId ? (
+                ) : viewer.userId ? (
                   <DashboardEntryButton className="w-full" />
                 ) : (
                   <>

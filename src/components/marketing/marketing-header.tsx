@@ -1,7 +1,7 @@
-import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 
 import { BrandMark } from "@/components/shared/brand-mark";
+import { getMarketingViewer } from "@/lib/auth/marketing-viewer";
 
 import { DashboardEntryButton } from "./dashboard-entry-button";
 import { DesktopExploreMenu } from "./desktop-explore-menu";
@@ -19,7 +19,7 @@ const navLinkClass =
   "inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-muted-foreground transition hover:bg-blue-surface hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export async function MarketingHeader() {
-  const { userId } = await auth();
+  const { userId } = await getMarketingViewer();
   const accountAction = <DashboardEntryButton className="w-full lg:w-auto" />;
 
   return (

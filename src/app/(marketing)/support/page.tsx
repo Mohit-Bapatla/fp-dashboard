@@ -166,8 +166,8 @@ export default function SupportPage() {
 
       <MarketingSection id="grants">
         <SectionHeading
-          description="The awards below are the grant-funder relationships and amounts included in Future Physicians’ approved public content."
-          eyebrow="Current grants received"
+          description="The awards below are the grant-funder relationships and amounts included in Future Physicians’ approved public content. Award dates are omitted because no dated, approved source is currently available for publication."
+          eyebrow="Published grant records"
           title="Published awards, without invented details."
         />
         <div className="mt-10 grid gap-5 md:grid-cols-3">
@@ -187,8 +187,7 @@ export default function SupportPage() {
               </h2>
               <p className="mt-4 border-t border-border pt-4 text-sm leading-6 text-muted-foreground">
                 Grant received by Future Physicians. No award year, restricted
-                use, quotation, or approved logo is supplied in the current
-                public content.
+                use, quotation, or approved logo is currently published.
               </p>
             </article>
           ))}
@@ -239,12 +238,11 @@ export default function SupportPage() {
             </dl>
           </div>
           <LimitationNote title="Financial transparency boundaries">
-            The approved HCB donation page identifies Future Physicians as
-            fiscally sponsored by Hack Club, a 501(c)(3) nonprofit. This site
-            does not publish grant years, restricted uses, a sponsorship total,
-            or audited financial reporting. The $300K+ impact figure is student
-            stipends facilitated through partner programs—not grant revenue,
-            donations, or money received by Future Physicians.
+            The linked HCB page is the current donation route. Any public claim
+            about fiscal sponsorship, tax treatment, or deductibility requires
+            authorized human and legal review. This site does not publish grant
+            years, restricted uses, a sponsorship total, or audited financial
+            reporting.
           </LimitationNote>
         </div>
       </MarketingSection>

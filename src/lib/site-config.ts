@@ -21,30 +21,87 @@ export const siteConfig = {
   },
 } as const;
 
-export const publicMetrics = [
+export const organizationImpactReporting = {
+  asOf: null,
+  disclosure:
+    "Organization-wide totals are withheld because no dated, approved source is currently available for publication.",
+  status: "withheld-pending-source-approval",
+} as const;
+
+export const impactMetricDefinitions = [
   {
-    value: "2,000+",
-    label: "students in the FP community",
-    definition:
-      "Students who have joined Future Physicians programs, events, or community channels; this is not the same as a placement count.",
+    term: "Community participants",
+    meaning:
+      "Distinct students documented as participating in defined FP programs, events, or community channels during a stated period.",
+    boundary:
+      "Not the same as registered dashboard users, applicants, acceptances, or placements.",
   },
   {
-    value: "50+",
-    label: "partner organizations",
-    definition:
-      "Organizations recorded by Future Physicians as program or opportunity partners; event promoters and grant funders are categorized separately.",
+    term: "Registered users",
+    meaning: "People with an FP account during a stated period.",
+    boundary:
+      "An account record does not establish program participation, application, or placement.",
   },
   {
-    value: "50+",
-    label: "countries reached",
-    definition:
-      "Countries represented across Future Physicians community and event participation.",
+    term: "Applicants",
+    meaning: "Students with an application record for an opportunity.",
+    boundary: "Application does not mean interview, acceptance, or placement.",
   },
   {
-    value: "$300K+",
-    label: "student stipends facilitated",
-    definition:
-      "Student stipend value facilitated through partner programs. This is not grant revenue, donations, or funding received by Future Physicians.",
+    term: "Students connected",
+    meaning:
+      "A broad relationship term that requires a specific program definition before reporting.",
+    boundary: "FP does not use it here as a substitute for placements.",
+  },
+  {
+    term: "Placements",
+    meaning: "Confirmed student participation in a program position.",
+    boundary:
+      "A public total requires an approved source, reporting period, and confirmation method.",
+  },
+  {
+    term: "Event registrants",
+    meaning: "People who completed registration for a named event.",
+    boundary: "Not the same as live attendees or peak concurrent viewers.",
+  },
+  {
+    term: "Event attendees",
+    meaning: "People reported as attending a named live event.",
+    boundary:
+      "Tracked separately from registrations, peak viewers, and watch minutes.",
+  },
+  {
+    term: "Paid interns",
+    meaning: "Students confirmed in paid internship positions.",
+    boundary:
+      "A public count requires a documented position and confirmation method.",
+  },
+  {
+    term: "Partner organizations",
+    meaning:
+      "Distinct organizations with an approved program or opportunity relationship during a stated period.",
+    boundary:
+      "Grant funders, event promoters, and institutional recognition are separate categories.",
+  },
+  {
+    term: "Grant or sponsorship revenue",
+    meaning: "Funds received in those specific relationship categories.",
+    boundary:
+      "This is separate from student stipend value offered or paid through a partner program.",
+  },
+  {
+    term: "Student stipends facilitated",
+    meaning:
+      "Documented student stipend value facilitated through identified partner programs during a stated period.",
+    boundary:
+      "Not a count of placements and not grant revenue, donations, or money received by FP.",
+  },
+  {
+    term: "Modeled program value",
+    meaning:
+      "An estimate based on stated assumptions rather than a direct transaction total.",
+    boundary:
+      "Modeled value must be labeled as an estimate and kept separate from verified payments.",
   },
 ] as const;
 
@@ -64,14 +121,43 @@ export const seminar = {
   isoDate: "2025-09-27",
   status: "Event completed",
   description:
-    "A global healthcare event featuring doctors, admissions officers, and Harvard students sharing their journeys in medicine.",
+    "The seminar brought together students and healthcare speakers for discussions about pathways into medicine.",
+  metricsAsOf: {
+    date: "September 27, 2025",
+    isoDate: "2025-09-27",
+  },
   metrics: [
-    { value: "825", label: "Registrations" },
-    { value: "500", label: "Live attendees" },
-    { value: "225", label: "Peak viewers" },
-    { value: "30,000+", label: "Watch minutes" },
-    { value: "50+", label: "Countries represented" },
-    { value: "300+", label: "Audience questions" },
+    {
+      value: "825",
+      label: "Registrations",
+      definition: "People who completed registration for this seminar.",
+    },
+    {
+      value: "500",
+      label: "Live attendees",
+      definition: "People reported as attending the live seminar.",
+    },
+    {
+      value: "225",
+      label: "Peak viewers",
+      definition:
+        "The highest reported number of concurrent viewers during the live seminar.",
+    },
+    {
+      value: "30,000+",
+      label: "Watch minutes",
+      definition: "Total watch minutes reported for this seminar.",
+    },
+    {
+      value: "50+",
+      label: "Countries represented",
+      definition: "Countries represented among reported seminar participants.",
+    },
+    {
+      value: "300+",
+      label: "Audience questions",
+      definition: "Questions reported as submitted by the seminar audience.",
+    },
   ],
   recognition: ["UC Riverside", "The George Washington University"],
 } as const;

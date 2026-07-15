@@ -1,4 +1,3 @@
-import { auth } from "@clerk/nextjs/server";
 import {
   ArrowRight,
   BadgeCheck,
@@ -29,16 +28,10 @@ import {
   textLinkClass,
 } from "@/components/marketing/page-shell";
 import { PublicOpportunityCard } from "@/components/opportunities/public-opportunity-card";
-import { getRoleFromSessionClaims } from "@/lib/auth/roles";
+import { getMarketingViewer } from "@/lib/auth/marketing-viewer";
 import { getFeaturedPublicOpportunities } from "@/lib/public/opportunities";
 import { createPublicMetadata } from "@/lib/public-metadata";
-import {
-  allFaqItems,
-  grants,
-  publicMetrics,
-  seminar,
-  siteConfig,
-} from "@/lib/site-config";
+import { allFaqItems, grants, seminar, siteConfig } from "@/lib/site-config";
 
 export const dynamic = "force-dynamic";
 
@@ -98,8 +91,8 @@ const howItWorks = [
 ] as const;
 
 export default async function HomePage() {
-  const [authState, opportunityResult] = await Promise.all([
-    auth(),
+  const [viewer, opportunityResult] = await Promise.all([
+    getMarketingViewer(),
     getFeaturedPublicOpportunities(6).then(
       (opportunities) => ({ opportunities, opportunityLoadFailed: false }),
       () => ({
@@ -110,9 +103,7 @@ export default async function HomePage() {
       }),
     ),
   ]);
-  const viewerRole = authState.userId
-    ? getRoleFromSessionClaims(authState.sessionClaims)
-    : null;
+  const viewerRole = viewer.role;
   const { opportunities, opportunityLoadFailed } = opportunityResult;
 
   const organizationSchema = {
@@ -194,12 +185,12 @@ export default async function HomePage() {
       </section>
 
       <section
-        aria-label="Future Physicians impact snapshot"
+        aria-label={`${seminar.title} impact snapshot`}
         className="border-b border-border bg-white"
       >
         <MarketingContainer className="py-3">
           <div className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
-            {publicMetrics.map((metric) => (
+            {seminar.metrics.slice(0, 4).map((metric) => (
               <Link
                 className="group px-4 py-5 first:pl-0 last:pr-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 href="/impact"
@@ -215,8 +206,13 @@ export default async function HomePage() {
             ))}
           </div>
           <p className="border-t border-border px-1 py-3 text-xs leading-5 text-muted-foreground">
-            Figures were supplied in the project brief; no reporting period or
-            “as of” date was provided.{" "}
+            These figures apply only to the completed seminar and are reported
+            as of{" "}
+            <time dateTime={seminar.metricsAsOf.isoDate}>
+              {seminar.metricsAsOf.date}
+            </time>
+            . Organization-wide totals are withheld pending dated source
+            approval.{" "}
             <Link
               className="font-semibold text-primary underline underline-offset-4"
               href="/impact"

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  opportunityCount: vi.fn(),
   opportunityFindFirst: vi.fn(),
   opportunityFindMany: vi.fn(),
 }));
@@ -8,6 +9,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/db/prisma", () => ({
   prisma: {
     opportunity: {
+      count: mocks.opportunityCount,
       findFirst: mocks.opportunityFindFirst,
       findMany: mocks.opportunityFindMany,
     },
@@ -17,12 +19,57 @@ vi.mock("@/lib/db/prisma", () => ({
 import {
   getPublicOpportunities,
   getPublicOpportunity,
+  getPublicOpportunityPage,
 } from "@/lib/public/opportunities";
 
 describe("public opportunity data access", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.opportunityCount.mockResolvedValue(0);
     mocks.opportunityFindMany.mockResolvedValue([]);
+  });
+
+  it("paginates with a deterministic tie-breaker and clamps an empty result", async () => {
+    await getPublicOpportunityPage({ page: 4, pageSize: 12, sort: "deadline" });
+
+    expect(mocks.opportunityCount).toHaveBeenCalledWith({
+      where: expect.objectContaining({ AND: expect.any(Array) }),
+    });
+    expect(mocks.opportunityFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [
+          { deadline: { sort: "asc", nulls: "last" } },
+          { publishedAt: "desc" },
+          { id: "asc" },
+        ],
+        skip: 0,
+        take: 12,
+      }),
+    );
+  });
+
+  it("uses count-derived page bounds without duplicating adjacent records", async () => {
+    mocks.opportunityCount.mockResolvedValue(25);
+
+    const result = await getPublicOpportunityPage({ page: 9, pageSize: 12 });
+
+    expect(result).toMatchObject({
+      page: 3,
+      pageSize: 12,
+      totalCount: 25,
+      totalPages: 3,
+    });
+    expect(mocks.opportunityFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [
+          { publishedAt: "desc" },
+          { createdAt: "desc" },
+          { id: "asc" },
+        ],
+        skip: 24,
+        take: 12,
+      }),
+    );
   });
 
   it("always combines public visibility with the effective external flow filter", async () => {

@@ -44,6 +44,16 @@ export type PublicOpportunityQuery = {
   type?: OpportunityType;
 };
 
+export const publicOpportunityPageSize = 12;
+
+export type PublicOpportunityPage = {
+  opportunities: PublicOpportunityRecord[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+};
+
 const publicOpportunitySelect = {
   acceptedGradeLevels: true,
   applicationInstructions: true,
@@ -111,6 +121,11 @@ function cleanText(value: string | undefined, maxLength = 120) {
 function normalizeLimit(value: number | undefined, fallback = 100) {
   if (!Number.isFinite(value)) return fallback;
   return Math.min(Math.max(Math.trunc(value ?? fallback), 1), 100);
+}
+
+function normalizePage(value: number | undefined) {
+  if (!Number.isFinite(value)) return 1;
+  return Math.max(Math.trunc(value ?? 1), 1);
 }
 
 function sanitizePublicOpportunity(
@@ -243,14 +258,15 @@ function getPublicOpportunityOrderBy(
     return [
       { deadline: { sort: "asc", nulls: "last" } },
       { publishedAt: "desc" },
+      { id: "asc" },
     ];
   }
 
   if (sort === "recently-verified") {
-    return [{ lastVerifiedAt: "desc" }, { publishedAt: "desc" }];
+    return [{ lastVerifiedAt: "desc" }, { publishedAt: "desc" }, { id: "asc" }];
   }
 
-  return [{ publishedAt: "desc" }, { createdAt: "desc" }];
+  return [{ publishedAt: "desc" }, { createdAt: "desc" }, { id: "asc" }];
 }
 
 export async function getPublicOpportunities(
@@ -261,6 +277,53 @@ export async function getPublicOpportunities(
     orderBy: getPublicOpportunityOrderBy(input.sort),
     select: publicOpportunitySelect,
     take: normalizeLimit(input.limit),
+    where: buildPublicOpportunityWhere(input, now),
+  });
+
+  return opportunities.map(sanitizePublicOpportunity);
+}
+
+export async function getPublicOpportunityPage({
+  page: requestedPage,
+  pageSize: requestedPageSize = publicOpportunityPageSize,
+  ...input
+}: PublicOpportunityQuery & { page?: number; pageSize?: number } = {}) {
+  const now = new Date();
+  const pageSize = normalizeLimit(requestedPageSize, publicOpportunityPageSize);
+  const where = buildPublicOpportunityWhere(input, now);
+  const totalCount = await prisma.opportunity.count({ where });
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const page = Math.min(normalizePage(requestedPage), totalPages);
+  const opportunities = await prisma.opportunity.findMany({
+    orderBy: getPublicOpportunityOrderBy(input.sort),
+    select: publicOpportunitySelect,
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+    where,
+  });
+
+  return {
+    opportunities: opportunities.map(sanitizePublicOpportunity),
+    page,
+    pageSize,
+    totalCount,
+    totalPages,
+  } satisfies PublicOpportunityPage;
+}
+
+/**
+ * Eligibility categories are derived from both a private student profile and
+ * listing requirements, so they cannot be represented by a public SQL filter.
+ * This uncapped query is reserved for that signed-in filtering path; normal
+ * directory traffic must use getPublicOpportunityPage.
+ */
+export async function getPublicOpportunitiesForEligibility(
+  input: PublicOpportunityQuery = {},
+) {
+  const now = new Date();
+  const opportunities = await prisma.opportunity.findMany({
+    orderBy: getPublicOpportunityOrderBy(input.sort),
+    select: publicOpportunitySelect,
     where: buildPublicOpportunityWhere(input, now),
   });
 
