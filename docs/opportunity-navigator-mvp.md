@@ -42,7 +42,7 @@ Student actions derive the profile from Clerk-authenticated user context and nev
 - Reminder delivery uses one daily Vercel job, so two-hour interview delivery and immediate post-quiet-hour delivery are deferred.
 - Schedule compatibility remains unknown until both profile and listing availability use a richer shared structure.
 - Geographic checks are deliberately narrow; distance calculations and geocoding are not included.
-- Activities, stories, resume-version management, documents, recommendations, answers, interview preparation, and outcomes have schema foundations only and remain future owner-scoped UI work.
+- Priority 2-4 activities, stories, resume-version management, documents, recommendation contacts, answers, interview preparation, and outcomes are deferred; speculative schema is not shipped in this MVP.
 - This is not a verified catalog, browser extension, full AI copilot, or automatic application system.
 
 ## Recommended next phase

@@ -1,75 +1,91 @@
 # Authenticated Student Smoke Checklist
 
-Use a disposable or non-production environment with two student accounts, one
-admin account, one public opening-soon opportunity, one public open external
-opportunity, and one configured internal opportunity. Record browser, viewport,
-account, and result for every executed item. Do not use production data.
+Run this checklist only in a disposable or non-production environment. Use two
+student accounts, one admin account, one verified opening-soon public
+opportunity, one verified open external opportunity, and one configured
+internal opportunity. Record the browser, viewport, account, result, and a
+short evidence link or note for every numbered flow. Do not mark an unexecuted
+flow as passed and do not use production data.
 
-## Priority 0 and Priority 1 release checks
+## Setup prerequisites
 
-- [ ] Student updates the existing profile and sees readiness links update.
-- [ ] Student uploads a resume, selects it in a workspace, and sees the resume
-      task and calculated progress update.
-- [ ] Student saves and follows an opening-soon public opportunity.
-- [ ] Student starts preparation for `OPENING_SOON` and receives typed tasks.
-- [ ] Student cannot internally submit or externally confirm before `opensAt`.
-- [ ] Student can submit the configured internal opportunity only after it is
-      open and explicitly confirms the submission form.
-- [ ] Student opens the host portal and explicitly confirms an open external
-      submission; FP makes no host submission claim.
-- [ ] Student completes, reopens, blocks, and unblocks tasks; progress and next
-      action change without a manual percentage field.
-- [ ] Student adds a private custom task, edits its due date, and cannot skip a
-      required task.
-- [ ] Student filters Tasks by application, type, due bucket, and status at a
-      390px viewport using keyboard navigation.
-- [ ] Student adds an external URL, creates a workspace, and sees
-      “Private / added by you / not verified” labels.
-- [ ] Student adds the same normalized URL again and receives a duplicate error.
-- [ ] Student submits the private source for verification; admin sees the source
-      metadata but not private application notes and cannot publish it from that
-      review action.
-- [ ] Student saves notification preferences, timezone, quiet hours, and weekly
-      digest opt-in; refresh preserves the settings.
-- [ ] A secret-authenticated reminder job creates exact in-app action links,
-      respects preferences/timezone, and does not duplicate a repeated run.
-- [ ] Student opens and dismisses a reminder; another user cannot mutate it.
-- [ ] Weekly plan preview is structured, omits private content, and an empty plan
-      produces no email.
-- [ ] Student dashboard remains usable near 390px and shows the requested section
-      order without horizontal overflow.
-- [ ] Second student cannot access the first student's private opportunity,
-      application, tasks, resume selection, notes, or notifications by URL or
-      forged form ID.
-- [ ] Partner, staff, and general admin catalog pages do not display the private
-      opportunity or hidden placeholder organization.
+Configure `DATABASE_URL`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`,
+`CLERK_SECRET_KEY`, the Clerk redirect variables from `.env.example`,
+`NEXT_PUBLIC_APP_URL`, and a non-production `CRON_SECRET`. Seed or create the
+fixtures above before testing.
 
-## Deferred checks — do not mark complete in this release
+Keep email disabled unless real non-production delivery is intentionally in
+scope. Real delivery additionally requires `RESEND_API_KEY`, `EMAIL_FROM`,
+optional `EMAIL_REPLY_TO`, and `EMAIL_NOTIFICATIONS_ENABLED=true`. A successful
+Resend request proves provider acceptance, not inbox delivery.
 
-These checks remain blocked until the corresponding Priority 2–4 editors and
-actions are implemented. Schema presence is not a working feature.
+## Priority 0 and Priority 1 release flows
 
-- [ ] Student creates, duplicates, edits, archives, and deletes an activity.
-- [ ] Student creates and explicitly approves a story.
-- [ ] Student maintains and selects multiple named resume versions.
-- [ ] Student tracks a reusable recommendation contact and explicitly sends a
-      reviewed request.
-- [ ] Student creates, versions, and approves an application answer from approved
-      facts without automatic submission.
-- [ ] Student records interview preparation and a thank-you action.
-- [ ] Student optionally reports an outcome and controls anonymous aggregate use.
-- [ ] Data export contains only the student's exportable records and deletion
-      follows a reviewed retention workflow.
+1. [ ] Student updates the existing profile and sees readiness links update.
+2. [ ] Student views verified recommendations; unverified or unavailable
+       opportunities are not presented as recommendations.
+3. [ ] Student saves an opening-soon public opportunity, enables reopening
+       follow, refreshes, and sees both states persist.
+4. [ ] Student starts preparation for an `OPENING_SOON` opportunity and receives
+       stable typed tasks without making a submission claim.
+5. [ ] Student cannot submit an internal application before `opensAt`; both the
+       hidden/disabled UI path and a direct forged Server Action are blocked.
+6. [ ] Student cannot confirm an external submission before `opensAt`; both the
+       UI path and a direct forged Server Action are blocked.
+7. [ ] Student starts an open external application, opens the host portal, and
+       sees clear copy that Future Physicians does not submit to the host.
+8. [ ] Student completes, reopens, blocks, and unblocks ordinary tasks; required
+       submission tasks remain protected by their authoritative actions.
+9. [ ] Student uploads and selects an owned resume; the resume task and progress
+       recalculate, and a required task cannot be skipped.
+10. [ ] Student changes task state or resume selection and sees the deterministic
+        next action change without a manual percentage or next-action field.
+11. [ ] Student adds a private custom task with a title, private description,
+        required flag, and optional due date.
+12. [ ] Student edits that custom task's title, description, and due date, then
+        deletes it; progress and next action recalculate and system tasks remain
+        protected.
+13. [ ] Student explicitly confirms an open external submission; the application
+        and authoritative confirmation task update without an FP host claim.
+14. [ ] Student explicitly submits the configured open internal opportunity and
+        the existing internal email/review workflow runs only after confirmation.
+15. [ ] Student adds a safe external URL, creates a workspace, sees "Private",
+        "added by you", and "not verified" labels, and receives a duplicate
+        error for the same normalized URL.
+16. [ ] A second student cannot see the first student's private opportunity in
+        the directory; public, partner, staff, and general-admin catalogs also
+        hide it and the placeholder organization.
+17. [ ] Cross-user URLs and forged form IDs cannot read or mutate another
+        student's private opportunity, workspace, tasks, notifications, resume
+        selection, or private notes.
+18. [ ] Notification preferences, timezone, quiet hours, and digest opt-in
+        persist; the secret-authenticated job creates exact action links,
+        deduplicates repeated runs, respects quiet hours, supports open/dismiss,
+        shows a structured weekly plan, and sends no empty digest.
+19. [ ] Student requests verification of a private source; admin sees only the
+        allowed source metadata, not private application notes, and resolving
+        the request does not publish the opportunity.
+20. [ ] With keyboard-only navigation and a viewport near 390px, student home,
+        Tasks, add-external, application workspace, notifications, and settings
+        have visible focus, announced form state, usable controls, no horizontal
+        overflow, and the documented student-home section order.
 
-## Mobile and accessibility notes
+## Deferred scope - do not execute as release flows
 
-For student home, opportunities, saved items, detail, application workspace,
-Tasks, notifications, and settings, verify:
+Priority 2-4 editors and actions are not implemented or represented as shipped
+schema in this release. Do not treat these as available beta features:
 
-- visible focus and full keyboard operation;
-- associated labels and announced form errors/success states;
-- touch targets near 40px or larger;
-- no hover-only essential actions;
-- no clipped content or horizontal page scrolling at about 390px;
-- usable loading, empty, error, and success states;
-- readable contrast in status badges and callouts.
+- activity and story libraries;
+- multiple named resume versions and status-only document tracking;
+- reusable recommendation contacts and recommender email sending;
+- versioned application-answer drafting or approval;
+- interview-preparation and thank-you editors;
+- outcome reporting and anonymous aggregate consent;
+- student export/deletion, comparison, or calendar export workflows.
+
+## Accessibility evidence
+
+For each route exercised above, also record visible focus, associated labels,
+announced error/success state, touch targets near 40px or larger, absence of
+hover-only essential actions, readable status contrast, and useful loading,
+empty, error, and recovery states.

@@ -14,9 +14,10 @@ Priority 0 and Priority 1 scope:
 - explicit student action for every internal submission or external
   confirmation.
 
-The activities, stories, recommendations, answer editor, interview-preparation,
-and outcome features have schema foundations only. They are deliberately absent
-from navigation until owner-scoped editors and action tests are implemented.
+Activities, stories, recommendation contacts, answer editing,
+interview-preparation, and outcome reporting are deferred. Their speculative
+schema is intentionally not included until owner-scoped vertical slices and
+action tests are designed.
 
 ## Routes
 
@@ -66,10 +67,12 @@ due dates. System tasks are inserted with `createMany(..., skipDuplicates)` and
 are never silently deleted.
 
 Students can complete or reopen tasks, mark them blocked, skip optional tasks,
-create private custom tasks, and edit due dates only for student-controlled
-tasks. Every mutation derives the student profile from Clerk context, scopes the
-record through its application owner, rate limits the action, and audits only
-IDs, types, status, and other non-content metadata.
+and create private custom tasks. While an application remains in a preparatory
+state, they can edit a custom task's title, private description, and due date or
+delete it. System/opportunity tasks and post-planning applications are guarded.
+Every mutation derives the student profile from Clerk context, scopes the record
+through its application owner, rate limits the action, recalculates progress and
+next action, and audits only IDs, types, status, and other non-content metadata.
 
 Submission and external-confirmation tasks are completed only by their
 authoritative submission Server Actions. Generic task controls cannot complete
@@ -100,12 +103,18 @@ The daily runner derives notifications from structured dates and task types. It
 uses unique deduplication keys for deadline, target-date, opening, overdue-task,
 recommendation, interview-tomorrow, follow-up, thank-you, and outcome events.
 Eligible email notifications are grouped into at most one message per student
-per run. Quiet hours and current preferences are checked before delivery.
+per run; ordinary summaries include the oldest 10 eligible rows from the prior
+48 hours. Quiet hours and current preferences are checked before delivery.
 
 On Monday in the student's timezone, an opted-in digest is generated from the
 same structured weekly plan. Empty plans are not sent. Email content excludes
 essay text, story text, resume text, private notes, task descriptions, and
-recommender message bodies. The current plan is visible in settings.
+recommender message bodies. A digest claims only its own row and leaves ordinary
+reminders pending for the next run. The current plan is visible in settings.
+
+A successful send means Resend accepted the API request, not that the message
+reached an inbox. Bounces, complaints, and later suppression are not tracked in
+this release.
 
 Vercel calls `/api/jobs/student-reminders` daily with
 `Authorization: Bearer ${CRON_SECRET}`. See `background-jobs.md` for exact
@@ -158,17 +167,16 @@ visibility or publish the opportunity. Webpage content is not scraped.
 
 This release adds no generic chatbot and no application-answer generation UI.
 Existing optional recommendation wording remains server-side and has a
-deterministic fallback when `OPENAI_API_KEY` is absent. Later answer/story
-foundations separate factual notes, student drafts, AI drafts, approved text,
-provenance, and prompt versions; no AI text is auto-approved.
+deterministic fallback when `OPENAI_API_KEY` is absent. Any later answer/story
+slice must explicitly separate factual notes, student drafts, AI drafts,
+approved text, provenance, and prompt versions; no AI text may be auto-approved.
 
 Resume files continue to use private Supabase storage and signed owner-scoped
-access. The later schema adds resume naming/version metadata and status-only
-document tracking, but multiple-version management and sensitive-document
-uploads are deferred. Students should not upload transcripts, medical records,
-or parent forms unless a reviewed private-storage workflow is added.
-Future resume actions must clear and set the student's single active default
-resume in one transaction.
+access. Multiple-version management, naming metadata, and status-only document
+tracking are deferred and have no schema in this release. Students should not
+upload transcripts, medical records, or parent forms unless a reviewed
+private-storage workflow is added. Any future default-resume feature must
+enforce a single active default transactionally.
 
 ## Environment and operations
 
@@ -189,12 +197,14 @@ production deployment is part of this work.
   reminder or wake immediately after every timezone's quiet hours.
 - Email row claiming prevents concurrent duplicate sends but is not a durable
   queue lease if a function terminates after claim and before provider response.
+  `emailedAt` also records provider acceptance, so operators must not blindly
+  reclaim old values. Vercel does not retry a failed cron invocation.
 - Authenticated browser smoke testing requires Clerk test credentials; the
   manual checklist is in `student-authenticated-smoke-checklist.md`.
-- Priority 2–4 data models are intentionally schema-only. Activities, stories,
-  multiple-resume management, recommendation contacts, application answers,
-  interview preparation, outcomes, export/deletion, comparison, and calendar
-  export need owner-scoped UI and action coverage in later changes.
+- Priority 2-4 data models and UI are intentionally deferred. Activities,
+  stories, multiple-resume management, recommendation contacts, application
+  answers, interview preparation, outcomes, export/deletion, comparison, and
+  calendar export need owner-scoped design and action coverage in later changes.
 - No external page scraping, automatic publication, automatic submission, or
   recommender email sending is implemented.
 

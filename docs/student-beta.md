@@ -32,6 +32,6 @@ The student beta is a controlled onboarding period for invited students only.
 
 The authenticated release checklist is in
 `student-authenticated-smoke-checklist.md`. Activities, stories,
-recommendations, application answers, interview preparation, and outcomes have
-schema foundations only in this release and are not yet student-facing beta
-features.
+recommendation contacts, application answers, interview preparation, and
+outcomes are deferred and have no shipped schema or student-facing beta UI in
+this release.
