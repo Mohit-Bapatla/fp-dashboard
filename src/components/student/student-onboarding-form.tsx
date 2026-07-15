@@ -14,6 +14,7 @@ import {
 
 type StudentOnboardingFormProps = {
   initialState: StudentOnboardingActionState;
+  returnTo?: string;
 };
 
 type TextFieldProps = {
@@ -345,6 +346,7 @@ function SpecialtyTagInput({
 
 export function StudentOnboardingForm({
   initialState,
+  returnTo = "/dashboard/student",
 }: StudentOnboardingFormProps) {
   const [state, formAction, isPending] = useActionState(
     saveStudentProfile,
@@ -375,6 +377,7 @@ export function StudentOnboardingForm({
         }
       }}
     >
+      <input name="returnTo" type="hidden" value={returnTo} />
       <div className="border-b border-border p-6">
         <nav aria-label="Form progress" className="mb-5">
           <ol className="flex items-center">

@@ -10,6 +10,7 @@ import { syncCurrentUserFromClerk } from "@/lib/auth/user-sync";
 import { getPartnerNavItems } from "@/lib/partner/navigation";
 import { getStaffNavItems } from "@/lib/staff/navigation";
 import { getStudentNavItems } from "@/lib/student/navigation";
+import { siteConfig } from "@/lib/site-config";
 
 const reportDetails = [
   "Your role and the account email you used.",
@@ -59,7 +60,7 @@ export default async function SupportPage() {
           />
           <SupportCard
             description="Email the FP beta support contact with the issue details below."
-            href="mailto:support@example.com?subject=FP%20Dashboard%20Beta%20Support"
+            href={`mailto:${siteConfig.emails.support}?subject=FP%20Dashboard%20Beta%20Support`}
             icon={Mail}
             title="Email support"
           />
@@ -87,8 +88,7 @@ export default async function SupportPage() {
             ))}
           </ul>
           <p className="mt-5 text-sm leading-6 text-muted-foreground">
-            Replace `support@example.com` with the FP team support inbox before
-            inviting external beta users.
+            Support requests are sent to {siteConfig.emails.support}.
           </p>
         </section>
       </div>

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { isSafeExternalUrl } from "@/lib/security/safe-url";
 import {
   validateOpportunityForm,
+  validateOpportunityOrganizationReadiness,
   validateOpportunityPublishReadiness,
 } from "@/lib/admin/opportunity-validation";
 
@@ -23,6 +24,42 @@ describe("opportunity publish readiness", () => {
         officialSourceUrl: "https://example.org/program",
         verificationStatus: "VERIFIED",
         lastVerifiedAt: new Date(),
+      }).ready,
+    ).toBe(true);
+  });
+});
+
+describe("opportunity organization readiness", () => {
+  it("blocks publication and verification until the organization is verified", () => {
+    expect(
+      validateOpportunityOrganizationReadiness({
+        organizationVerificationStatus: "UNVERIFIED",
+        status: "PUBLISHED",
+        verificationStatus: "NEEDS_REVIEW",
+      }),
+    ).toMatchObject({ ready: false, errors: [expect.any(String)] });
+    expect(
+      validateOpportunityOrganizationReadiness({
+        organizationVerificationStatus: "IN_REVIEW",
+        status: "DRAFT",
+        verificationStatus: "VERIFIED",
+      }),
+    ).toMatchObject({ ready: false, errors: [expect.any(String)] });
+  });
+
+  it("allows private draft preparation and verified-organization transitions", () => {
+    expect(
+      validateOpportunityOrganizationReadiness({
+        organizationVerificationStatus: "UNVERIFIED",
+        status: "DRAFT",
+        verificationStatus: "NEEDS_REVIEW",
+      }).ready,
+    ).toBe(true);
+    expect(
+      validateOpportunityOrganizationReadiness({
+        organizationVerificationStatus: "VERIFIED",
+        status: "PUBLISHED",
+        verificationStatus: "VERIFIED",
       }).ready,
     ).toBe(true);
   });

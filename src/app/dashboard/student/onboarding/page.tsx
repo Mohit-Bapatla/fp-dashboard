@@ -4,8 +4,9 @@ import { redirect } from "next/navigation";
 import { StudentOnboardingForm } from "@/components/student/student-onboarding-form";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { RoleBadge } from "@/components/dashboard/role-badge";
-import { roleNavigation } from "@/components/dashboard/role-config";
 import { getRoleFromSessionClaims } from "@/lib/auth/roles";
+import { safeInternalPath } from "@/lib/security/safe-url";
+import { getStudentNavItems } from "@/lib/student/navigation";
 import {
   initialStudentOnboardingActionState,
   type StudentOnboardingActionState,
@@ -45,7 +46,11 @@ function getGradeYearValues(value: string | null | undefined) {
   };
 }
 
-export default async function StudentOnboardingPage() {
+export default async function StudentOnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ returnTo?: string | string[] }>;
+}) {
   const { redirectToSignIn, sessionClaims, userId } = await auth();
 
   if (!userId) {
@@ -57,6 +62,11 @@ export default async function StudentOnboardingPage() {
   }
 
   const user = await getOrCreateCurrentStudentUser(userId);
+  const query = await searchParams;
+  const requestedReturnTo = Array.isArray(query.returnTo)
+    ? query.returnTo[0]
+    : query.returnTo;
+  const returnTo = safeInternalPath(requestedReturnTo, "/dashboard/student");
   const profile = user.studentProfile;
   const gradeYearValues = getGradeYearValues(profile?.gradeYear);
   const initialState: StudentOnboardingActionState = {
@@ -93,7 +103,10 @@ export default async function StudentOnboardingPage() {
   };
 
   return (
-    <DashboardShell navItems={roleNavigation.student} role="student">
+    <DashboardShell
+      navItems={getStudentNavItems("/dashboard/student/onboarding")}
+      role="student"
+    >
       <div className="space-y-8">
         <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
           <RoleBadge className="mb-5" role="student" />
@@ -110,7 +123,10 @@ export default async function StudentOnboardingPage() {
           </p>
         </section>
 
-        <StudentOnboardingForm initialState={initialState} />
+        <StudentOnboardingForm
+          initialState={initialState}
+          returnTo={returnTo}
+        />
       </div>
     </DashboardShell>
   );

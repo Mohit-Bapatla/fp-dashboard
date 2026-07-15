@@ -17,17 +17,26 @@ export function DashboardShell({
   children,
 }: DashboardShellProps) {
   return (
-    <main className="min-h-screen bg-muted/50 text-foreground">
+    <div className="min-h-screen bg-page text-foreground">
+      <a
+        className="fixed left-4 top-4 z-[100] -translate-y-24 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-transform focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        href="#dashboard-content"
+      >
+        Skip to dashboard content
+      </a>
       <div className="flex min-h-screen">
         <DashboardSidebar navItems={navItems} role={role} />
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col bg-page">
           <DashboardTopNav navItems={navItems} role={role} />
           <DemoModeBanner />
-          <div className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-            <div className="mx-auto w-full max-w-7xl">{children}</div>
-          </div>
+          <main
+            className="flex-1 px-3 py-4 sm:px-5 sm:py-5 lg:px-7 lg:py-6 xl:px-8"
+            id="dashboard-content"
+          >
+            <div className="mx-auto w-full max-w-[1280px]">{children}</div>
+          </main>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

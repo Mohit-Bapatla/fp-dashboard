@@ -9,13 +9,13 @@ type RoleBadgeProps = {
 
 const badgeStyles: Record<DashboardRole, string> = {
   student:
-    "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200",
+    "border-primary/20 bg-blue-surface text-brand-navy [&_svg]:text-primary",
   partner:
-    "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200",
+    "border-secondary/25 bg-secondary/[0.08] text-brand-navy [&_svg]:text-secondary",
   staff:
-    "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200",
+    "border-primary/20 bg-primary/[0.07] text-brand-navy [&_svg]:text-primary",
   admin:
-    "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200",
+    "border-accent-warm/35 bg-accent-warm/[0.14] text-brand-navy [&_svg]:text-warning",
 };
 
 export function RoleBadge({ role, className }: RoleBadgeProps) {
@@ -25,12 +25,12 @@ export function RoleBadge({ role, className }: RoleBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em]",
+        "inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.13em]",
         badgeStyles[role],
         className,
       )}
     >
-      <Icon aria-hidden="true" className="h-3.5 w-3.5" />
+      <Icon aria-hidden="true" className="size-3.5" />
       {meta.label}
     </span>
   );

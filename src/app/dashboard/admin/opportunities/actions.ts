@@ -14,6 +14,7 @@ import type {
 } from "@/lib/admin/opportunity-validation";
 import {
   validateOpportunityForm,
+  validateOpportunityOrganizationReadiness,
   validateOpportunityPublishReadiness,
   validatePartnerOrganizationForm,
 } from "@/lib/admin/opportunity-validation";
@@ -73,6 +74,7 @@ export async function saveOpportunity(
     },
     select: {
       id: true,
+      verificationStatus: true,
     },
   });
 
@@ -82,6 +84,25 @@ export async function saveOpportunity(
         organizationId: "Choose an existing partner organization.",
       },
       formError: "The selected partner organization could not be found.",
+      values: validation.values,
+    };
+  }
+
+  const organizationReadiness = validateOpportunityOrganizationReadiness({
+    organizationVerificationStatus: organization.verificationStatus,
+    status: validation.data.status,
+    verificationStatus: validation.data.verificationStatus,
+  });
+
+  if (!organizationReadiness.ready) {
+    const message = organizationReadiness.errors.join(" ");
+
+    return {
+      fieldErrors: {
+        organizationId: message,
+        status: message,
+      },
+      formError: message,
       values: validation.values,
     };
   }
@@ -283,6 +304,7 @@ async function updateOpportunityStatus(
               },
             },
             name: true,
+            verificationStatus: true,
           },
         },
       },
@@ -294,6 +316,18 @@ async function updateOpportunityStatus(
     }
 
     if (status === "PUBLISHED") {
+      const organizationReadiness = validateOpportunityOrganizationReadiness({
+        organizationVerificationStatus:
+          opportunity.organization.verificationStatus,
+        status,
+      });
+
+      if (!organizationReadiness.ready) {
+        redirect(
+          `${redirectTo}?error=${encodeURIComponent(organizationReadiness.errors.join(" "))}`,
+        );
+      }
+
       const readiness = validateOpportunityPublishReadiness(opportunity);
       if (!readiness.ready) {
         redirect(

@@ -9,6 +9,7 @@ import {
   getActorIdFromClerkUserId,
 } from "@/lib/audit/audit-log";
 import { assertAdminAccess } from "@/lib/admin/authorization";
+import { validateOpportunityOrganizationReadiness } from "@/lib/admin/opportunity-validation";
 import { prisma } from "@/lib/db/prisma";
 import { createNotifications } from "@/lib/notifications/notifications";
 
@@ -282,6 +283,7 @@ async function updateOpportunityModerationStatus(
             },
           },
           name: true,
+          verificationStatus: true,
         },
       },
       status: true,
@@ -291,6 +293,20 @@ async function updateOpportunityModerationStatus(
 
   if (!opportunity) {
     redirect(redirectTo);
+  }
+
+  if (status === "PUBLISHED") {
+    const organizationReadiness = validateOpportunityOrganizationReadiness({
+      organizationVerificationStatus:
+        opportunity.organization.verificationStatus,
+      status,
+    });
+
+    if (!organizationReadiness.ready) {
+      redirect(
+        `${redirectTo}?error=${encodeURIComponent(organizationReadiness.errors.join(" "))}`,
+      );
+    }
   }
 
   await prisma.opportunity.update({

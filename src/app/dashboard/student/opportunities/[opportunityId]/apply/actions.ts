@@ -314,9 +314,16 @@ export async function confirmExternalApplicationSubmission(formData: FormData) {
   const [opportunity, existingApplication] = await Promise.all([
     prisma.opportunity.findFirst({
       where: {
-        ...studentApplicationOpportunityWhere(opportunityId),
-        applicationMethod: "EXTERNAL_PORTAL",
-        officialApplicationUrl: { not: null },
+        AND: [
+          studentApplicationOpportunityWhere(opportunityId),
+          {
+            officialApplicationUrl: { not: null },
+            OR: [
+              { relationshipType: "EXTERNAL_PUBLIC" },
+              { applicationMethod: "EXTERNAL_PORTAL" },
+            ],
+          },
+        ],
       },
       select: { id: true, title: true },
     }),

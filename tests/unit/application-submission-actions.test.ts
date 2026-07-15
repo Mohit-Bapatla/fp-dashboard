@@ -97,7 +97,7 @@ describe("application submission actions", () => {
     ]);
   });
 
-  it("confirms an external PREPARING application without FP statement, host email, or host notification", async () => {
+  it("confirms a legacy external-public PREPARING application without replacing the deadline predicate", async () => {
     mocks.opportunityFindFirst.mockResolvedValue({
       id: "opp-1",
       title: "External program",
@@ -112,6 +112,30 @@ describe("application submission actions", () => {
     form.set("confirmedExternalSubmission", "on");
     await expect(confirmExternalApplicationSubmission(form)).rejects.toThrow(
       "external=1",
+    );
+    expect(mocks.opportunityFindFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          AND: [
+            expect.objectContaining({
+              availabilityStatus: {
+                in: ["OPEN", "OPENING_SOON", "ROLLING"],
+              },
+              id: "opp-1",
+              OR: [{ deadline: null }, { deadline: { gte: expect.any(Date) } }],
+              status: "PUBLISHED",
+              verificationStatus: "VERIFIED",
+            }),
+            {
+              officialApplicationUrl: { not: null },
+              OR: [
+                { relationshipType: "EXTERNAL_PUBLIC" },
+                { applicationMethod: "EXTERNAL_PORTAL" },
+              ],
+            },
+          ],
+        },
+      }),
     );
     expect(mocks.applicationUpsert).toHaveBeenCalledWith(
       expect.objectContaining({

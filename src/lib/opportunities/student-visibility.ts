@@ -20,6 +20,9 @@ export function studentDirectoryOpportunityWhere(
 ): Prisma.OpportunityWhereInput {
   return {
     availabilityStatus: { in: [...currentlyAvailableStatuses] },
+    organization: {
+      verificationStatus: "VERIFIED",
+    },
     OR: [{ deadline: null }, { deadline: { gte: now } }],
     status: "PUBLISHED",
     verificationStatus: "VERIFIED",

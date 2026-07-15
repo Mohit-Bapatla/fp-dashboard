@@ -104,6 +104,10 @@ export type StudentOpportunityApplyState =
       kind: "needsResume";
     };
 
+export function getStudentOpportunityOnboardingHref(returnTo: string) {
+  return `/dashboard/student/onboarding?returnTo=${encodeURIComponent(returnTo)}`;
+}
+
 function formatEnumLabel(value: string) {
   return value
     .toLowerCase()
@@ -188,19 +192,11 @@ export function StudentOpportunityDetail({
               {opportunity.organization.name}
             </p>
           </div>
-          <ApplyCallToAction
+          <StudentOpportunityPrimaryActions
+            isSaved={isSaved}
             opportunityId={opportunity.id}
-            state={applyState}
+            applyState={applyState}
           />
-          <form action={isSaved ? unsaveOpportunity : saveOpportunity}>
-            <input name="opportunityId" type="hidden" value={opportunity.id} />
-            <button
-              className="inline-flex min-h-10 rounded-lg border border-border px-4 py-2 text-sm font-medium"
-              type="submit"
-            >
-              {isSaved ? "Unsave" : "Save"}
-            </button>
-          </form>
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -500,6 +496,43 @@ export function StudentOpportunityDetail({
   );
 }
 
+export function StudentOpportunityPrimaryActions({
+  applyState,
+  isSaved,
+  opportunityId,
+}: {
+  applyState: StudentOpportunityApplyState;
+  isSaved: boolean;
+  opportunityId: string;
+}) {
+  const detailPath = `/dashboard/student/opportunities/${opportunityId}`;
+
+  return (
+    <>
+      <ApplyCallToAction opportunityId={opportunityId} state={applyState} />
+      {applyState.kind === "needsProfile" ? (
+        <Link
+          className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          href={getStudentOpportunityOnboardingHref(detailPath)}
+        >
+          <UserRound aria-hidden="true" className="h-4 w-4" />
+          Complete profile to save
+        </Link>
+      ) : (
+        <form action={isSaved ? unsaveOpportunity : saveOpportunity}>
+          <input name="opportunityId" type="hidden" value={opportunityId} />
+          <button
+            className="inline-flex min-h-10 rounded-lg border border-border px-4 py-2 text-sm font-medium"
+            type="submit"
+          >
+            {isSaved ? "Unsave" : "Save"}
+          </button>
+        </form>
+      )}
+    </>
+  );
+}
+
 function MatchPanel({
   empty,
   items,
@@ -573,10 +606,12 @@ function ApplyCallToAction({
     );
 
   if (state.kind === "needsProfile") {
+    const applyPath = `/dashboard/student/opportunities/${opportunityId}/apply`;
+
     return (
       <Link
         className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-        href="/dashboard/student/onboarding"
+        href={getStudentOpportunityOnboardingHref(applyPath)}
       >
         <UserRound aria-hidden="true" className="h-4 w-4" />
         Complete profile to apply

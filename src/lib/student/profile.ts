@@ -1,6 +1,10 @@
 import { auth } from "@clerk/nextjs/server";
 
-import type { StudentProfile } from "@/generated/prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
+import {
+  acquireAccountTransitionLock,
+  getStudentAccountTransitionBlockReason,
+} from "@/lib/auth/account-transition";
 import { getRoleFromSessionClaims } from "@/lib/auth/roles";
 import { syncCurrentUserFromClerk } from "@/lib/auth/user-sync";
 import { prisma } from "@/lib/db/prisma";
@@ -20,13 +24,28 @@ function useImportedArray<T>(currentValue: T[], importedValue: T[]) {
   return currentValue.length > 0 ? currentValue : importedValue;
 }
 
-async function claimStagedStudentImport(user: {
-  email: string;
-  firstName: string | null;
-  id: string;
-  lastName: string | null;
-  studentProfile: StudentProfile | null;
-}) {
+const currentStudentUserInclude = {
+  partnerMemberships: true,
+  studentProfile: true,
+} as const;
+
+type CurrentStudentUser = Prisma.UserGetPayload<{
+  include: typeof currentStudentUserInclude;
+}>;
+
+async function claimStagedStudentImport(
+  clerkUserId: string,
+  user: CurrentStudentUser,
+) {
+  if (
+    getStudentAccountTransitionBlockReason({
+      databaseRole: user.role,
+      hasPartnerMembership: user.partnerMemberships.length > 0,
+    })
+  ) {
+    return user;
+  }
+
   const normalizedEmail = normalizeEmail(user.email);
   const staged = await prisma.studentImportRecord.findFirst({
     where: {
@@ -39,126 +58,163 @@ async function claimStagedStudentImport(user: {
     return user;
   }
 
-  await prisma.$transaction(async (tx) => {
-    if (!user.firstName || !user.lastName) {
+  return prisma.$transaction(async (tx) => {
+    await acquireAccountTransitionLock(tx, clerkUserId);
+
+    const currentUser = await tx.user.findUniqueOrThrow({
+      where: { id: user.id },
+      include: currentStudentUserInclude,
+    });
+    const blockReason = getStudentAccountTransitionBlockReason({
+      databaseRole: currentUser.role,
+      hasPartnerMembership: currentUser.partnerMemberships.length > 0,
+    });
+
+    if (blockReason) {
+      return currentUser;
+    }
+
+    const currentStaged = await tx.studentImportRecord.findFirst({
+      where: {
+        claimedAt: null,
+        normalizedEmail,
+      },
+    });
+
+    if (!currentStaged) {
+      return currentUser;
+    }
+
+    if (!currentUser.firstName || !currentUser.lastName) {
       await tx.user.update({
         where: {
-          id: user.id,
+          id: currentUser.id,
         },
         data: {
-          firstName: user.firstName || staged.firstName,
-          lastName: user.lastName || staged.lastName,
+          firstName: currentUser.firstName || currentStaged.firstName,
+          lastName: currentUser.lastName || currentStaged.lastName,
         },
       });
     }
 
-    if (user.studentProfile) {
+    if (currentUser.studentProfile) {
       await tx.studentProfile.update({
         where: {
-          userId: user.id,
+          userId: currentUser.id,
         },
         data: {
           availability: useImportedArray(
-            user.studentProfile.availability,
-            staged.availability,
+            currentUser.studentProfile.availability,
+            currentStaged.availability,
           ),
           careerGoals: useImportedString(
-            user.studentProfile.careerGoals,
-            staged.careerGoals,
+            currentUser.studentProfile.careerGoals,
+            currentStaged.careerGoals,
           ),
-          city: useImportedString(user.studentProfile.city, staged.city),
+          city: useImportedString(
+            currentUser.studentProfile.city,
+            currentStaged.city,
+          ),
           country: useImportedString(
-            user.studentProfile.country,
-            staged.country,
+            currentUser.studentProfile.country,
+            currentStaged.country,
           ),
           experienceLevel: useImportedString(
-            user.studentProfile.experienceLevel,
-            staged.experienceLevel,
+            currentUser.studentProfile.experienceLevel,
+            currentStaged.experienceLevel,
           ),
           gradeYear: useImportedString(
-            user.studentProfile.gradeYear,
-            staged.gradeYear,
+            currentUser.studentProfile.gradeYear,
+            currentStaged.gradeYear,
           ),
           graduationYear:
-            user.studentProfile.graduationYear ?? staged.graduationYear,
+            currentUser.studentProfile.graduationYear ??
+            currentStaged.graduationYear,
           interestedSpecialties: useImportedArray(
-            user.studentProfile.interestedSpecialties,
-            staged.interestedSpecialties,
+            currentUser.studentProfile.interestedSpecialties,
+            currentStaged.interestedSpecialties,
           ),
           languages: useImportedArray(
-            user.studentProfile.languages,
-            staged.languages,
+            currentUser.studentProfile.languages,
+            currentStaged.languages,
           ),
           locationPreference: useImportedString(
-            user.studentProfile.locationPreference,
-            staged.locationPreference,
+            currentUser.studentProfile.locationPreference,
+            currentStaged.locationPreference,
           ),
-          major: useImportedString(user.studentProfile.major, staged.major),
+          major: useImportedString(
+            currentUser.studentProfile.major,
+            currentStaged.major,
+          ),
           opportunityTypes: useImportedArray(
-            user.studentProfile.opportunityTypes,
-            staged.opportunityTypes,
+            currentUser.studentProfile.opportunityTypes,
+            currentStaged.opportunityTypes,
           ),
           remotePreference: useImportedString(
-            user.studentProfile.remotePreference,
-            staged.remotePreference,
+            currentUser.studentProfile.remotePreference,
+            currentStaged.remotePreference,
           ),
-          school: useImportedString(user.studentProfile.school, staged.school),
-          state: useImportedString(user.studentProfile.state, staged.state),
+          school: useImportedString(
+            currentUser.studentProfile.school,
+            currentStaged.school,
+          ),
+          state: useImportedString(
+            currentUser.studentProfile.state,
+            currentStaged.state,
+          ),
         },
       });
     } else {
       await tx.studentProfile.create({
         data: {
-          availability: staged.availability,
-          careerGoals: staged.careerGoals,
-          city: staged.city,
-          country: staged.country,
-          experienceLevel: staged.experienceLevel,
-          gradeYear: staged.gradeYear,
-          graduationYear: staged.graduationYear,
-          interestedSpecialties: staged.interestedSpecialties,
-          languages: staged.languages,
-          locationPreference: staged.locationPreference,
-          major: staged.major,
-          opportunityTypes: staged.opportunityTypes,
-          remotePreference: staged.remotePreference,
-          school: staged.school,
-          state: staged.state,
-          userId: user.id,
+          availability: currentStaged.availability,
+          careerGoals: currentStaged.careerGoals,
+          city: currentStaged.city,
+          country: currentStaged.country,
+          experienceLevel: currentStaged.experienceLevel,
+          gradeYear: currentStaged.gradeYear,
+          graduationYear: currentStaged.graduationYear,
+          interestedSpecialties: currentStaged.interestedSpecialties,
+          languages: currentStaged.languages,
+          locationPreference: currentStaged.locationPreference,
+          major: currentStaged.major,
+          opportunityTypes: currentStaged.opportunityTypes,
+          remotePreference: currentStaged.remotePreference,
+          school: currentStaged.school,
+          state: currentStaged.state,
+          userId: currentUser.id,
         },
       });
     }
 
     await tx.studentImportRecord.update({
       where: {
-        id: staged.id,
+        id: currentStaged.id,
       },
       data: {
         claimedAt: new Date(),
-        claimedById: user.id,
+        claimedById: currentUser.id,
       },
     });
 
     await tx.auditLog.create({
       data: {
         action: "STUDENT_IMPORT_RECORD_CLAIMED",
-        actorId: user.id,
-        entityId: staged.id,
+        actorId: currentUser.id,
+        entityId: currentStaged.id,
         entityType: "StudentImportRecord",
         metadata: {
           normalizedEmail,
         },
       },
     });
-  });
 
-  return prisma.user.findUniqueOrThrow({
-    where: {
-      id: user.id,
-    },
-    include: {
-      studentProfile: true,
-    },
+    return tx.user.findUniqueOrThrow({
+      where: {
+        id: currentUser.id,
+      },
+      include: currentStudentUserInclude,
+    });
   });
 }
 
@@ -166,21 +222,22 @@ export async function getOrCreateCurrentStudentUser(clerkUserId: string) {
   const { sessionClaims } = await auth();
   const role = getRoleFromSessionClaims(sessionClaims);
 
-  await syncCurrentUserFromClerk({
+  const syncedUser = await syncCurrentUserFromClerk({
     clerkUserId,
+    preserveExistingRole: true,
     role,
   });
 
   const user = await prisma.user.findUniqueOrThrow({
     where: {
-      clerkUserId,
+      id: syncedUser.id,
     },
-    include: {
-      studentProfile: true,
-    },
+    include: currentStudentUserInclude,
   });
 
-  return role === "STUDENT" ? claimStagedStudentImport(user) : user;
+  return role === "STUDENT"
+    ? claimStagedStudentImport(clerkUserId, user)
+    : user;
 }
 
 export async function getCurrentStudentProfile(clerkUserId: string) {
