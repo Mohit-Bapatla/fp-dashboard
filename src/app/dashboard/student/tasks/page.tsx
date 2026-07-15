@@ -227,81 +227,116 @@ export default async function StudentTasksPage({
           </div>
         </header>
 
-        <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-foreground">
-            Filter tasks
-          </h2>
-          <form className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <FilterLabel label="Application">
-              <select defaultValue={applicationId ?? ""} name="applicationId">
-                <option value="">All applications</option>
-                {applicationOptions.map((application) => (
-                  <option key={application.id} value={application.id}>
-                    {application.label}
-                  </option>
-                ))}
-              </select>
-            </FilterLabel>
-            <FilterLabel label="Task type">
-              <select defaultValue={type ?? ""} name="type">
-                <option value="">All task types</option>
-                {applicationTaskTypes.map((taskType) => (
-                  <option key={taskType} value={taskType}>
-                    {formatApplicationTaskType(taskType)}
-                  </option>
-                ))}
-              </select>
-            </FilterLabel>
-            <FilterLabel label="Due date">
-              <select defaultValue={due} name="due">
-                <option value="ALL">Any due date</option>
-                <option value="OVERDUE">Overdue</option>
-                <option value="TODAY">Today</option>
-                <option value="THIS_WEEK">This week</option>
-                <option value="LATER">Later or no date</option>
-              </select>
-            </FilterLabel>
-            <FilterLabel label="Completion">
-              <select defaultValue={completion} name="completion">
-                <option value="ALL">Any status</option>
-                <option value="OPEN">Open</option>
-                <option value="COMPLETED">Completed or skipped</option>
-                <option value="BLOCKED">Blocked</option>
-              </select>
-            </FilterLabel>
-            <div className="flex flex-wrap gap-3 md:col-span-2 xl:col-span-4">
-              <button
-                className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                type="submit"
-              >
-                Apply filters
-              </button>
-              <Link
-                className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-medium transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                href="/dashboard/student/tasks"
-              >
-                Clear filters
-              </Link>
-            </div>
-          </form>
-        </section>
+        {applications.length > 0 ? (
+          <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">
+              Filter tasks
+            </h2>
+            <form className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <FilterLabel label="Application">
+                <select defaultValue={applicationId ?? ""} name="applicationId">
+                  <option value="">All applications</option>
+                  {applicationOptions.map((application) => (
+                    <option key={application.id} value={application.id}>
+                      {application.label}
+                    </option>
+                  ))}
+                </select>
+              </FilterLabel>
+              <FilterLabel label="Task type">
+                <select defaultValue={type ?? ""} name="type">
+                  <option value="">All task types</option>
+                  {applicationTaskTypes.map((taskType) => (
+                    <option key={taskType} value={taskType}>
+                      {formatApplicationTaskType(taskType)}
+                    </option>
+                  ))}
+                </select>
+              </FilterLabel>
+              <FilterLabel label="Due date">
+                <select defaultValue={due} name="due">
+                  <option value="ALL">Any due date</option>
+                  <option value="OVERDUE">Overdue</option>
+                  <option value="TODAY">Today</option>
+                  <option value="THIS_WEEK">This week</option>
+                  <option value="LATER">Later or no date</option>
+                </select>
+              </FilterLabel>
+              <FilterLabel label="Completion">
+                <select defaultValue={completion} name="completion">
+                  <option value="ALL">Any status</option>
+                  <option value="OPEN">Open</option>
+                  <option value="COMPLETED">Completed or skipped</option>
+                  <option value="BLOCKED">Blocked</option>
+                </select>
+              </FilterLabel>
+              <div className="flex flex-wrap gap-3 md:col-span-2 xl:col-span-4">
+                <button
+                  className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  type="submit"
+                >
+                  Apply filters
+                </button>
+                <Link
+                  className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-medium transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  href="/dashboard/student/tasks"
+                >
+                  Clear filters
+                </Link>
+              </div>
+            </form>
+          </section>
+        ) : null}
 
-        <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-foreground">
-            Add a private task
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Custom task titles and descriptions remain inside your application
-            workspace and are not included in audit logs.
-          </p>
-          <StudentCustomTaskForm applications={applicationOptions} />
-        </section>
+        {applications.length > 0 ? (
+          <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-foreground">
+              Add a private task
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Custom task titles and descriptions remain inside your application
+              workspace and are not included in audit logs.
+            </p>
+            <StudentCustomTaskForm applications={applicationOptions} />
+          </section>
+        ) : null}
 
-        <StudentApplicationTaskList
-          groups={groups}
-          now={now}
-          timezone={notificationPreference.timezone}
-        />
+        {applications.length === 0 ? (
+          <section className="space-y-4 rounded-xl border border-border bg-background p-6 shadow-sm">
+            <EmptyState
+              description="Save or start preparing for an opportunity to create an application workspace and its action plan."
+              icon={ListChecks}
+              title="No application tasks yet"
+            />
+            <Link
+              className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              href="/dashboard/student/opportunities"
+            >
+              Explore opportunities
+            </Link>
+          </section>
+        ) : filteredTasks.length === 0 ? (
+          <section className="space-y-4 rounded-xl border border-dashed border-border bg-background p-6 text-center">
+            <h2 className="text-xl font-semibold text-foreground">
+              No tasks match these filters
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Clear the filters to return to your complete application plan.
+            </p>
+            <Link
+              className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-medium transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              href="/dashboard/student/tasks"
+            >
+              Clear filters
+            </Link>
+          </section>
+        ) : (
+          <StudentApplicationTaskList
+            groups={groups}
+            now={now}
+            timezone={notificationPreference.timezone}
+          />
+        )}
       </div>
     </DashboardShell>
   );

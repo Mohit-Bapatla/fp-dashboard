@@ -8,6 +8,7 @@ import Link from "next/link";
 
 import { StudentTaskControls } from "@/components/student/student-task-controls";
 import type {
+  ApplicationStatus,
   ApplicationTaskStatus,
   ApplicationTaskType,
 } from "@/generated/prisma/enums";
@@ -20,10 +21,11 @@ import {
   type ApplicationTaskGroups,
   type ApplicationTaskLike,
 } from "@/lib/student/application-tasks";
+import { canSubmitExistingApplication } from "@/lib/student/application-workspace";
 import { cn } from "@/lib/utils";
 
 export type StudentApplicationTaskListItem = ApplicationTaskLike & {
-  applicationStatus: string;
+  applicationStatus: ApplicationStatus;
   opportunityId: string;
   opportunityTitle: string;
   organizationName: string;
@@ -202,11 +204,18 @@ function TaskCard({
         completionRequiresApplicationAction={requiresAuthoritativeApplicationAction(
           task.type,
         )}
+        customTaskEditable={
+          task.source === "STUDENT" &&
+          task.type === "CUSTOM" &&
+          Boolean(task.studentControlled) &&
+          canSubmitExistingApplication(task.applicationStatus)
+        }
+        description={task.description ?? null}
         dueAt={dueAtValue}
         required={task.required}
         status={task.status}
-        studentControlled={Boolean(task.studentControlled)}
         taskId={task.id}
+        title={task.title}
       />
     </article>
   );

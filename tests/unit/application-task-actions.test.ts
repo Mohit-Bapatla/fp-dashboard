@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   applicationFindFirst: vi.fn(),
+  applicationFindUnique: vi.fn(),
   applicationTaskCreate: vi.fn(),
+  applicationTaskDelete: vi.fn(),
   applicationTaskFindFirst: vi.fn(),
   applicationTaskFindMany: vi.fn(),
   applicationTaskUpdate: vi.fn(),
@@ -14,9 +16,13 @@ const mocks = vi.hoisted(() => ({
 }));
 
 const transactionClient = {
-  application: { update: mocks.applicationUpdate },
+  application: {
+    findUnique: mocks.applicationFindUnique,
+    update: mocks.applicationUpdate,
+  },
   applicationTask: {
     create: mocks.applicationTaskCreate,
+    delete: mocks.applicationTaskDelete,
     findMany: mocks.applicationTaskFindMany,
     update: mocks.applicationTaskUpdate,
   },
@@ -54,8 +60,10 @@ vi.mock("@/lib/student/profile", () => ({
 
 import {
   createStudentCustomApplicationTask,
+  deleteStudentCustomApplicationTask,
   updateStudentApplicationTaskDueDate,
   updateStudentApplicationTaskStatus,
+  updateStudentCustomApplicationTask,
   type StudentTaskActionState,
 } from "@/app/dashboard/student/tasks/actions";
 
@@ -67,14 +75,47 @@ function form(values: Record<string, string>) {
   return data;
 }
 
+function taskSnapshot(
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return {
+    applicationId: "application-1",
+    completedAt: null,
+    dueAt: null,
+    id: "task-1",
+    required: true,
+    sortOrder: 0,
+    status: "COMPLETE",
+    title: "Prepare essay",
+    type: "PREPARE_ESSAY",
+    ...overrides,
+  };
+}
+
+const activeApplication = { status: "PREPARING" };
+
 describe("student application task actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.rateLimit.mockResolvedValue({ allowed: true });
-    mocks.applicationTaskFindMany.mockResolvedValue([
-      { required: true, status: "COMPLETE" },
-    ]);
+    mocks.applicationFindUnique.mockResolvedValue({
+      opportunityId: "opportunity-1",
+      studentProfileId: "profile-1",
+      opportunity: {
+        applicationMethod: "EXTERNAL_PORTAL",
+        availabilityStatus: "OPEN",
+        deadline: null,
+        opensAt: null,
+        sourceType: "FP_CATALOG",
+        status: "PUBLISHED",
+        studentOwnerProfileId: null,
+        verificationStatus: "VERIFIED",
+        visibility: "PUBLIC_DIRECTORY",
+      },
+    });
+    mocks.applicationTaskFindMany.mockResolvedValue([taskSnapshot()]);
     mocks.applicationTaskUpdate.mockResolvedValue({ id: "task-1" });
+    mocks.applicationTaskDelete.mockResolvedValue({ id: "task-1" });
     mocks.applicationUpdate.mockResolvedValue({ id: "application-1" });
     mocks.applicationTaskCreate.mockResolvedValue({ id: "task-new" });
     mocks.auditCreate.mockResolvedValue({ id: "audit-1" });
@@ -158,7 +199,7 @@ describe("student application task actions", () => {
       type: "SELECT_RESUME",
     });
     mocks.applicationTaskFindMany.mockResolvedValue([
-      { required: true, status: "NOT_STARTED" },
+      taskSnapshot({ status: "NOT_STARTED" }),
     ]);
 
     await updateStudentApplicationTaskStatus(
@@ -179,6 +220,7 @@ describe("student application task actions", () => {
 
   it("requires authoritative submission actions to complete submission tasks", async () => {
     mocks.applicationTaskFindFirst.mockResolvedValue({
+      application: activeApplication,
       applicationId: "application-1",
       id: "task-submit",
       required: true,
@@ -202,6 +244,7 @@ describe("student application task actions", () => {
 
   it("does not reopen an authoritatively completed confirmation task", async () => {
     mocks.applicationTaskFindFirst.mockResolvedValue({
+      application: activeApplication,
       applicationId: "application-1",
       id: "task-confirm",
       required: true,
@@ -275,6 +318,7 @@ describe("student application task actions", () => {
 
   it("allows due-date edits only for student-controlled owned tasks", async () => {
     mocks.applicationTaskFindFirst.mockResolvedValue({
+      application: activeApplication,
       applicationId: "application-1",
       id: "task-1",
       source: "SYSTEM",
@@ -285,10 +329,11 @@ describe("student application task actions", () => {
       initialState,
       form({ dueAt: "2026-08-01", taskId: "task-1" }),
     );
-    expect(rejected.error).toContain("student-controlled");
+    expect(rejected.error).toContain("private custom tasks");
     expect(mocks.applicationTaskUpdate).not.toHaveBeenCalled();
 
     mocks.applicationTaskFindFirst.mockResolvedValue({
+      application: activeApplication,
       applicationId: "application-1",
       id: "task-2",
       source: "STUDENT",
@@ -304,5 +349,162 @@ describe("student application task actions", () => {
       where: { id: "task-2" },
       data: { dueAt: new Date("2026-08-01T00:00:00.000Z") },
     });
+  });
+
+  it("edits an owned custom task and refreshes its next-action title", async () => {
+    mocks.applicationTaskFindFirst.mockResolvedValue({
+      application: activeApplication,
+      applicationId: "application-1",
+      description: "Old private details",
+      dueAt: null,
+      id: "task-custom",
+      source: "STUDENT",
+      studentControlled: true,
+      title: "Old task title",
+      type: "CUSTOM",
+    });
+    mocks.applicationTaskFindMany.mockResolvedValue([
+      taskSnapshot({
+        id: "task-custom",
+        status: "NOT_STARTED",
+        title: "Call the mentor",
+        type: "CUSTOM",
+      }),
+    ]);
+
+    const result = await updateStudentCustomApplicationTask(
+      initialState,
+      form({
+        description: "New private details",
+        dueAt: "2026-08-02",
+        taskId: "task-custom",
+        title: "Call the mentor",
+      }),
+    );
+
+    expect(result).toEqual({ error: null, success: "Private task updated." });
+    expect(mocks.applicationTaskUpdate).toHaveBeenCalledWith({
+      where: { id: "task-custom" },
+      data: {
+        description: "New private details",
+        dueAt: new Date("2026-08-02T00:00:00.000Z"),
+        title: "Call the mentor",
+      },
+    });
+    expect(mocks.applicationUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          completionPercent: 0,
+          nextAction: "Call the mentor",
+        }),
+      }),
+    );
+    expect(mocks.rateLimit).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "application_task_edit", limit: 60 }),
+    );
+    const auditInput = mocks.auditCreate.mock.calls[0]?.[0];
+    expect(JSON.stringify(auditInput)).not.toContain("Old task title");
+    expect(JSON.stringify(auditInput)).not.toContain("Call the mentor");
+    expect(JSON.stringify(auditInput)).not.toContain("private details");
+  });
+
+  it("refuses a cross-user custom-task edit through the ownership predicate", async () => {
+    mocks.applicationTaskFindFirst.mockResolvedValue(null);
+
+    const result = await updateStudentCustomApplicationTask(
+      initialState,
+      form({ taskId: "task-other", title: "Do not change" }),
+    );
+
+    expect(result).toEqual({ error: "Task was not found.", success: null });
+    expect(mocks.applicationTaskFindFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          application: { studentProfileId: "profile-1" },
+          id: "task-other",
+        },
+      }),
+    );
+    expect(mocks.applicationTaskUpdate).not.toHaveBeenCalled();
+  });
+
+  it("protects system tasks from custom-task edits", async () => {
+    mocks.applicationTaskFindFirst.mockResolvedValue({
+      application: activeApplication,
+      applicationId: "application-1",
+      description: null,
+      dueAt: null,
+      id: "task-system",
+      source: "SYSTEM",
+      studentControlled: false,
+      title: "Submit application",
+      type: "SUBMIT_INTERNAL_APPLICATION",
+    });
+
+    const result = await updateStudentCustomApplicationTask(
+      initialState,
+      form({ taskId: "task-system", title: "Changed" }),
+    );
+
+    expect(result.error).toContain("private custom tasks");
+    expect(mocks.applicationTaskUpdate).not.toHaveBeenCalled();
+  });
+
+  it("blocks custom-task deletion after planning", async () => {
+    mocks.applicationTaskFindFirst.mockResolvedValue({
+      application: { status: "SUBMITTED" },
+      applicationId: "application-1",
+      id: "task-custom",
+      required: false,
+      source: "STUDENT",
+      studentControlled: true,
+      type: "CUSTOM",
+    });
+
+    const result = await deleteStudentCustomApplicationTask(
+      initialState,
+      form({ taskId: "task-custom" }),
+    );
+
+    expect(result.error).toContain("leaves planning");
+    expect(mocks.applicationTaskDelete).not.toHaveBeenCalled();
+  });
+
+  it("deletes an owned custom task and recalculates progress and next action", async () => {
+    mocks.applicationTaskFindFirst.mockResolvedValue({
+      application: activeApplication,
+      applicationId: "application-1",
+      id: "task-custom",
+      required: true,
+      source: "STUDENT",
+      studentControlled: true,
+      type: "CUSTOM",
+    });
+    mocks.applicationTaskFindMany.mockResolvedValue([
+      taskSnapshot({ id: "task-remaining", title: "Finished requirement" }),
+    ]);
+
+    const result = await deleteStudentCustomApplicationTask(
+      initialState,
+      form({ taskId: "task-custom" }),
+    );
+
+    expect(result).toEqual({ error: null, success: "Private task deleted." });
+    expect(mocks.applicationTaskDelete).toHaveBeenCalledWith({
+      where: { id: "task-custom" },
+    });
+    expect(mocks.applicationUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          completionPercent: 100,
+          nextAction: null,
+        }),
+      }),
+    );
+    expect(mocks.rateLimit).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "application_task_delete", limit: 30 }),
+    );
+    const auditInput = mocks.auditCreate.mock.calls[0]?.[0];
+    expect(JSON.stringify(auditInput)).not.toContain("Finished requirement");
   });
 });

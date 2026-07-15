@@ -5,15 +5,18 @@ import { revalidatePath } from "next/cache";
 import { Prisma } from "@/generated/prisma/client";
 import type { ApplicationTaskStatus } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/db/prisma";
+import { isStudentOpportunitySubmittable } from "@/lib/opportunities/student-visibility";
 import {
   enforceRateLimit,
   formatRateLimitMessage,
 } from "@/lib/security/rate-limit";
 import {
   calculateApplicationProgress,
+  getApplicationNextAction,
   parseTaskDueDate,
   requiresAuthoritativeApplicationAction,
 } from "@/lib/student/application-tasks";
+import { canSubmitExistingApplication } from "@/lib/student/application-workspace";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import {
   applicationOwnership,
@@ -86,23 +89,88 @@ async function getMutationContext(action: string, limit: number) {
   };
 }
 
-async function refreshApplicationProgress(
+async function refreshApplicationDerivedState(
   tx: Prisma.TransactionClient,
   applicationId: string,
   lastActivityAt: Date,
 ) {
+  const application = await tx.application.findUnique({
+    where: { id: applicationId },
+    select: {
+      opportunityId: true,
+      studentProfileId: true,
+      opportunity: {
+        select: {
+          applicationMethod: true,
+          availabilityStatus: true,
+          deadline: true,
+          opensAt: true,
+          sourceType: true,
+          status: true,
+          studentOwnerProfileId: true,
+          verificationStatus: true,
+          visibility: true,
+        },
+      },
+    },
+  });
+  if (!application) return;
+
   const tasks = await tx.applicationTask.findMany({
     where: { applicationId },
-    select: { required: true, status: true },
+    select: {
+      applicationId: true,
+      completedAt: true,
+      dueAt: true,
+      id: true,
+      required: true,
+      sortOrder: true,
+      status: true,
+      title: true,
+      type: true,
+    },
   });
+  const nextAction = getApplicationNextAction(
+    tasks,
+    {
+      applicationId,
+      canSubmit: isStudentOpportunitySubmittable(
+        application.opportunity,
+        application.studentProfileId,
+        lastActivityAt,
+      ),
+      opportunityId: application.opportunityId,
+    },
+    lastActivityAt,
+  );
 
   await tx.application.update({
     where: { id: applicationId },
     data: {
       completionPercent: calculateApplicationProgress(tasks),
       lastActivityAt,
+      nextAction: nextAction?.task.title ?? null,
     },
   });
+}
+
+function customTaskGuardError(task: {
+  application: { status: Parameters<typeof canSubmitExistingApplication>[0] };
+  source: string | null;
+  studentControlled: boolean;
+  type: string;
+}) {
+  if (
+    task.source !== "STUDENT" ||
+    task.type !== "CUSTOM" ||
+    !task.studentControlled
+  ) {
+    return "Only private custom tasks can be edited or deleted.";
+  }
+  if (!canSubmitExistingApplication(task.application.status)) {
+    return "Tasks cannot be edited after the application leaves planning.";
+  }
+  return null;
 }
 
 function statusSuccessMessage(status: ApplicationTaskStatus) {
@@ -174,7 +242,7 @@ export async function updateStudentApplicationTaskStatus(
         status: requestedStatus,
       },
     });
-    await refreshApplicationProgress(tx, task.applicationId, now);
+    await refreshApplicationDerivedState(tx, task.applicationId, now);
     await tx.auditLog.create({
       data: {
         action:
@@ -256,7 +324,7 @@ export async function createStudentCustomApplicationTask(
         },
         select: { id: true },
       });
-      await refreshApplicationProgress(tx, application.id, now);
+      await refreshApplicationDerivedState(tx, application.id, now);
       await tx.auditLog.create({
         data: {
           action: "APPLICATION_TASK_CREATED",
@@ -288,6 +356,142 @@ export async function createStudentCustomApplicationTask(
   }
 }
 
+export async function updateStudentCustomApplicationTask(
+  _previousState: StudentTaskActionState,
+  formData: FormData,
+): Promise<StudentTaskActionState> {
+  const taskId = value(formData, "taskId");
+  const title = value(formData, "title").replace(/\s+/g, " ");
+  const description = value(formData, "description");
+  const dueDate = parseTaskDueDate(value(formData, "dueAt"));
+
+  if (!taskId) return errorState("Task was not found.");
+  if (!title || title.length > 240) {
+    return errorState("Enter a task title of 240 characters or fewer.");
+  }
+  if (description.length > 2_000) {
+    return errorState(
+      "Keep the private description to 2,000 characters or fewer.",
+    );
+  }
+  if (!dueDate.ok) return errorState(dueDate.error);
+
+  const context = await getMutationContext("application_task_edit", 60);
+  if (!context.ok) return errorState(context.error);
+
+  const task = await prisma.applicationTask.findFirst({
+    where: applicationTaskOwnership(context.profileId, taskId),
+    select: {
+      applicationId: true,
+      application: { select: { status: true } },
+      description: true,
+      dueAt: true,
+      id: true,
+      source: true,
+      studentControlled: true,
+      title: true,
+      type: true,
+    },
+  });
+  if (!task) return errorState("Task was not found.");
+  const guardError = customTaskGuardError(task);
+  if (guardError) return errorState(guardError);
+
+  try {
+    const now = new Date();
+    await prisma.$transaction(async (tx) => {
+      await tx.applicationTask.update({
+        where: { id: task.id },
+        data: {
+          description: description || null,
+          dueAt: dueDate.value,
+          title,
+        },
+      });
+      await refreshApplicationDerivedState(tx, task.applicationId, now);
+      await tx.auditLog.create({
+        data: {
+          action: "APPLICATION_TASK_UPDATED",
+          actorId: context.userId,
+          entityId: task.id,
+          entityType: "ApplicationTask",
+          metadata: {
+            applicationId: task.applicationId,
+            descriptionChanged: task.description !== (description || null),
+            dueDateChanged: task.dueAt?.getTime() !== dueDate.value?.getTime(),
+            hasDescription: Boolean(description),
+            hasDueDate: Boolean(dueDate.value),
+            source: task.source,
+            taskType: task.type,
+            titleChanged: task.title !== title,
+          },
+        },
+      });
+    });
+
+    revalidateTaskPaths(task.applicationId);
+    return successState("Private task updated.");
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return errorState("This application already has a task with that title.");
+    }
+    return errorState("Task could not be updated. Please try again.");
+  }
+}
+
+export async function deleteStudentCustomApplicationTask(
+  _previousState: StudentTaskActionState,
+  formData: FormData,
+): Promise<StudentTaskActionState> {
+  const taskId = value(formData, "taskId");
+  if (!taskId) return errorState("Task was not found.");
+
+  const context = await getMutationContext("application_task_delete", 30);
+  if (!context.ok) return errorState(context.error);
+
+  const task = await prisma.applicationTask.findFirst({
+    where: applicationTaskOwnership(context.profileId, taskId),
+    select: {
+      applicationId: true,
+      application: { select: { status: true } },
+      id: true,
+      required: true,
+      source: true,
+      studentControlled: true,
+      type: true,
+    },
+  });
+  if (!task) return errorState("Task was not found.");
+  const guardError = customTaskGuardError(task);
+  if (guardError) return errorState(guardError);
+
+  const now = new Date();
+  await prisma.$transaction(async (tx) => {
+    await tx.applicationTask.delete({ where: { id: task.id } });
+    await refreshApplicationDerivedState(tx, task.applicationId, now);
+    await tx.auditLog.create({
+      data: {
+        action: "APPLICATION_TASK_DELETED",
+        actorId: context.userId,
+        entityId: task.id,
+        entityType: "ApplicationTask",
+        metadata: {
+          applicationId: task.applicationId,
+          required: task.required,
+          source: task.source,
+          taskType: task.type,
+        },
+      },
+    });
+  });
+
+  revalidateTaskPaths(task.applicationId);
+  return successState("Private task deleted.");
+}
+
 export async function updateStudentApplicationTaskDueDate(
   _previousState: StudentTaskActionState,
   formData: FormData,
@@ -304,6 +508,7 @@ export async function updateStudentApplicationTaskDueDate(
     where: applicationTaskOwnership(context.profileId, taskId),
     select: {
       applicationId: true,
+      application: { select: { status: true } },
       id: true,
       source: true,
       studentControlled: true,
@@ -312,21 +517,17 @@ export async function updateStudentApplicationTaskDueDate(
   });
 
   if (!task) return errorState("Task was not found.");
-  if (!task.studentControlled) {
-    return errorState("Only student-controlled task due dates can be edited.");
-  }
+  const guardError = customTaskGuardError(task);
+  if (guardError) return errorState(guardError);
 
   const now = new Date();
-  await prisma.$transaction([
-    prisma.applicationTask.update({
+  await prisma.$transaction(async (tx) => {
+    await tx.applicationTask.update({
       where: { id: task.id },
       data: { dueAt: dueDate.value },
-    }),
-    prisma.application.update({
-      where: { id: task.applicationId },
-      data: { lastActivityAt: now },
-    }),
-    prisma.auditLog.create({
+    });
+    await refreshApplicationDerivedState(tx, task.applicationId, now);
+    await tx.auditLog.create({
       data: {
         action: "APPLICATION_TASK_DUE_DATE_UPDATED",
         actorId: context.userId,
@@ -340,8 +541,8 @@ export async function updateStudentApplicationTaskDueDate(
           taskType: task.type,
         },
       },
-    }),
-  ]);
+    });
+  });
 
   revalidateTaskPaths(task.applicationId);
   return successState(
