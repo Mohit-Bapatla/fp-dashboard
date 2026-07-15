@@ -39,6 +39,42 @@ describe("student reminder cron route", () => {
     expect(mocks.run).not.toHaveBeenCalled();
   });
 
+  it("fails closed when CRON_SECRET is not configured", async () => {
+    delete process.env.CRON_SECRET;
+    const response = await GET(
+      new NextRequest("http://localhost/api/jobs/student-reminders", {
+        headers: { authorization: "Bearer undefined" },
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    expect(mocks.run).not.toHaveBeenCalled();
+  });
+
+  it("returns a generic error for the wrong secret", async () => {
+    const response = await GET(
+      new NextRequest("http://localhost/api/jobs/student-reminders", {
+        headers: { authorization: "Bearer leaked-wrong-secret" },
+      }),
+    );
+    const body = await response.text();
+
+    expect(response.status).toBe(401);
+    expect(body).not.toContain("leaked-wrong-secret");
+    expect(body).not.toContain("runId");
+    expect(mocks.run).not.toHaveBeenCalled();
+  });
+
+  it("rate limits repeated authentication failures", async () => {
+    mocks.rateLimit.mockResolvedValue({ allowed: false });
+    const response = await GET(
+      new NextRequest("http://localhost/api/jobs/student-reminders"),
+    );
+
+    expect(response.status).toBe(429);
+    expect(mocks.run).not.toHaveBeenCalled();
+  });
+
   it("runs the workflow with the matching secret", async () => {
     const response = await GET(
       new NextRequest("http://localhost/api/jobs/student-reminders", {

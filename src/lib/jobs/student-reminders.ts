@@ -416,29 +416,12 @@ export async function runStudentReminderWorkflows({
               continue;
             }
 
-            const summarizedNotifications = await getPendingEmailNotifications({
-              now,
-              preference,
-              userId: student.user.id,
-            });
-            const summarizedIds = summarizedNotifications.map(
-              (notification) => notification.id,
-            );
             const claimedAt = new Date();
-            const claimed = await prisma.$transaction(async (tx) => {
-              const digestClaim = await tx.notification.updateMany({
-                where: { emailedAt: null, id: pendingDigest.id },
-                data: { emailedAt: claimedAt },
-              });
-              if (digestClaim.count === 0) return false;
-
-              await tx.notification.updateMany({
-                where: { emailedAt: null, id: { in: summarizedIds } },
-                data: { emailedAt: claimedAt },
-              });
-              return true;
+            const digestClaim = await prisma.notification.updateMany({
+              where: { emailedAt: null, id: pendingDigest.id },
+              data: { emailedAt: claimedAt },
             });
-            if (!claimed) continue;
+            if (digestClaim.count === 0) continue;
 
             const delivery = await sendTransactionalEmail({
               ...email,
@@ -448,13 +431,11 @@ export async function runStudentReminderWorkflows({
               result.emailsSent += 1;
             } else {
               result.emailsSkipped += 1;
-              await releaseEmailClaims(
-                [pendingDigest.id, ...summarizedIds],
-                claimedAt,
-              );
+              await releaseEmailClaims([pendingDigest.id], claimedAt);
             }
 
-            // A digest absorbs the ordinary reminder batch for this run.
+            // A digest uses this run's email slot. Ordinary reminders remain
+            // pending for the next run because the digest plan is independent.
             continue;
           }
         }
