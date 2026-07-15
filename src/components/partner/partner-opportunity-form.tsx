@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 
 import { savePartnerOpportunity } from "@/app/dashboard/partner/opportunities/actions";
@@ -40,12 +40,16 @@ function inputClassName(hasError?: boolean) {
   ].join(" ");
 }
 
-function FieldError({ message }: { message?: string }) {
+function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) {
     return null;
   }
 
-  return <p className="mt-2 text-sm text-destructive">{message}</p>;
+  return (
+    <p className="mt-2 text-sm text-destructive" id={id}>
+      {message}
+    </p>
+  );
 }
 
 function SubmitButton() {
@@ -53,7 +57,7 @@ function SubmitButton() {
 
   return (
     <button
-      className="inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
       disabled={pending}
       type="submit"
     >
@@ -75,11 +79,29 @@ export function PartnerOpportunityForm({
   };
   const [state, action] = useActionState(savePartnerOpportunity, initialState);
   const values = state.values;
+  const formRef = useRef<HTMLFormElement>(null);
+  const formErrorRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    const invalidControl = formRef.current?.querySelector<HTMLElement>(
+      '[aria-invalid="true"]:not(:disabled)',
+    );
+
+    if (invalidControl) {
+      invalidControl.focus();
+      return;
+    }
+
+    if (state.formError) {
+      formErrorRef.current?.focus();
+    }
+  }, [state.fieldErrors, state.formError]);
 
   return (
     <form
       action={action}
       className="rounded-lg border border-border bg-background p-5 shadow-sm"
+      ref={formRef}
     >
       <input name="opportunityId" type="hidden" value={values.opportunityId} />
       <div className="border-b border-border pb-5">
@@ -106,7 +128,12 @@ export function PartnerOpportunityForm({
           </p>
         ) : null}
         {state.formError ? (
-          <p className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <p
+            className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2"
+            ref={formErrorRef}
+            role="alert"
+            tabIndex={-1}
+          >
             {state.formError}
           </p>
         ) : null}
@@ -116,22 +143,41 @@ export function PartnerOpportunityForm({
         <label className="text-sm font-medium text-foreground md:col-span-2">
           Title
           <input
+            aria-describedby={
+              state.fieldErrors.title
+                ? "partner-opportunity-title-error"
+                : undefined
+            }
+            aria-invalid={Boolean(state.fieldErrors.title)}
             className={inputClassName(Boolean(state.fieldErrors.title))}
             defaultValue={values.title}
+            id="partner-opportunity-title"
             name="title"
             placeholder="Clinical shadowing with community health team"
+            required
           />
-          <FieldError message={state.fieldErrors.title} />
+          <FieldError
+            id="partner-opportunity-title-error"
+            message={state.fieldErrors.title}
+          />
         </label>
 
         <label className="text-sm font-medium text-foreground">
           Organization
           <select
+            aria-describedby={
+              state.fieldErrors.organizationId
+                ? "partner-opportunity-organization-error"
+                : undefined
+            }
+            aria-invalid={Boolean(state.fieldErrors.organizationId)}
             className={inputClassName(
               Boolean(state.fieldErrors.organizationId),
             )}
             defaultValue={values.organizationId}
+            id="partner-opportunity-organization"
             name="organizationId"
+            required
           >
             <option value="">Select organization</option>
             {organizations.map((organization) => (
@@ -140,15 +186,26 @@ export function PartnerOpportunityForm({
               </option>
             ))}
           </select>
-          <FieldError message={state.fieldErrors.organizationId} />
+          <FieldError
+            id="partner-opportunity-organization-error"
+            message={state.fieldErrors.organizationId}
+          />
         </label>
 
         <label className="text-sm font-medium text-foreground">
           Type
           <select
+            aria-describedby={
+              state.fieldErrors.type
+                ? "partner-opportunity-type-error"
+                : undefined
+            }
+            aria-invalid={Boolean(state.fieldErrors.type)}
             className={inputClassName(Boolean(state.fieldErrors.type))}
             defaultValue={values.type}
+            id="partner-opportunity-type"
             name="type"
+            required
           >
             <option value="">Select type</option>
             {partnerOpportunityTypeOptions.map((type) => (
@@ -157,7 +214,10 @@ export function PartnerOpportunityForm({
               </option>
             ))}
           </select>
-          <FieldError message={state.fieldErrors.type} />
+          <FieldError
+            id="partner-opportunity-type-error"
+            message={state.fieldErrors.type}
+          />
         </label>
 
         <label className="text-sm font-medium text-foreground">
@@ -203,25 +263,45 @@ export function PartnerOpportunityForm({
         <label className="text-sm font-medium text-foreground">
           Deadline
           <input
+            aria-describedby={
+              state.fieldErrors.deadline
+                ? "partner-opportunity-deadline-error"
+                : undefined
+            }
+            aria-invalid={Boolean(state.fieldErrors.deadline)}
             className={inputClassName(Boolean(state.fieldErrors.deadline))}
             defaultValue={values.deadline}
+            id="partner-opportunity-deadline"
             name="deadline"
             type="date"
           />
-          <FieldError message={state.fieldErrors.deadline} />
+          <FieldError
+            id="partner-opportunity-deadline-error"
+            message={state.fieldErrors.deadline}
+          />
         </label>
 
         <label className="text-sm font-medium text-foreground">
           Capacity
           <input
+            aria-describedby={
+              state.fieldErrors.capacity
+                ? "partner-opportunity-capacity-error"
+                : undefined
+            }
+            aria-invalid={Boolean(state.fieldErrors.capacity)}
             className={inputClassName(Boolean(state.fieldErrors.capacity))}
             defaultValue={values.capacity}
+            id="partner-opportunity-capacity"
             min="1"
             name="capacity"
             placeholder="12"
             type="number"
           />
-          <FieldError message={state.fieldErrors.capacity} />
+          <FieldError
+            id="partner-opportunity-capacity-error"
+            message={state.fieldErrors.capacity}
+          />
         </label>
 
         <label className="text-sm font-medium text-foreground md:col-span-2">
@@ -272,7 +352,7 @@ export function PartnerOpportunityForm({
       <div className="mt-6 flex flex-wrap items-center gap-3">
         {canEdit ? <SubmitButton /> : null}
         <Link
-          className="inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+          className="inline-flex min-h-11 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           href="/dashboard/partner/opportunities"
         >
           Back to opportunities

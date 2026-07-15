@@ -13,7 +13,7 @@ export function FaqList({ items }: { items: readonly FaqItem[] }) {
           className="group p-5 open:bg-blue-surface/45 sm:p-6"
           key={item.question}
         >
-          <summary className="flex min-h-7 list-none items-center justify-between gap-5 text-left text-base font-semibold text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+          <summary className="flex min-h-11 list-none items-center justify-between gap-5 rounded-md text-left text-base font-semibold text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">
             {item.question}
             <ChevronDown
               aria-hidden="true"

@@ -1,4 +1,20 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
+
+const publicRoutes = [
+  "/opportunities",
+  "/students",
+  "/partners",
+  "/events",
+  "/events/global-healthcare-seminar-2025",
+  "/chapters",
+  "/about",
+  "/impact",
+  "/support",
+  "/faq",
+  "/contact",
+  "/privacy",
+  "/terms",
+] as const;
 
 test("homepage explains the product and exposes the public navigation", async ({
   page,
@@ -24,15 +40,32 @@ test("mobile navigation is keyboard-accessible", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
 
-  await page.getByRole("button", { name: "Open navigation menu" }).click();
+  const trigger = page.getByRole("button", { name: "Open navigation menu" });
+  await trigger.focus();
+  await page.keyboard.press("Enter");
   await expect(
     page.getByRole("navigation", { name: "Mobile navigation" }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "For Students" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Close navigation menu" }),
+  ).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        Boolean(
+          document.activeElement?.closest('[role="dialog"]') ??
+          document.activeElement?.closest("[data-popup-open]"),
+        ),
+      ),
+    )
+    .toBe(true);
   await page.keyboard.press("Escape");
   await expect(
     page.getByRole("navigation", { name: "Mobile navigation" }),
   ).toBeHidden();
+  await expect(trigger).toBeFocused();
 });
 
 test("desktop Explore disclosure exposes state and closes with Escape", async ({
@@ -67,6 +100,7 @@ test("key public pages avoid horizontal overflow at required breakpoints", async
         name: "Build your path into healthcare.",
       }),
     ).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
     const dimensions = await page.evaluate(() => ({
       clientWidth: document.documentElement.clientWidth,
       scrollWidth: document.documentElement.scrollWidth,
@@ -76,9 +110,10 @@ test("key public pages avoid horizontal overflow at required breakpoints", async
     );
   }
 
-  for (const url of ["/support", "/opportunities"]) {
+  for (const url of publicRoutes) {
     await page.setViewportSize({ width: 320, height: 900 });
     await page.goto(url, { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => document.fonts.ready);
     const dimensions = await page.evaluate(() => ({
       clientWidth: document.documentElement.clientWidth,
       scrollWidth: document.documentElement.scrollWidth,
@@ -180,7 +215,43 @@ test("signed-out dashboard redirects to sign-in", async ({ page }) => {
 });
 
 test("unknown public opportunity returns not found", async ({ page }) => {
-  const response = await page.goto("/opportunities/not-a-real-opportunity");
+  const response = await page.request.get(
+    "/opportunities/not-a-real-opportunity",
+    { maxRedirects: 0 },
+  );
 
-  expect(response?.status()).toBe(404);
+  expect(response.status()).toBe(404);
+});
+
+test("opportunity directory completes its database query", async ({ page }) => {
+  const response = await page.goto("/opportunities");
+
+  expect(
+    response,
+    "The opportunity directory must return a document",
+  ).not.toBeNull();
+  expect(response?.status()).toBeLessThan(500);
+  const resultHeading = page.getByRole("heading", {
+    level: 2,
+    name: /\d+ verified opportunit(?:y|ies)/,
+  });
+  await expect(
+    resultHeading,
+    "A broken opportunity query must not be mistaken for a valid empty directory",
+  ).toBeVisible();
+  if ((await resultHeading.textContent())?.trim().startsWith("0 ")) {
+    await expect(
+      page.getByRole("heading", {
+        name: "No public listings are open right now",
+      }),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "Reset filters" })).toHaveCount(
+      0,
+    );
+  }
+  await expect(
+    page.getByRole("heading", {
+      name: "We couldn't load the opportunity directory",
+    }),
+  ).toHaveCount(0);
 });

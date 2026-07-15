@@ -96,7 +96,7 @@ export default function FaqPage() {
                 <div className="divide-y divide-border rounded-2xl border border-border bg-white px-5 shadow-sm sm:px-7">
                   {group.items.map((item) => (
                     <details className="group py-5" key={item.question}>
-                      <summary className="cursor-pointer list-none pr-8 font-semibold text-brand-navy marker:content-none">
+                      <summary className="flex min-h-11 cursor-pointer list-none items-center rounded-md pr-8 font-semibold text-brand-navy marker:content-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">
                         {item.question}
                       </summary>
                       <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">

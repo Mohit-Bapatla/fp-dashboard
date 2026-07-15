@@ -227,12 +227,20 @@ export default async function StaffAutomationsPage() {
         <AutomationRunPanel />
 
         <section className="rounded-lg border border-border bg-background p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">
+          <h2
+            className="text-base font-semibold text-foreground"
+            id="recent-automation-runs-heading"
+          >
             Recent automation runs
           </h2>
           {recentRuns.length > 0 ? (
-            <div className="mt-4 overflow-hidden rounded-md border border-border">
-              <table className="min-w-full divide-y divide-border text-sm">
+            <div
+              aria-labelledby="recent-automation-runs-heading"
+              className="mt-4 overflow-x-auto rounded-md border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              role="region"
+              tabIndex={0}
+            >
+              <table className="w-full min-w-[48rem] divide-y divide-border text-sm">
                 <thead className="bg-muted/40">
                   <tr className="text-left text-muted-foreground">
                     <th className="px-3 py-2 font-medium">Started</th>

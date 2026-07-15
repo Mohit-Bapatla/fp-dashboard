@@ -250,7 +250,7 @@ export function PublicOpportunityFilters({
           <span className="rounded-full bg-blue-surface px-2.5 py-1 text-xs text-primary">
             {activeFilterCount > 0
               ? `${activeFilterCount} active`
-              : `${resultCount} results`}
+              : `${resultCount} ${resultCount === 1 ? "result" : "results"}`}
           </span>
         </summary>
         <div className="border-t border-border p-5">

@@ -140,7 +140,10 @@ export function DataImportPanel() {
         <section className="rounded-lg border border-border bg-background p-5 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">
+              <h2
+                className="text-lg font-semibold text-foreground"
+                id="csv-import-preview-heading"
+              >
                 Preview rows
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -164,8 +167,13 @@ export function DataImportPanel() {
             </form>
           </div>
 
-          <div className="mt-5 overflow-hidden rounded-md border border-border">
-            <table className="min-w-full divide-y divide-border text-sm">
+          <div
+            aria-labelledby="csv-import-preview-heading"
+            className="mt-5 overflow-x-auto rounded-md border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            role="region"
+            tabIndex={0}
+          >
+            <table className="w-full min-w-[48rem] divide-y divide-border text-sm">
               <thead className="bg-muted/40">
                 <tr className="text-left text-muted-foreground">
                   <th className="px-3 py-2 font-medium">Row</th>
