@@ -59,3 +59,22 @@ test("public routes have no detectable WCAG A/AA axe violations", async ({
     expect.soft(violations, `${route}\n${summary}`).toEqual([]);
   }
 });
+
+test("opportunity card details keep valid definition-list semantics", async ({
+  page,
+}) => {
+  await page.goto("/opportunities", { waitUntil: "domcontentloaded" });
+
+  const detailLists = page.locator("article dl");
+  expect(
+    await detailLists.count(),
+    "The seeded opportunity directory should render at least one card",
+  ).toBeGreaterThan(0);
+
+  const { violations } = await new AxeBuilder({ page })
+    .include("article dl")
+    .withRules(["definition-list", "dlitem"])
+    .analyze();
+
+  expect(violations).toEqual([]);
+});

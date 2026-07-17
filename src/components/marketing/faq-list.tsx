@@ -6,6 +6,7 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type FaqItem = {
+  id: string;
   question: string;
   answer: string;
 };
@@ -25,11 +26,11 @@ export function FaqList({
       )}
       multiple
     >
-      {items.map((item, index) => (
+      {items.map((item) => (
         <Accordion.Item
           className="group px-5 transition-colors duration-[240ms] data-[open]:bg-blue-surface/45 sm:px-6"
-          key={item.question}
-          value={`faq-${index}`}
+          key={item.id}
+          value={item.id}
         >
           <Accordion.Header>
             <Accordion.Trigger className="flex min-h-16 w-full items-center justify-between gap-5 rounded-md py-3 text-left text-base font-semibold text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">

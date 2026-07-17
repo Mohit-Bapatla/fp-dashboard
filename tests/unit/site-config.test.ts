@@ -6,8 +6,10 @@ import {
   homepageFaqItems,
   impactMethodologyNote,
   organizationMetrics,
+  partnerFaqItems,
   seminar,
   siteConfig,
+  studentFaqItems,
 } from "@/lib/site-config";
 
 describe("public site configuration", () => {
@@ -112,6 +114,31 @@ describe("public site configuration", () => {
         "How do I contact support?",
       ]),
     );
+  });
+
+  it("uses unique stable IDs for FAQ records and page selections", () => {
+    const allIds = allFaqItems.map((item) => item.id);
+    expect(new Set(allIds).size).toBe(allIds.length);
+    expect(allIds.every((id) => id.length > 0)).toBe(true);
+
+    expect(homepageFaqItems.map((item) => item.id)).toEqual([
+      "student-dashboard-free",
+      "student-profile-eligibility",
+      "opportunity-verification",
+      "placement-guarantee",
+      "application-process",
+      "partner-inquiry",
+    ]);
+    expect(studentFaqItems.map((item) => item.id)).toEqual([
+      "student-profile-eligibility",
+      "recommendation-eligibility",
+      "application-process",
+    ]);
+    expect(partnerFaqItems.map((item) => item.id)).toEqual([
+      "partner-inquiry",
+      "organization-verification",
+      "partner-data-access",
+    ]);
   });
 
   it("uses the six approved homepage FAQ questions in the requested order", () => {

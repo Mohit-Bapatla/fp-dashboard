@@ -29,7 +29,7 @@ import {
   PageCta,
 } from "@/components/marketing/supporting-page-sections";
 import { createPublicMetadata } from "@/lib/public-metadata";
-import { faqGroups, siteConfig } from "@/lib/site-config";
+import { partnerFaqItems, siteConfig } from "@/lib/site-config";
 
 const description =
   "Hospitals, clinics, universities, research programs, schools, and community organizations can contact Future Physicians to discuss an approved partnership.";
@@ -327,7 +327,7 @@ export default function PartnersPage() {
           title="Clear boundaries before you begin."
         />
         <div className="mt-8">
-          <FaqList items={faqGroups[3].items} />
+          <FaqList items={partnerFaqItems} />
         </div>
         <div className="mt-6">
           <Link className={textLinkClass} href="/faq">

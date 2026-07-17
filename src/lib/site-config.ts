@@ -109,21 +109,25 @@ export const faqGroups = [
     title: "Student accounts",
     items: [
       {
+        id: "student-profile-eligibility",
         question: "Who can create a student profile?",
         answer:
           "High school, college, graduate, and medical students exploring healthcare careers can create a profile. Each opportunity still has its own age, location, education, and experience requirements.",
       },
       {
+        id: "student-dashboard-free",
         question: "Is Future Physicians free for students?",
         answer:
           "Creating a student profile and using the FP Dashboard is free. Individual programs may disclose separate costs, travel needs, or unpaid participation on their listings.",
       },
       {
+        id: "student-profile-information",
         question: "What information goes in my profile?",
         answer:
           "Your profile can include education level, location, interests, experience, availability, preferences, and reusable application materials. You control the information you submit.",
       },
       {
+        id: "student-profile-creation",
         question: "How do I create a student profile?",
         answer:
           "Create a free account, then complete the student onboarding steps in the FP Dashboard. You can add or update your education level, interests, experience, location, availability, preferences, and reusable application materials there.",
@@ -135,16 +139,19 @@ export const faqGroups = [
     title: "Opportunities",
     items: [
       {
+        id: "opportunity-verification",
         question: "How are opportunities verified?",
         answer:
           "FP reviews the source, deadline, eligibility, application path, and publication status before an opportunity appears in the student directory. Details can change, so students should also review the linked official source.",
       },
       {
+        id: "recommendation-eligibility",
         question: "Does a recommendation mean I am eligible?",
         answer:
           "No. Recommendations use the information available in your profile and the listing, but they do not guarantee eligibility. Always review every published requirement before applying.",
       },
       {
+        id: "closed-opportunity",
         question: "What happens when an opportunity closes?",
         answer:
           "Closed or expired opportunities stop accepting new applications. Existing application records remain available in the dashboard, and saved listings may offer reopening alerts when supported.",
@@ -156,26 +163,31 @@ export const faqGroups = [
     title: "Applications",
     items: [
       {
+        id: "fp-managed-application",
         question: "What is an FP-managed application?",
         answer:
           "An FP-managed application is prepared or submitted through the FP Dashboard. Other listings send you to an official partner portal or use an introduction or interest process.",
       },
       {
+        id: "external-application-tracking",
         question: "Can I track an external application?",
         answer:
           "Yes. The dashboard can keep deadlines, notes, status, and next steps together even when the final submission happens on an external website.",
       },
       {
+        id: "application-process",
         question: "How do applications work?",
         answer:
           "Some applications are managed through the FP Dashboard, while others redirect to an organization’s official application path. In either case, you can use the dashboard to keep deadlines, progress, and next steps organized.",
       },
       {
+        id: "placement-guarantee",
         question: "Does Future Physicians guarantee a placement?",
         answer:
           "No. An application does not guarantee acceptance, an introduction does not guarantee a response, and Future Physicians does not guarantee interviews or placement.",
       },
       {
+        id: "application-waitlist",
         question: "What does waitlisted mean?",
         answer:
           "Waitlisted means your application is still active, but a place is not currently confirmed. The organization or FP team will update the record when the status changes.",
@@ -187,16 +199,19 @@ export const faqGroups = [
     title: "Partners",
     items: [
       {
+        id: "partner-inquiry",
         question: "How can an organization work with Future Physicians?",
         answer:
           "Hospitals, clinics, universities, research programs, schools, and community organizations can contact outreach@futurephysicians.org. FP reviews the organization and proposed collaboration before approving access or publishing an opportunity.",
       },
       {
+        id: "organization-verification",
         question: "How does FP verify organizations?",
         answer:
           "FP reviews organization and source information before publishing a listing. Verification records that review; it is not an endorsement, a guarantee of program quality, or a promise of a student outcome.",
       },
       {
+        id: "partner-data-access",
         question: "What student data can partners see?",
         answer:
           "Partners can access only the applicant or student information authorized for their opportunity and workflow. They do not receive unrestricted access to the student directory.",
@@ -208,21 +223,25 @@ export const faqGroups = [
     title: "Chapters and events",
     items: [
       {
+        id: "chapter-application",
         question: "Can my school start a chapter?",
         answer:
           "Students can apply to start or join a chapter. Approval is not automatic, and chapters are responsible for active leadership, accurate communication, and coordination with the national organization.",
       },
       {
+        id: "chapter-funding",
         question: "Does every chapter receive funding?",
         answer:
           "No. Chapter approval does not guarantee funding, exclusive opportunities, hospital access, or participation in every national program.",
       },
       {
+        id: "event-recordings",
         question: "Where are event recordings available?",
         answer:
           "Completed events with approved recordings are listed on the Events page. Upcoming events show registration details only while registration is active.",
       },
       {
+        id: "upcoming-events",
         question: "Where can I find upcoming events?",
         answer:
           "Confirmed upcoming programs and registration details appear on the Events page after they are published. If no upcoming event is listed, you can subscribe to the Future Physicians newsletter for new program announcements.",
@@ -234,16 +253,19 @@ export const faqGroups = [
     title: "Privacy and support",
     items: [
       {
+        id: "profile-visibility",
         question: "Who can see my profile?",
         answer:
           "Your profile is not a public page. Access is limited by role and application context, and partners may see only information authorized for the opportunities they manage.",
       },
       {
+        id: "incorrect-information",
         question: "How do I report incorrect information?",
         answer:
           "Signed-in students can report a broken link, incorrect deadline, eligibility issue, or closed program from the opportunity workspace. You can also email support@futurephysicians.org.",
       },
       {
+        id: "support-contact",
         question: "How do I contact support?",
         answer:
           "Email support@futurephysicians.org for account, application, opportunity, or general questions, or use the Contact page to find the partnerships and fundraising addresses. Do not include sensitive profile or document details in an initial email.",
@@ -252,16 +274,41 @@ export const faqGroups = [
   },
 ] as const;
 
-export const allFaqItems: ReadonlyArray<{
-  question: string;
-  answer: string;
-}> = faqGroups.flatMap((group) => [...group.items]);
+export const allFaqItems = faqGroups.flatMap((group) => [...group.items]);
 
-export const homepageFaqItems = [
-  faqGroups[0].items[1],
-  faqGroups[0].items[0],
-  faqGroups[1].items[0],
-  faqGroups[2].items[3],
-  faqGroups[2].items[2],
-  faqGroups[3].items[0],
-] as const;
+type FaqItemId = (typeof allFaqItems)[number]["id"];
+
+const faqItemsById = new Map(
+  allFaqItems.map((item) => [item.id, item] as const),
+);
+
+function selectFaqItems(ids: readonly FaqItemId[]) {
+  return ids.map((id) => {
+    const item = faqItemsById.get(id);
+    if (!item) {
+      throw new Error(`Unknown FAQ id: ${id}`);
+    }
+    return item;
+  });
+}
+
+export const homepageFaqItems = selectFaqItems([
+  "student-dashboard-free",
+  "student-profile-eligibility",
+  "opportunity-verification",
+  "placement-guarantee",
+  "application-process",
+  "partner-inquiry",
+]);
+
+export const studentFaqItems = selectFaqItems([
+  "student-profile-eligibility",
+  "recommendation-eligibility",
+  "application-process",
+]);
+
+export const partnerFaqItems = selectFaqItems([
+  "partner-inquiry",
+  "organization-verification",
+  "partner-data-access",
+]);

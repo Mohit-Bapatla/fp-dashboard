@@ -25,7 +25,7 @@ import {
   textLinkClass,
 } from "@/components/marketing/page-shell";
 import { createPublicMetadata } from "@/lib/public-metadata";
-import { faqGroups } from "@/lib/site-config";
+import { studentFaqItems } from "@/lib/site-config";
 
 const description =
   "Discover verified healthcare opportunities, understand your next steps, and keep applications organized in one free student dashboard.";
@@ -35,12 +35,6 @@ export const metadata = createPublicMetadata({
   path: "/students",
   title: "For Students",
 });
-
-const studentFaqs = [
-  faqGroups[0].items[0],
-  faqGroups[1].items[1],
-  faqGroups[2].items[2],
-];
 
 export default function StudentsPage() {
   return (
@@ -311,7 +305,7 @@ export default function StudentsPage() {
           eyebrow="Student FAQ"
           title="Know what the platform can—and cannot—do."
         />
-        <FaqList className="mt-8" items={studentFaqs} />
+        <FaqList className="mt-8" items={studentFaqItems} />
         <div className="mt-6">
           <Link className={textLinkClass} href="/faq">
             Read all frequently asked questions

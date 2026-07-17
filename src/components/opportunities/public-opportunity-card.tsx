@@ -183,40 +183,40 @@ export function PublicOpportunityCard({
       ) : null}
 
       <dl className="mt-5 grid gap-3 text-sm text-muted-foreground">
-        <div className="flex gap-2.5">
-          <MapPin
-            aria-hidden="true"
-            className="mt-0.5 size-4 shrink-0 text-primary"
-          />
-          <div>
-            <dt className="sr-only">Location and format</dt>
-            <dd>
+        <div>
+          <dt className="sr-only">Location and format</dt>
+          <dd className="flex gap-2.5">
+            <MapPin
+              aria-hidden="true"
+              className="mt-0.5 size-4 shrink-0 text-primary"
+            />
+            <span>
               {getLocationLabel(opportunity)}
               {opportunity.remoteType
                 ? ` \u00b7 ${opportunity.remoteType}`
                 : ""}
-            </dd>
-          </div>
+            </span>
+          </dd>
         </div>
-        <div className="flex gap-2.5">
-          <GraduationCap
-            aria-hidden="true"
-            className="mt-0.5 size-4 shrink-0 text-primary"
-          />
-          <div>
-            <dt className="sr-only">Accepted education levels</dt>
-            <dd>{getGradeLabel(opportunity)}</dd>
-          </div>
+        <div>
+          <dt className="sr-only">Accepted education levels</dt>
+          <dd className="flex gap-2.5">
+            <GraduationCap
+              aria-hidden="true"
+              className="mt-0.5 size-4 shrink-0 text-primary"
+            />
+            <span>{getGradeLabel(opportunity)}</span>
+          </dd>
         </div>
-        <div className="flex gap-2.5">
-          <CalendarDays
-            aria-hidden="true"
-            className="mt-0.5 size-4 shrink-0 text-primary"
-          />
-          <div>
-            <dt className="sr-only">Application deadline</dt>
-            <dd>{getDeadlineLabel(opportunity)}</dd>
-          </div>
+        <div>
+          <dt className="sr-only">Application deadline</dt>
+          <dd className="flex gap-2.5">
+            <CalendarDays
+              aria-hidden="true"
+              className="mt-0.5 size-4 shrink-0 text-primary"
+            />
+            <span>{getDeadlineLabel(opportunity)}</span>
+          </dd>
         </div>
       </dl>
 

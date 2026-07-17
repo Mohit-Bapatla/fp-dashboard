@@ -155,7 +155,7 @@ test("key public pages avoid horizontal overflow at required breakpoints", async
 
   for (const width of [1440, 1024, 768, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.goto("/", { waitUntil: "load" });
     await expect(
       page.getByRole("heading", {
         level: 1,
@@ -174,7 +174,7 @@ test("key public pages avoid horizontal overflow at required breakpoints", async
 
   for (const url of publicRoutes) {
     await page.setViewportSize({ width: 320, height: 900 });
-    await page.goto(url, { waitUntil: "domcontentloaded" });
+    await page.goto(url, { waitUntil: "load" });
     await page.evaluate(() => document.fonts.ready);
     const dimensions = await page.evaluate(() => ({
       clientWidth: document.documentElement.clientWidth,
