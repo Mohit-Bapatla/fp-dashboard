@@ -3,8 +3,8 @@ import Link from "next/link";
 
 import { type AppRole, getDashboardPathForRole } from "@/lib/auth/roles";
 import { getMarketingViewer } from "@/lib/auth/marketing-viewer";
-import { PARTNER_ONBOARDING_PATH } from "@/lib/partner/onboarding";
 import { safeInternalPath } from "@/lib/security/safe-url";
+import { siteConfig } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
 import { primaryButtonClass, secondaryButtonClass } from "./page-shell";
@@ -45,9 +45,9 @@ export function getDashboardEntryAction({
 
   if (intent === "partner") {
     return {
-      href: `/sign-up?redirect_url=${encodeURIComponent(PARTNER_ONBOARDING_PATH)}`,
-      label: "Create Partner Workspace",
-      linkType: "internal",
+      href: siteConfig.mailto.partnerships,
+      label: "Contact Our Outreach Team",
+      linkType: "mailto",
     };
   }
 

@@ -9,6 +9,13 @@ export const siteConfig = {
     partnerships: "outreach@futurephysicians.org",
     fundraising: "fundraising@futurephysicians.org",
   },
+  mailto: {
+    support: "mailto:support@futurephysicians.org",
+    partnerships:
+      "mailto:outreach@futurephysicians.org?subject=Future%20Physicians%20Partnership%20Inquiry",
+    fundraising:
+      "mailto:fundraising@futurephysicians.org?subject=Funding%20Future%20Physicians",
+  },
   links: {
     chapterApplication:
       "https://docs.google.com/forms/d/e/1FAIpQLSeT-FOoYXGwLMgDIqr-kTCPGceFSnkgn_FAyp3C_9M9eo6y3g/viewform",
@@ -21,89 +28,23 @@ export const siteConfig = {
   },
 } as const;
 
-export const organizationImpactReporting = {
-  asOf: null,
-  disclosure:
-    "Organization-wide totals are withheld because no dated, approved source is currently available for publication.",
-  status: "withheld-pending-source-approval",
-} as const;
-
-export const impactMetricDefinitions = [
+export const organizationMetrics = [
   {
-    term: "Community participants",
-    meaning:
-      "Distinct students documented as participating in defined FP programs, events, or community channels during a stated period.",
-    boundary:
-      "Not the same as registered dashboard users, applicants, acceptances, or placements.",
+    value: "2,000+",
+    label: "Students in the FP community",
   },
   {
-    term: "Registered users",
-    meaning: "People with an FP account during a stated period.",
-    boundary:
-      "An account record does not establish program participation, application, or placement.",
+    value: "50+",
+    label: "Partner organizations",
   },
   {
-    term: "Applicants",
-    meaning: "Students with an application record for an opportunity.",
-    boundary: "Application does not mean interview, acceptance, or placement.",
-  },
-  {
-    term: "Students connected",
-    meaning:
-      "A broad relationship term that requires a specific program definition before reporting.",
-    boundary: "FP does not use it here as a substitute for placements.",
-  },
-  {
-    term: "Placements",
-    meaning: "Confirmed student participation in a program position.",
-    boundary:
-      "A public total requires an approved source, reporting period, and confirmation method.",
-  },
-  {
-    term: "Event registrants",
-    meaning: "People who completed registration for a named event.",
-    boundary: "Not the same as live attendees or peak concurrent viewers.",
-  },
-  {
-    term: "Event attendees",
-    meaning: "People reported as attending a named live event.",
-    boundary:
-      "Tracked separately from registrations, peak viewers, and watch minutes.",
-  },
-  {
-    term: "Paid interns",
-    meaning: "Students confirmed in paid internship positions.",
-    boundary:
-      "A public count requires a documented position and confirmation method.",
-  },
-  {
-    term: "Partner organizations",
-    meaning:
-      "Distinct organizations with an approved program or opportunity relationship during a stated period.",
-    boundary:
-      "Grant funders, event promoters, and institutional recognition are separate categories.",
-  },
-  {
-    term: "Grant or sponsorship revenue",
-    meaning: "Funds received in those specific relationship categories.",
-    boundary:
-      "This is separate from student stipend value offered or paid through a partner program.",
-  },
-  {
-    term: "Student stipends facilitated",
-    meaning:
-      "Documented student stipend value facilitated through identified partner programs during a stated period.",
-    boundary:
-      "Not a count of placements and not grant revenue, donations, or money received by FP.",
-  },
-  {
-    term: "Modeled program value",
-    meaning:
-      "An estimate based on stated assumptions rather than a direct transaction total.",
-    boundary:
-      "Modeled value must be labeled as an estimate and kept separate from verified payments.",
+    value: "$300K+",
+    label: "Student stipends facilitated through partner programs",
   },
 ] as const;
+
+export const impactMethodologyNote =
+  "Figures represent cumulative Future Physicians activity. Student stipends reflect funding facilitated through partner programs rather than funds paid directly by FP.";
 
 export const grants = [
   {
@@ -168,9 +109,9 @@ export const faqGroups = [
     title: "Student accounts",
     items: [
       {
-        question: "Who can join Future Physicians?",
+        question: "Who can create a student profile?",
         answer:
-          "Future Physicians is designed for high school, college, graduate, and medical students exploring healthcare careers. Available opportunities still have their own age, location, education, and experience requirements.",
+          "High school, college, graduate, and medical students exploring healthcare careers can create a profile. Each opportunity still has its own age, location, education, and experience requirements.",
       },
       {
         question: "Is Future Physicians free for students?",
@@ -225,12 +166,12 @@ export const faqGroups = [
           "Yes. The dashboard can keep deadlines, notes, status, and next steps together even when the final submission happens on an external website.",
       },
       {
-        question: "How do external applications work?",
+        question: "How do applications work?",
         answer:
-          "FP directs you to the organization’s official application path when a listing uses an external portal. The organization receives and reviews that submission under its own process; you can use the FP Dashboard to record progress and next steps.",
+          "Some applications are managed through the FP Dashboard, while others redirect to an organization’s official application path. In either case, you can use the dashboard to keep deadlines, progress, and next steps organized.",
       },
       {
-        question: "Does FP guarantee placement?",
+        question: "Does Future Physicians guarantee a placement?",
         answer:
           "No. An application does not guarantee acceptance, an introduction does not guarantee a response, and Future Physicians does not guarantee interviews or placement.",
       },
@@ -246,9 +187,9 @@ export const faqGroups = [
     title: "Partners",
     items: [
       {
-        question: "Who can list an opportunity?",
+        question: "How can an organization work with Future Physicians?",
         answer:
-          "Hospitals, clinics, laboratories, universities, schools, nonprofits, community organizations, and healthcare programs can contact FP. Organizations and listings are reviewed before student publication.",
+          "Hospitals, clinics, universities, research programs, schools, and community organizations can contact outreach@futurephysicians.org. FP reviews the organization and proposed collaboration before approving access or publishing an opportunity.",
       },
       {
         question: "How does FP verify organizations?",
@@ -315,3 +256,12 @@ export const allFaqItems: ReadonlyArray<{
   question: string;
   answer: string;
 }> = faqGroups.flatMap((group) => [...group.items]);
+
+export const homepageFaqItems = [
+  faqGroups[0].items[1],
+  faqGroups[0].items[0],
+  faqGroups[1].items[0],
+  faqGroups[2].items[3],
+  faqGroups[2].items[2],
+  faqGroups[3].items[0],
+] as const;

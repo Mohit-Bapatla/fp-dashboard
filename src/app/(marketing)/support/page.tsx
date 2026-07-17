@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import {
+  emailLinkClass,
   PageHero,
   SectionHeading,
   primaryButtonClass,
@@ -95,7 +96,7 @@ export default function SupportPage() {
             </a>
             <a
               className={secondaryButtonClass}
-              href={`mailto:${siteConfig.emails.fundraising}`}
+              href={siteConfig.mailto.fundraising}
             >
               Discuss funding
               <Mail aria-hidden="true" className="size-4" />
@@ -249,34 +250,34 @@ export default function SupportPage() {
 
       <MarketingSection id="donate">
         <div className="grid gap-5 md:grid-cols-2">
-          <div className="rounded-3xl border border-border bg-white p-7 shadow-sm sm:p-8">
+          <div className="rounded-3xl border border-border bg-white p-5 shadow-sm sm:p-8">
             <HandHeart aria-hidden="true" className="size-7 text-primary" />
             <h2 className="mt-5 text-2xl font-semibold text-brand-navy">
               Funding and donations
             </h2>
-            <p className="mt-3 text-base leading-7 text-muted-foreground">
+            <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
               For grants, sponsorships, donations, and funding opportunities,
               email{" "}
               <a
-                className="break-all font-semibold text-primary hover:underline"
-                href={`mailto:${siteConfig.emails.fundraising}`}
+                className={emailLinkClass}
+                href={siteConfig.mailto.fundraising}
               >
                 {siteConfig.emails.fundraising}
               </a>
               .
             </p>
           </div>
-          <div className="rounded-3xl border border-border bg-white p-7 shadow-sm sm:p-8">
+          <div className="rounded-3xl border border-border bg-white p-5 shadow-sm sm:p-8">
             <Building2 aria-hidden="true" className="size-7 text-primary" />
             <h2 className="mt-5 text-2xl font-semibold text-brand-navy">
               Program partnerships
             </h2>
-            <p className="mt-3 text-base leading-7 text-muted-foreground">
+            <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
               For healthcare, education, community, or opportunity
               collaboration, email{" "}
               <a
-                className="break-all font-semibold text-primary hover:underline"
-                href={`mailto:${siteConfig.emails.partnerships}`}
+                className={emailLinkClass}
+                href={siteConfig.mailto.partnerships}
               >
                 {siteConfig.emails.partnerships}
               </a>
@@ -299,10 +300,12 @@ export default function SupportPage() {
               <ArrowRight aria-hidden="true" className="size-4" />
             </a>
             <a
-              className={`${secondaryButtonClass} break-all`}
-              href={`mailto:${siteConfig.emails.fundraising}`}
+              className={`${secondaryButtonClass} px-2 sm:px-5`}
+              href={siteConfig.mailto.fundraising}
             >
-              {siteConfig.emails.fundraising}
+              <span className={emailLinkClass}>
+                {siteConfig.emails.fundraising}
+              </span>
             </a>
           </>
         }

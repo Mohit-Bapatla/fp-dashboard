@@ -39,7 +39,7 @@ export function MobileNavigation({
     <Dialog.Root onOpenChange={setOpen} open={open}>
       <Dialog.Trigger
         aria-label="Open navigation menu"
-        className="inline-flex size-11 items-center justify-center rounded-xl border border-border bg-white text-brand-navy shadow-sm transition hover:bg-blue-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+        className="inline-flex size-11 items-center justify-center rounded-xl border border-border bg-white text-brand-navy shadow-sm transition hover:bg-blue-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring xl:hidden"
       >
         <Menu aria-hidden="true" className="size-5" />
       </Dialog.Trigger>

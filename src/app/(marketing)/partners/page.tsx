@@ -12,10 +12,12 @@ import {
   Users,
 } from "lucide-react";
 
-import { DashboardEntryButton } from "@/components/marketing/dashboard-entry-button";
+import { FaqList } from "@/components/marketing/faq-list";
 import {
+  emailLinkClass,
   PageHero,
   SectionHeading,
+  primaryButtonClass,
   secondaryButtonClass,
   textLinkClass,
 } from "@/components/marketing/page-shell";
@@ -30,7 +32,7 @@ import { createPublicMetadata } from "@/lib/public-metadata";
 import { faqGroups, siteConfig } from "@/lib/site-config";
 
 const description =
-  "Reach students through structured healthcare opportunity listings, centralized applicant workflows, and responsible access to authorized information.";
+  "Hospitals, clinics, universities, research programs, schools, and community organizations can contact Future Physicians to discuss an approved partnership.";
 
 export const metadata = createPublicMetadata({
   description,
@@ -56,22 +58,24 @@ export default function PartnersPage() {
       <PageHero
         actions={
           <>
-            <DashboardEntryButton
-              intent="partner"
-              returnTo="/dashboard/partner"
-            />
             <a
-              className={secondaryButtonClass}
-              href={`mailto:${siteConfig.emails.partnerships}`}
+              className={primaryButtonClass}
+              href={siteConfig.mailto.partnerships}
             >
-              Email partnerships
+              Contact Our Outreach Team
               <Mail aria-hidden="true" className="size-4" />
             </a>
+            <Link
+              className={secondaryButtonClass}
+              href="/sign-in?redirect_url=%2Fdashboard%2Fpartner"
+            >
+              Already an approved partner? Sign in
+            </Link>
           </>
         }
         description={description}
         eyebrow="For healthcare and education partners"
-        title="Reach qualified students without managing scattered forms and spreadsheets."
+        title="Work with Future Physicians to reach students."
       />
 
       <MarketingSection>
@@ -304,8 +308,8 @@ export default function PartnersPage() {
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Email{" "}
                 <a
-                  className="font-semibold text-primary hover:underline"
-                  href={`mailto:${siteConfig.emails.partnerships}`}
+                  className={emailLinkClass}
+                  href={siteConfig.mailto.partnerships}
                 >
                   {siteConfig.emails.partnerships}
                 </a>{" "}
@@ -322,17 +326,8 @@ export default function PartnersPage() {
           eyebrow="Partner FAQ"
           title="Clear boundaries before you begin."
         />
-        <div className="mt-8 divide-y divide-border rounded-2xl border border-border bg-white px-5 sm:px-7">
-          {faqGroups[3].items.map((item) => (
-            <details className="py-5" key={item.question}>
-              <summary className="flex min-h-11 cursor-pointer list-none items-center rounded-md pr-8 font-semibold text-brand-navy marker:content-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">
-                {item.question}
-              </summary>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
-                {item.answer}
-              </p>
-            </details>
-          ))}
+        <div className="mt-8">
+          <FaqList items={faqGroups[3].items} />
         </div>
         <div className="mt-6">
           <Link className={textLinkClass} href="/faq">
@@ -344,21 +339,24 @@ export default function PartnersPage() {
       <PageCta
         actions={
           <>
-            <DashboardEntryButton
-              intent="partner"
-              returnTo="/dashboard/partner"
-            />
             <a
               className={secondaryButtonClass}
-              href={`mailto:${siteConfig.emails.partnerships}`}
+              href={siteConfig.mailto.partnerships}
             >
-              {siteConfig.emails.partnerships}
+              Contact Our Outreach Team
+              <Mail aria-hidden="true" className="size-4" />
             </a>
+            <Link
+              className="inline-flex min-h-11 items-center rounded-md px-2 text-sm font-semibold text-blue-100 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-navy"
+              href="/sign-in?redirect_url=%2Fdashboard%2Fpartner"
+            >
+              Already approved? Sign in
+            </Link>
           </>
         }
-        description="Tell us what your organization offers, who it serves, and how students apply. FP will review the fit and next step."
-        eyebrow="Partner with care"
-        title="Build a more manageable student opportunity workflow."
+        description="Hospitals, clinics, universities, research programs, schools, and community organizations can work with FP to reach students and manage opportunities."
+        eyebrow="Partnership inquiries"
+        title="Interested in becoming a Future Physicians partner?"
       />
     </>
   );

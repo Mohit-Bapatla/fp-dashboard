@@ -3,8 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   allFaqItems,
   grants,
-  impactMetricDefinitions,
-  organizationImpactReporting,
+  homepageFaqItems,
+  impactMethodologyNote,
+  organizationMetrics,
   seminar,
   siteConfig,
 } from "@/lib/site-config";
@@ -17,6 +18,15 @@ describe("public site configuration", () => {
     expect(siteConfig.emails.support).toBe("support@futurephysicians.org");
     expect(siteConfig.emails.fundraising).toBe(
       "fundraising@futurephysicians.org",
+    );
+    expect(siteConfig.mailto.support).toBe(
+      "mailto:support@futurephysicians.org",
+    );
+    expect(siteConfig.mailto.partnerships).toBe(
+      "mailto:outreach@futurephysicians.org?subject=Future%20Physicians%20Partnership%20Inquiry",
+    );
+    expect(siteConfig.mailto.fundraising).toBe(
+      "mailto:fundraising@futurephysicians.org?subject=Funding%20Future%20Physicians",
     );
     expect(siteConfig.links.seminarRecording).toBe(
       "https://www.youtube.com/watch?v=6U2EA3O12YY",
@@ -71,14 +81,18 @@ describe("public site configuration", () => {
     ]);
   });
 
-  it("withholds unsupported organization-wide totals pending dated evidence", () => {
-    expect(organizationImpactReporting).toEqual({
-      asOf: null,
-      disclosure:
-        "Organization-wide totals are withheld because no dated, approved source is currently available for publication.",
-      status: "withheld-pending-source-approval",
-    });
-    expect(impactMetricDefinitions.length).toBeGreaterThan(0);
+  it("keeps the approved organization metrics and methodology wording exact", () => {
+    expect(organizationMetrics).toEqual([
+      { value: "2,000+", label: "Students in the FP community" },
+      { value: "50+", label: "Partner organizations" },
+      {
+        value: "$300K+",
+        label: "Student stipends facilitated through partner programs",
+      },
+    ]);
+    expect(impactMethodologyNote).toBe(
+      "Figures represent cumulative Future Physicians activity. Student stipends reflect funding facilitated through partner programs rather than funds paid directly by FP.",
+    );
   });
 
   it("uses the approved narrow seminar description without an unsupported affiliation", () => {
@@ -92,11 +106,41 @@ describe("public site configuration", () => {
     expect(allFaqItems.map((item) => item.question)).toEqual(
       expect.arrayContaining([
         "How do I create a student profile?",
-        "How do external applications work?",
+        "How do applications work?",
         "How does FP verify organizations?",
         "Where can I find upcoming events?",
         "How do I contact support?",
       ]),
     );
+  });
+
+  it("uses the six approved homepage FAQ questions in the requested order", () => {
+    expect(homepageFaqItems.map((item) => item.question)).toEqual([
+      "Is Future Physicians free for students?",
+      "Who can create a student profile?",
+      "How are opportunities verified?",
+      "Does Future Physicians guarantee a placement?",
+      "How do applications work?",
+      "How can an organization work with Future Physicians?",
+    ]);
+
+    const answers = new Map(
+      homepageFaqItems.map((item) => [item.question, item.answer]),
+    );
+    expect(answers.get("Is Future Physicians free for students?")).toMatch(
+      /is free/i,
+    );
+    expect(answers.get("How are opportunities verified?")).toMatch(
+      /official source/i,
+    );
+    expect(
+      answers.get("Does Future Physicians guarantee a placement?"),
+    ).toMatch(/does not guarantee/i);
+    expect(answers.get("How do applications work?")).toMatch(
+      /FP Dashboard.*official application path/i,
+    );
+    expect(
+      answers.get("How can an organization work with Future Physicians?"),
+    ).toContain("outreach@futurephysicians.org");
   });
 });

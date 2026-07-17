@@ -16,7 +16,7 @@ export function DashboardPreview({
   }
 
   return (
-    <figure className="relative mx-auto w-full max-w-[620px]">
+    <figure className="relative mx-auto w-full max-w-[680px]">
       <figcaption className="sr-only">
         Illustrative student dashboard preview
       </figcaption>

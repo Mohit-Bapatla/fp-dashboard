@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { getDashboardEntryAction } from "@/components/marketing/dashboard-entry-button";
 
 describe("dashboard entry actions", () => {
-  it("sends a signed-out partner through sign-up to protected onboarding", () => {
+  it("sends signed-out partner acquisition to the approved outreach inquiry", () => {
     expect(
       getDashboardEntryAction({
         intent: "partner",
@@ -11,9 +11,9 @@ describe("dashboard entry actions", () => {
         role: null,
       }),
     ).toEqual({
-      href: "/sign-up?redirect_url=%2Fpartner-onboarding",
-      label: "Create Partner Workspace",
-      linkType: "internal",
+      href: "mailto:outreach@futurephysicians.org?subject=Future%20Physicians%20Partnership%20Inquiry",
+      label: "Contact Our Outreach Team",
+      linkType: "mailto",
     });
   });
 

@@ -4,7 +4,7 @@ import { getDashboardEntryAction } from "@/components/marketing/dashboard-entry-
 import { getPublicOpportunityCardAction } from "@/components/opportunities/public-opportunity-card";
 
 describe("role-aware marketing actions", () => {
-  it("routes a signed-out partner through sign-up to protected onboarding", () => {
+  it("routes signed-out partner acquisition to the approved outreach inquiry", () => {
     const action = getDashboardEntryAction({
       intent: "partner",
       returnTo: "/dashboard/partner",
@@ -12,9 +12,9 @@ describe("role-aware marketing actions", () => {
     });
 
     expect(action).toEqual({
-      href: "/sign-up?redirect_url=%2Fpartner-onboarding",
-      label: "Create Partner Workspace",
-      linkType: "internal",
+      href: "mailto:outreach@futurephysicians.org?subject=Future%20Physicians%20Partnership%20Inquiry",
+      label: "Contact Our Outreach Team",
+      linkType: "mailto",
     });
   });
 

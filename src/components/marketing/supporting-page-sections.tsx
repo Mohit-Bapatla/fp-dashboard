@@ -23,7 +23,7 @@ export function MarketingSection({
 }) {
   return (
     <section
-      className={cn("py-16 sm:py-20", sectionTone[tone], className)}
+      className={cn("py-20 sm:py-24 lg:py-28", sectionTone[tone], className)}
       id={id}
     >
       <MarketingContainer>{children}</MarketingContainer>

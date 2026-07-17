@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import {
+  emailLinkClass,
   PageHero,
   SectionHeading,
   primaryButtonClass,
@@ -34,12 +35,14 @@ const contactRoutes = [
   {
     title: "General Support",
     email: siteConfig.emails.support,
+    href: siteConfig.mailto.support,
     description: "Account, application, opportunity, or general questions.",
     icon: MessageCircleQuestion,
   },
   {
     title: "Partnerships",
     email: siteConfig.emails.partnerships,
+    href: siteConfig.mailto.partnerships,
     description:
       "Hospitals, clinics, laboratories, universities, schools, nonprofits, and program collaborations.",
     icon: Building2,
@@ -47,6 +50,7 @@ const contactRoutes = [
   {
     title: "Fundraising",
     email: siteConfig.emails.fundraising,
+    href: siteConfig.mailto.fundraising,
     description: "Grants, sponsorships, donations, and funding opportunities.",
     icon: CircleDollarSign,
   },
@@ -58,10 +62,7 @@ export default function ContactPage() {
       <PageHero
         actions={
           <>
-            <a
-              className={primaryButtonClass}
-              href={`mailto:${siteConfig.emails.support}`}
-            >
+            <a className={primaryButtonClass} href={siteConfig.mailto.support}>
               Email general support
               <Mail aria-hidden="true" className="size-4" />
             </a>
@@ -83,9 +84,15 @@ export default function ContactPage() {
         />
         <div className="mt-10 grid gap-5 lg:grid-cols-3">
           {contactRoutes.map(
-            ({ description: routeDescription, email, icon: Icon, title }) => (
+            ({
+              description: routeDescription,
+              email,
+              href,
+              icon: Icon,
+              title,
+            }) => (
               <article
-                className="flex h-full flex-col rounded-3xl border border-border bg-white p-7 shadow-[0_14px_40px_rgba(16,33,58,0.07)]"
+                className="flex h-full flex-col rounded-3xl border border-border bg-white p-5 shadow-[0_14px_40px_rgba(16,33,58,0.07)] sm:p-7"
                 key={title}
               >
                 <div className="flex size-12 items-center justify-center rounded-2xl bg-blue-surface text-primary">
@@ -97,12 +104,12 @@ export default function ContactPage() {
                 <p className="mt-3 flex-1 text-base leading-7 text-muted-foreground">
                   {routeDescription}
                 </p>
-                <a
-                  className="mt-6 inline-flex items-center gap-2 break-all rounded-md text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  href={`mailto:${email}`}
-                >
+                <a className={`${emailLinkClass} mt-6`} href={href}>
                   {email}
-                  <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
+                  <ArrowRight
+                    aria-hidden="true"
+                    className="ml-2 inline size-4 shrink-0 align-middle"
+                  />
                 </a>
               </article>
             ),

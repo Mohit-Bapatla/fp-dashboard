@@ -20,7 +20,7 @@ const navLinkClass =
 
 export async function MarketingHeader() {
   const { userId } = await getMarketingViewer();
-  const accountAction = <DashboardEntryButton className="w-full lg:w-auto" />;
+  const accountAction = <DashboardEntryButton className="w-full xl:w-auto" />;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/90 bg-white/95 backdrop-blur-xl supports-[backdrop-filter]:bg-white/85">
@@ -29,7 +29,7 @@ export async function MarketingHeader() {
 
         <nav
           aria-label="Primary navigation"
-          className="hidden items-center lg:flex"
+          className="hidden items-center xl:flex"
         >
           <DesktopExploreMenu />
           {primaryNavigation.map((item) => (
@@ -39,7 +39,7 @@ export async function MarketingHeader() {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-2 lg:flex">
+        <div className="hidden items-center gap-2 xl:flex">
           {!userId ? (
             <Link
               className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-semibold text-brand-navy transition hover:bg-blue-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

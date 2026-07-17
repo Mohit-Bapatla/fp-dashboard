@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { DashboardEntryButton } from "@/components/marketing/dashboard-entry-button";
+import { FaqList } from "@/components/marketing/faq-list";
 import {
   FeatureCard,
   MarketingSection,
@@ -310,18 +311,7 @@ export default function StudentsPage() {
           eyebrow="Student FAQ"
           title="Know what the platform can—and cannot—do."
         />
-        <div className="mt-8 divide-y divide-border rounded-2xl border border-border bg-white px-5 sm:px-7">
-          {studentFaqs.map((item) => (
-            <details className="group py-5" key={item.question}>
-              <summary className="flex min-h-11 cursor-pointer list-none items-center rounded-md pr-8 font-semibold text-brand-navy marker:content-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">
-                {item.question}
-              </summary>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
-                {item.answer}
-              </p>
-            </details>
-          ))}
-        </div>
+        <FaqList className="mt-8" items={studentFaqs} />
         <div className="mt-6">
           <Link className={textLinkClass} href="/faq">
             Read all frequently asked questions
