@@ -33,6 +33,23 @@ type StaffOutreachPageProps = {
   }>;
 };
 
+const visibleOutreachTaskScope: Prisma.OutreachTaskWhereInput = {
+  AND: [
+    {
+      OR: [
+        { partnerOrganizationId: null },
+        { partnerOrganization: { isSystemPlaceholder: false } },
+      ],
+    },
+    {
+      OR: [
+        { contactId: null },
+        { contact: { organization: { isSystemPlaceholder: false } } },
+      ],
+    },
+  ],
+};
+
 export default async function StaffOutreachPage({
   searchParams,
 }: StaffOutreachPageProps) {
@@ -47,10 +64,12 @@ export default async function StaffOutreachPage({
   const [organizations, contacts, staffUsers, placementRequests] =
     await Promise.all([
       prisma.partnerOrganization.findMany({
+        where: { isSystemPlaceholder: false },
         orderBy: { name: "asc" },
         select: { id: true, name: true },
       }),
       prisma.outreachContact.findMany({
+        where: { organization: { isSystemPlaceholder: false } },
         orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
         select: {
           id: true,
@@ -96,7 +115,9 @@ export default async function StaffOutreachPage({
     params.assignedToId && staffIds.has(params.assignedToId)
       ? params.assignedToId
       : "";
-  const where: Prisma.OutreachTaskWhereInput = {};
+  const where: Prisma.OutreachTaskWhereInput = {
+    ...visibleOutreachTaskScope,
+  };
 
   if (query) {
     where.OR = [
@@ -149,18 +170,19 @@ export default async function StaffOutreachPage({
           title: true,
         },
       }),
-      prisma.outreachTask.count(),
+      prisma.outreachTask.count({ where: visibleOutreachTaskScope }),
       prisma.outreachTask.count({
         where,
       }),
       prisma.outreachTask.count({
         where: {
+          ...visibleOutreachTaskScope,
           dueAt: { lte: new Date() },
           status: { not: "COMPLETED" },
         },
       }),
       prisma.outreachTask.count({
-        where: { status: "BLOCKED" },
+        where: { ...visibleOutreachTaskScope, status: "BLOCKED" },
       }),
     ]);
   const totalPages = getTotalPages(filteredCount, pagination.pageSize);

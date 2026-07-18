@@ -63,16 +63,24 @@ export default async function PartnerAnalyticsPage() {
   ] = await Promise.all([
     prisma.opportunity.count({
       where: {
+        visibility: "PUBLIC_DIRECTORY",
         organizationId: {
           in: organizationIds,
+        },
+        organization: {
+          isSystemPlaceholder: false,
         },
       },
     }),
     prisma.application.count({
       where: {
         opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
           organizationId: {
             in: organizationIds,
+          },
+          organization: {
+            isSystemPlaceholder: false,
           },
         },
       },
@@ -80,8 +88,12 @@ export default async function PartnerAnalyticsPage() {
     prisma.opportunity.groupBy({
       by: ["status"],
       where: {
+        visibility: "PUBLIC_DIRECTORY",
         organizationId: {
           in: organizationIds,
+        },
+        organization: {
+          isSystemPlaceholder: false,
         },
       },
       _count: {
@@ -92,8 +104,12 @@ export default async function PartnerAnalyticsPage() {
       by: ["status"],
       where: {
         opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
           organizationId: {
             in: organizationIds,
+          },
+          organization: {
+            isSystemPlaceholder: false,
           },
         },
       },
@@ -103,8 +119,12 @@ export default async function PartnerAnalyticsPage() {
     }),
     prisma.opportunity.findMany({
       where: {
+        visibility: "PUBLIC_DIRECTORY",
         organizationId: {
           in: organizationIds,
+        },
+        organization: {
+          isSystemPlaceholder: false,
         },
       },
       orderBy: {

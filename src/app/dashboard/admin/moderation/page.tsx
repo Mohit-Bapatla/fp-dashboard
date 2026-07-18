@@ -21,6 +21,7 @@ export default async function AdminModerationPage() {
   const [partners, opportunities] = await Promise.all([
     prisma.partnerOrganization.findMany({
       where: {
+        isSystemPlaceholder: false,
         verificationStatus: {
           not: "VERIFIED",
         },
@@ -41,6 +42,8 @@ export default async function AdminModerationPage() {
     }),
     prisma.opportunity.findMany({
       where: {
+        organization: { isSystemPlaceholder: false },
+        visibility: "PUBLIC_DIRECTORY",
         OR: [
           {
             status: {

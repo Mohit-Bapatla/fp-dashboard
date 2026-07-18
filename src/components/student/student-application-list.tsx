@@ -15,7 +15,10 @@ import {
 } from "@/components/onboarding/application-onboarding-list";
 import { ServiceHourPanel } from "@/components/service-hours/service-hour-panel";
 import { StudentApplicationStatusBadge } from "@/components/student/student-application-status-badge";
-import type { ApplicationStatus } from "@/generated/prisma/enums";
+import type {
+  ApplicationStatus,
+  OpportunityVisibility,
+} from "@/generated/prisma/enums";
 import type { RecordCommentThread as RecordCommentThreadData } from "@/lib/comments/record-comments";
 import type { InterviewRequestView } from "@/lib/interviews/interviews";
 import type { ServiceHourRecordView } from "@/lib/service-hours/service-hours";
@@ -31,7 +34,9 @@ export type StudentApplicationListItem = {
   } | null;
   opportunity: {
     id: string;
+    studentOrganizationName: string | null;
     title: string;
+    visibility: OpportunityVisibility;
     organization: {
       name: string;
     };
@@ -89,7 +94,7 @@ export function StudentApplicationList({
         description={
           hasAnyApplications
             ? "Try changing the view or status filter to see more applications."
-            : "Submitted applications will appear here after you apply to a published opportunity."
+            : "Application workspaces will appear here after you start preparing or submit an application."
         }
         icon={ClipboardCheck}
         title={
@@ -113,9 +118,7 @@ export function StudentApplicationList({
               <div className="flex flex-wrap items-center gap-2">
                 <StudentApplicationStatusBadge status={application.status} />
                 <span className="text-xs font-medium text-muted-foreground">
-                  {workspaceStatuses.has(application.status)
-                    ? "Updated "
-                    : "Submitted "}
+                  {application.submittedAt ? "Submitted " : "Started "}
                   {formatDate(application.submittedAt ?? application.createdAt)}
                 </span>
               </div>
@@ -123,8 +126,19 @@ export function StudentApplicationList({
                 {application.opportunity.title}
               </h2>
               <p className="mt-2 text-sm font-medium text-muted-foreground">
-                {application.opportunity.organization.name}
+                {application.opportunity.studentOrganizationName ??
+                  application.opportunity.organization.name}
               </p>
+              {application.opportunity.visibility === "STUDENT_PRIVATE" ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <span className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700">
+                    Private
+                  </span>
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">
+                    Not verified
+                  </span>
+                </div>
+              ) : null}
             </div>
             <Link
               className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
@@ -149,7 +163,10 @@ export function StudentApplicationList({
                 Short statement
               </p>
               <p className="mt-2 whitespace-pre-line text-sm leading-6 text-muted-foreground">
-                {application.statement || "No statement submitted."}
+                {application.statement ||
+                  (workspaceStatuses.has(application.status)
+                    ? "No statement added yet."
+                    : "No statement recorded.")}
               </p>
             </div>
             <div className="rounded-lg border border-border bg-muted/30 p-4">

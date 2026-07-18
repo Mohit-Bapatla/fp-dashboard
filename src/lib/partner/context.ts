@@ -10,6 +10,7 @@ export async function getCurrentPartnerContext() {
   const memberships = await prisma.partnerMember.findMany({
     where: {
       userId: user.id,
+      organization: { isSystemPlaceholder: false },
     },
     orderBy: [
       {

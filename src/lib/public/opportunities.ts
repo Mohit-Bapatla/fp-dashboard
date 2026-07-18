@@ -17,6 +17,7 @@ export async function getPublicOpportunity(opportunityId: string) {
       eligibilityRequirements: true,
       id: true,
       location: true,
+      opensAt: true,
       paidStatus: true,
       publishedAt: true,
       remoteType: true,

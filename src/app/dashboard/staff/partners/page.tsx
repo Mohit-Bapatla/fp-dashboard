@@ -35,7 +35,9 @@ export default async function StaffPartnersPage({
   const query = params.q?.trim() ?? "";
   const status =
     params.status && isPartnerStatus(params.status) ? params.status : "";
-  const where: Prisma.PartnerOrganizationWhereInput = {};
+  const where: Prisma.PartnerOrganizationWhereInput = {
+    isSystemPlaceholder: false,
+  };
 
   if (query) {
     where.OR = [
@@ -78,9 +80,12 @@ export default async function StaffPartnersPage({
           },
         },
       }),
-      prisma.partnerOrganization.count(),
+      prisma.partnerOrganization.count({
+        where: { isSystemPlaceholder: false },
+      }),
       prisma.partnerOrganization.count({
         where: {
+          isSystemPlaceholder: false,
           nextFollowUpAt: {
             lte: new Date(),
           },
@@ -88,6 +93,7 @@ export default async function StaffPartnersPage({
       }),
       prisma.partnerOrganization.count({
         where: {
+          isSystemPlaceholder: false,
           status: "PARTNERED",
         },
       }),

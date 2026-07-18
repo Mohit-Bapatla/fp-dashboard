@@ -10,6 +10,7 @@ export default async function NewAdminOpportunityPage() {
   await assertAdminAccess();
 
   const organizations = await prisma.partnerOrganization.findMany({
+    where: { isSystemPlaceholder: false },
     orderBy: {
       name: "asc",
     },

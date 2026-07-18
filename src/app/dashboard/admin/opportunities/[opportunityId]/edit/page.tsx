@@ -29,9 +29,11 @@ export default async function EditAdminOpportunityPage({
 
   const { opportunityId } = await params;
   const [opportunity, organizations] = await Promise.all([
-    prisma.opportunity.findUnique({
+    prisma.opportunity.findFirst({
       where: {
         id: opportunityId,
+        organization: { isSystemPlaceholder: false },
+        visibility: "PUBLIC_DIRECTORY",
       },
       select: {
         id: true,
@@ -70,6 +72,7 @@ export default async function EditAdminOpportunityPage({
       },
     }),
     prisma.partnerOrganization.findMany({
+      where: { isSystemPlaceholder: false },
       orderBy: {
         name: "asc",
       },

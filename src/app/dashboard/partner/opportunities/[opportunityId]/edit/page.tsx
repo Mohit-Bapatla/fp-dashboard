@@ -74,8 +74,12 @@ export default async function EditPartnerOpportunityPage({
   const opportunity = await prisma.opportunity.findFirst({
     where: {
       id: opportunityId,
+      visibility: "PUBLIC_DIRECTORY",
       organizationId: {
         in: context.organizationIds,
+      },
+      organization: {
+        isSystemPlaceholder: false,
       },
     },
     select: {

@@ -113,7 +113,9 @@ async function canSubmitFeedback({
         where: {
           id: entityId,
           opportunity: {
+            visibility: "PUBLIC_DIRECTORY",
             organization: {
+              isSystemPlaceholder: false,
               members: {
                 some: {
                   userId,

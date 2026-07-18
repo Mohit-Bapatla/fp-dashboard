@@ -1,16 +1,19 @@
-import { BellRing, Check, CheckCheck } from "lucide-react";
-
+import { ArrowRight, BellRing, Check, CheckCheck, X } from "lucide-react";
 import {
+  dismissNotification,
   markAllNotificationsRead,
   markNotificationRead,
+  openNotification,
 } from "@/app/dashboard/notifications/actions";
 
 type NotificationListItem = {
+  actionUrl: string | null;
   body: string | null;
   createdAt: Date;
   id: string;
   readAt: Date | null;
   title: string;
+  type: string;
 };
 
 type NotificationListProps = {
@@ -95,24 +98,101 @@ export function NotificationList({
               </p>
             </div>
             {!notification.readAt ? (
-              <form action={markNotificationRead}>
-                <input
-                  name="notificationId"
-                  type="hidden"
-                  value={notification.id}
+              <div className="flex flex-wrap gap-2">
+                {notification.actionUrl ? (
+                  <OpenNotificationButton
+                    notificationId={notification.id}
+                    notificationTitle={notification.title}
+                    primary
+                  />
+                ) : null}
+                <form action={markNotificationRead}>
+                  <input
+                    name="notificationId"
+                    type="hidden"
+                    value={notification.id}
+                  />
+                  <button
+                    aria-label={`Mark ${notification.title} as read`}
+                    className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+                    type="submit"
+                  >
+                    <Check aria-hidden="true" className="h-4 w-4" />
+                    Mark read
+                  </button>
+                </form>
+                <DismissNotificationButton
+                  notificationId={notification.id}
+                  notificationTitle={notification.title}
                 />
-                <button
-                  className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
-                  type="submit"
-                >
-                  <Check aria-hidden="true" className="h-4 w-4" />
-                  Mark read
-                </button>
-              </form>
-            ) : null}
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {notification.actionUrl ? (
+                  <OpenNotificationButton
+                    notificationId={notification.id}
+                    notificationTitle={notification.title}
+                  />
+                ) : null}
+                <DismissNotificationButton
+                  notificationId={notification.id}
+                  notificationTitle={notification.title}
+                />
+              </div>
+            )}
           </article>
         ))}
       </div>
     </section>
+  );
+}
+
+function OpenNotificationButton({
+  notificationId,
+  notificationTitle,
+  primary = false,
+}: {
+  notificationId: string;
+  notificationTitle: string;
+  primary?: boolean;
+}) {
+  return (
+    <form action={openNotification}>
+      <input name="notificationId" type="hidden" value={notificationId} />
+      <button
+        aria-label={`Open ${notificationTitle}`}
+        className={
+          primary
+            ? "inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+            : "inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+        }
+        type="submit"
+      >
+        Open
+        <ArrowRight aria-hidden="true" className="h-4 w-4" />
+      </button>
+    </form>
+  );
+}
+
+function DismissNotificationButton({
+  notificationId,
+  notificationTitle,
+}: {
+  notificationId: string;
+  notificationTitle: string;
+}) {
+  return (
+    <form action={dismissNotification}>
+      <input name="notificationId" type="hidden" value={notificationId} />
+      <button
+        aria-label={`Dismiss ${notificationTitle}`}
+        className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        type="submit"
+      >
+        <X aria-hidden="true" className="h-4 w-4" />
+        Dismiss
+      </button>
+    </form>
   );
 }

@@ -72,8 +72,12 @@ export default async function PartnerOpportunitiesPage({
   }
 
   const where = {
+    visibility: "PUBLIC_DIRECTORY" as const,
     organizationId: {
       in: organizationIds,
+    },
+    organization: {
+      isSystemPlaceholder: false,
     },
     ...(status ? { status } : {}),
   };
@@ -110,31 +114,47 @@ export default async function PartnerOpportunitiesPage({
       }),
       prisma.opportunity.count({
         where: {
+          visibility: "PUBLIC_DIRECTORY",
           organizationId: {
             in: organizationIds,
+          },
+          organization: {
+            isSystemPlaceholder: false,
           },
         },
       }),
       prisma.opportunity.count({
         where: {
+          visibility: "PUBLIC_DIRECTORY",
           organizationId: {
             in: organizationIds,
+          },
+          organization: {
+            isSystemPlaceholder: false,
           },
           status: "DRAFT",
         },
       }),
       prisma.opportunity.count({
         where: {
+          visibility: "PUBLIC_DIRECTORY",
           organizationId: {
             in: organizationIds,
+          },
+          organization: {
+            isSystemPlaceholder: false,
           },
           status: "PENDING_APPROVAL",
         },
       }),
       prisma.opportunity.count({
         where: {
+          visibility: "PUBLIC_DIRECTORY",
           organizationId: {
             in: organizationIds,
+          },
+          organization: {
+            isSystemPlaceholder: false,
           },
           status: "PUBLISHED",
         },

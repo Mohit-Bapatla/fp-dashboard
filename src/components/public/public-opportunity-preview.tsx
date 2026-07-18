@@ -38,8 +38,8 @@ export function PublicOpportunityPreview({
 }: {
   opportunity: PublicOpportunity;
 }) {
-  const applyPath = `/dashboard/student/opportunities/${opportunity.id}/apply`;
-  const signInHref = `/sign-in?redirect_url=${encodeURIComponent(applyPath)}`;
+  const opportunityPath = `/dashboard/student/opportunities/${opportunity.id}`;
+  const signInHref = `/sign-in?redirect_url=${encodeURIComponent(opportunityPath)}`;
 
   return (
     <main className="min-h-screen bg-muted/30 px-4 py-8 text-foreground sm:px-6 lg:px-8">
@@ -74,7 +74,7 @@ export function PublicOpportunityPreview({
               href={signInHref}
             >
               <LogIn aria-hidden="true" className="h-4 w-4" />
-              Sign in to apply
+              Sign in to view and prepare
             </Link>
             <Link
               className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
@@ -104,6 +104,11 @@ export function PublicOpportunityPreview({
           <OpportunityFact
             label="Paid status"
             value={fieldValue(opportunity.paidStatus)}
+          />
+          <OpportunityFact
+            icon={CalendarDays}
+            label="Applications open"
+            value={formatDate(opportunity.opensAt)}
           />
           <OpportunityFact
             icon={CalendarDays}
@@ -163,17 +168,18 @@ export function PublicOpportunityPreview({
 
             <section className="rounded-lg border border-border bg-background p-6 shadow-sm">
               <h2 className="text-base font-semibold text-foreground">
-                Ready to apply?
+                Plan your application
               </h2>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                Applications are handled inside the protected Future Physicians
-                student dashboard.
+                Review current availability and prepare inside the protected
+                Future Physicians student dashboard. Submission controls appear
+                only when the verified opportunity is open.
               </p>
               <Link
                 className="mt-5 inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
                 href={signInHref}
               >
-                Sign in to apply
+                Sign in to view and prepare
               </Link>
             </section>
           </aside>

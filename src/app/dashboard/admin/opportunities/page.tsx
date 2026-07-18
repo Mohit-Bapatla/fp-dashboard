@@ -55,7 +55,10 @@ export default async function AdminOpportunitiesPage({
     params.type,
     opportunityTypeOptions,
   );
-  const where: Prisma.OpportunityWhereInput = {};
+  const where: Prisma.OpportunityWhereInput = {
+    organization: { isSystemPlaceholder: false },
+    visibility: "PUBLIC_DIRECTORY",
+  };
 
   if (query) {
     where.OR = [
@@ -121,18 +124,29 @@ export default async function AdminOpportunitiesPage({
           },
         },
       }),
-      prisma.opportunity.count(),
+      prisma.opportunity.count({
+        where: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
+        },
+      }),
       prisma.opportunity.count({
         where: {
           status: "PUBLISHED",
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
         },
       }),
       prisma.opportunity.count({
         where: {
           status: "DRAFT",
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
         },
       }),
-      prisma.partnerOrganization.count(),
+      prisma.partnerOrganization.count({
+        where: { isSystemPlaceholder: false },
+      }),
     ]);
 
   const redirectSearchParams = new URLSearchParams();

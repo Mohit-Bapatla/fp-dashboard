@@ -108,6 +108,12 @@ export async function getAdvancedAnalytics(
       select: {
         availability: true,
         applications: {
+          where: {
+            opportunity: {
+              visibility: "PUBLIC_DIRECTORY",
+              organization: { isSystemPlaceholder: false },
+            },
+          },
           select: {
             id: true,
           },
@@ -133,6 +139,10 @@ export async function getAdvancedAnalytics(
     }),
     prisma.application.count({
       where: {
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
+        },
         status: {
           not: "DRAFT",
         },
@@ -141,6 +151,10 @@ export async function getAdvancedAnalytics(
     }),
     prisma.application.count({
       where: {
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
+        },
         reviewedAt: {
           not: null,
         },
@@ -149,6 +163,10 @@ export async function getAdvancedAnalytics(
     }),
     prisma.application.count({
       where: {
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
+        },
         status: {
           in: ["INTERVIEW", "ACCEPTED"],
         },
@@ -157,6 +175,10 @@ export async function getAdvancedAnalytics(
     }),
     prisma.application.count({
       where: {
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
+        },
         status: "ACCEPTED",
         ...inRangeWhere(range, "updatedAt"),
       },
@@ -181,6 +203,10 @@ export async function getAdvancedAnalytics(
       },
     }),
     prisma.opportunity.findMany({
+      where: {
+        visibility: "PUBLIC_DIRECTORY",
+        organization: { isSystemPlaceholder: false },
+      },
       orderBy: {
         applications: {
           _count: "desc",

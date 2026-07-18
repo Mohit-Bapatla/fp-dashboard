@@ -1,4 +1,5 @@
 import { BriefcaseBusiness } from "lucide-react";
+import Link from "next/link";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { RoleBadge } from "@/components/dashboard/role-badge";
@@ -163,6 +164,7 @@ export default async function StudentOpportunitiesPage({
         location: true,
         remoteType: true,
         paidStatus: true,
+        opensAt: true,
         deadline: true,
         capacity: true,
         eligibilityRequirements: true,
@@ -240,8 +242,12 @@ export default async function StudentOpportunitiesPage({
       parseEmbedding(record.embedding),
     ]),
   );
+  const availabilityCheckAt = new Date();
   const opportunitiesWithMatches = opportunities.map((opportunity) => ({
     ...opportunity,
+    preparationOnly:
+      opportunity.availabilityStatus === "OPENING_SOON" ||
+      Boolean(opportunity.opensAt && opportunity.opensAt > availabilityCheckAt),
     match: getOpportunityMatchScore({
       opportunity,
       profile,
@@ -305,13 +311,21 @@ export default async function StudentOpportunitiesPage({
               Browse Opportunities
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
-              Browse and apply to published healthcare opportunities from Future
-              Physicians partner organizations. Filter by specialty, location,
-              format, and more.
+              Browse verified healthcare opportunities, save promising programs,
+              and start preparing before applications open. Filter by specialty,
+              location, format, and more.
             </p>
           </div>
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-primary">
-            <BriefcaseBusiness aria-hidden="true" className="h-6 w-6" />
+          <div className="flex shrink-0 flex-col items-stretch gap-3 sm:items-end">
+            <div className="flex h-12 w-12 items-center justify-center self-end rounded-lg border border-border bg-muted text-primary">
+              <BriefcaseBusiness aria-hidden="true" className="h-6 w-6" />
+            </div>
+            <Link
+              className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground"
+              href="/dashboard/student/opportunities/add-external"
+            >
+              Add external application
+            </Link>
           </div>
         </header>
 

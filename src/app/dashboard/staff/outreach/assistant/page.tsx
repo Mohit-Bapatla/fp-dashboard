@@ -23,6 +23,7 @@ export default async function StaffOutreachAssistantPage() {
 
   const [organizations, contacts, placementRequests] = await Promise.all([
     prisma.partnerOrganization.findMany({
+      where: { isSystemPlaceholder: false },
       orderBy: {
         name: "asc",
       },

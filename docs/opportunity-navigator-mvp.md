@@ -6,7 +6,7 @@ The original product already supported authenticated student, partner, staff, an
 
 ## Implemented MVP scope
 
-This MVP adds explicit opportunity provenance, source verification and availability, structured eligibility fields, conservative eligibility evaluation, student profile facts needed for matching, real saved/follow records, application preparation workspaces and checklists, correction reports, an admin verification queue, guarded publishing, safer imports, relationship disclosures, and official links.
+This MVP adds explicit opportunity provenance, source verification and availability, structured eligibility fields, conservative eligibility evaluation, student profile facts needed for matching, real saved/follow records, application preparation workspaces and interactive tasks, correction reports, an admin verification queue, guarded publishing, safer imports, relationship disclosures, official links, student reminders, weekly plans, and owner-scoped external opportunities. The current student copilot behavior and deferred scope are documented in `student-application-copilot.md`.
 
 ## Entities and relationships
 
@@ -14,7 +14,7 @@ This MVP adds explicit opportunity provenance, source verification and availabil
 - `applicationMethod` explicitly selects `EXTERNAL_PORTAL`, `FP_INTERNAL`, or `FP_REFERRAL`. External-public opportunities are always forced to the host-portal flow.
 - `Opportunity.verifiedBy` is a named optional relation to `User`; verification dates, notes, status, availability, cycle, location, eligibility, and effort are structured fields.
 - `SavedOpportunity` belongs to one student profile and one opportunity, with a unique pair and optional reopening follow state.
-- `Application` keeps all historical statuses and adds preparation statuses and workspace fields. `ApplicationChecklistItem` is separate from post-acceptance onboarding.
+- `Application` keeps all historical statuses and adds preparation statuses and workspace fields. `ApplicationTask` maps the former checklist table for a non-destructive transition and remains separate from post-acceptance onboarding.
 - `OpportunityCorrectionReport` records authenticated reports and admin resolution without exposing reporter identity publicly.
 
 ## Migration notes
@@ -31,7 +31,7 @@ External and partner listings cannot publish unless they have a safe HTTP(S) off
 
 ## Application workspace workflow
 
-Starting an application upserts one student-owned `PREPARING` application, records the configured application method, creates checklist items from known documents, resume selection, essays, and external confirmation, and redirects to the workspace. It sends no reviewer email and makes no submission claim. For `EXTERNAL_PORTAL`, students open the official host portal themselves and explicitly confirm their own submission; this path does not require an FP statement or email host members. `FP_INTERNAL` and `FP_REFERRAL` retain the configured internal submission/email workflow. Explicit submission updates a preparatory record to `SUBMITTED`; submitted, review, interview, waitlist, outcome, and withdrawn states remain duplicate-blocked.
+Starting an application upserts one student-owned `PREPARING` application, records the configured application method, creates stable typed tasks from known documents, resume selection, essays, and submission method, and redirects to the workspace. Progress and next action are calculated from tasks. It sends no reviewer email and makes no submission claim. For `EXTERNAL_PORTAL`, students open the official host portal themselves and explicitly confirm their own submission; this path does not require an FP statement or email host members. `FP_INTERNAL` and `FP_REFERRAL` retain the configured internal submission/email workflow. Explicit submission updates a preparatory record to `SUBMITTED`; submitted, review, interview, waitlist, outcome, and withdrawn states remain duplicate-blocked.
 
 ## Authorization and privacy
 
@@ -39,10 +39,10 @@ Student actions derive the profile from Clerk-authenticated user context and nev
 
 ## Known limitations
 
-- Reopening alerts are stored but no scheduled delivery job is included.
+- Reminder delivery uses one daily Vercel job, so two-hour interview delivery and immediate post-quiet-hour delivery are deferred.
 - Schedule compatibility remains unknown until both profile and listing availability use a richer shared structure.
 - Geographic checks are deliberately narrow; distance calculations and geocoding are not included.
-- Checklist editing is foundational; document-specific uploads and recommendation workflows remain future work.
+- Priority 2-4 activities, stories, resume-version management, documents, recommendation contacts, answers, interview preparation, and outcomes are deferred; speculative schema is not shipped in this MVP.
 - This is not a verified catalog, browser extension, full AI copilot, or automatic application system.
 
 ## Recommended next phase
