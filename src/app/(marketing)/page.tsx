@@ -153,12 +153,15 @@ export default function HomePage() {
         </MarketingContainer>
       </section>
 
-      <section className="relative overflow-hidden bg-[linear-gradient(135deg,#0c2445_0%,#164b94_55%,#087b82_125%)] py-20 sm:py-24 lg:py-28">
+      <section
+        className="relative overflow-hidden bg-[linear-gradient(135deg,#0c2445_0%,#164b94_55%,#087b82_125%)] py-20 sm:py-24 lg:py-28"
+        id="opportunity-showcase"
+      >
         <div
           aria-hidden="true"
           className="absolute -right-24 top-10 size-96 rounded-full bg-cyan-300/15 blur-3xl"
         />
-        <MarketingContainer className="relative grid items-center gap-12 lg:grid-cols-[0.42fr_0.58fr] lg:gap-16">
+        <MarketingContainer className="relative grid items-center gap-12 lg:w-[96vw] lg:max-w-[1520px] lg:grid-cols-[minmax(240px,0.3fr)_minmax(0,0.7fr)] lg:gap-10 lg:px-0 xl:gap-12">
           <div className="max-w-lg text-white">
             <Sparkles aria-hidden="true" className="size-8 text-cyan-300" />
             <h2 className="mt-6 text-balance text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">
@@ -200,38 +203,10 @@ export default function HomePage() {
         </MarketingContainer>
       </section>
 
-      <section className="bg-brand-navy py-16 text-white sm:py-20">
-        <MarketingContainer className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
-          <div className="max-w-3xl">
-            <h2 className="text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-              Interested in becoming a Future Physicians partner?
-            </h2>
-            <p className="mt-4 text-pretty text-base leading-7 text-blue-100 sm:text-lg">
-              Hospitals, clinics, universities, research programs, schools, and
-              community organizations can work with FP to reach students and
-              manage opportunities.
-            </p>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-stretch">
-            <a
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-brand-navy shadow-lg transition hover:-translate-y-0.5 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-navy"
-              href={siteConfig.mailto.partnerships}
-            >
-              <Mail aria-hidden="true" className="size-4 text-primary" />
-              Contact Our Outreach Team
-            </a>
-            <Link
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-blue-100 underline-offset-4 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200"
-              href="/sign-in"
-            >
-              <LogIn aria-hidden="true" className="size-4" />
-              Current partner? Sign in
-            </Link>
-          </div>
-        </MarketingContainer>
-      </section>
-
-      <section className="bg-[#fbfaf7] py-20 sm:py-24 lg:py-28">
+      <section
+        className="bg-[#fbfaf7] py-20 sm:py-24 lg:py-28"
+        id="homepage-faq"
+      >
         <MarketingContainer>
           <div className="grid gap-10 lg:grid-cols-[0.42fr_0.58fr] lg:gap-16">
             <div className="max-w-lg">
@@ -273,6 +248,40 @@ export default function HomePage() {
                 Explore Opportunities
               </Link>
             </div>
+          </div>
+        </MarketingContainer>
+      </section>
+
+      <section
+        className="bg-brand-navy py-16 text-white sm:py-20"
+        id="partner-inquiry"
+      >
+        <MarketingContainer className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="max-w-3xl">
+            <h2 className="text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+              Interested in becoming a Future Physicians partner?
+            </h2>
+            <p className="mt-4 text-pretty text-base leading-7 text-blue-100 sm:text-lg">
+              Hospitals, clinics, universities, research programs, schools, and
+              community organizations can contact our team to discuss
+              opportunities for students.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-stretch">
+            <Link
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-brand-navy shadow-lg transition hover:-translate-y-0.5 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-navy"
+              href={siteConfig.contact.partnerships.href}
+            >
+              <Mail aria-hidden="true" className="size-4 text-primary" />
+              Contact Our Outreach Team
+            </Link>
+            <Link
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-blue-100 underline-offset-4 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200"
+              href="/sign-in"
+            >
+              <LogIn aria-hidden="true" className="size-4" />
+              Current partner? Sign in
+            </Link>
           </div>
         </MarketingContainer>
       </section>

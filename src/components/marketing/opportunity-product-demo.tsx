@@ -19,7 +19,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { FocusEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
@@ -201,9 +201,7 @@ export function OpportunityDiscoveryPreview() {
 
 export function OpportunityWalkthrough() {
   const [activeStep, setActiveStep] = useState(0);
-  const [focusPaused, setFocusPaused] = useState(false);
-  const [hoverPaused, setHoverPaused] = useState(false);
-  const [inView, setInView] = useState(true);
+  const [inView, setInView] = useState(false);
   const [manualPaused, setManualPaused] = useState(false);
   const [pageVisible, setPageVisible] = useState(true);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -219,12 +217,26 @@ export function OpportunityWalkthrough() {
 
   useEffect(() => {
     const node = rootRef.current;
-    if (!node || !("IntersectionObserver" in window)) {
+    if (!node) {
       return;
     }
+    if (!("IntersectionObserver" in window)) {
+      const frame = requestAnimationFrame(() => setInView(true));
+      return () => cancelAnimationFrame(frame);
+    }
     const observer = new IntersectionObserver(
-      ([entry]) => setInView(entry.isIntersecting),
-      { threshold: 0.2 },
+      ([entry]) => {
+        const referenceHeight = Math.min(
+          entry.boundingClientRect.height,
+          window.innerHeight,
+        );
+        const visibleRatio =
+          referenceHeight > 0
+            ? entry.intersectionRect.height / referenceHeight
+            : 0;
+        setInView(entry.isIntersecting && visibleRatio >= 0.7);
+      },
+      { threshold: Array.from({ length: 21 }, (_, index) => index / 20) },
     );
     observer.observe(node);
     return () => observer.disconnect();
@@ -239,13 +251,7 @@ export function OpportunityWalkthrough() {
       document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
 
-  const autoPaused =
-    reducedMotion ||
-    manualPaused ||
-    hoverPaused ||
-    focusPaused ||
-    !inView ||
-    !pageVisible;
+  const autoPaused = reducedMotion || manualPaused || !inView || !pageVisible;
 
   useEffect(() => {
     if (autoPaused) {
@@ -253,15 +259,9 @@ export function OpportunityWalkthrough() {
     }
     const timer = window.setInterval(() => {
       setActiveStep((current) => (current + 1) % walkthroughSteps.length);
-    }, 2000);
+    }, 4000);
     return () => window.clearInterval(timer);
   }, [autoPaused]);
-
-  function handleBlur(event: FocusEvent<HTMLDivElement>) {
-    if (!event.currentTarget.contains(event.relatedTarget)) {
-      setFocusPaused(false);
-    }
-  }
 
   const currentStep = walkthroughSteps[activeStep];
 
@@ -270,10 +270,6 @@ export function OpportunityWalkthrough() {
       aria-describedby="walkthrough-status"
       aria-label="Guided opportunity walkthrough"
       className="grid overflow-hidden rounded-[2rem] border border-indigo-200/70 bg-white shadow-[0_28px_80px_rgba(32,54,117,0.14)] lg:grid-cols-[310px_1fr]"
-      onBlur={handleBlur}
-      onFocusCapture={() => setFocusPaused(true)}
-      onMouseEnter={() => setHoverPaused(true)}
-      onMouseLeave={() => setHoverPaused(false)}
       ref={rootRef}
       role="region"
     >
@@ -318,7 +314,10 @@ export function OpportunityWalkthrough() {
                       ? "bg-indigo-700 text-white shadow-md shadow-indigo-900/15"
                       : "text-indigo-950 hover:bg-white/80",
                   )}
-                  onClick={() => setActiveStep(index)}
+                  onClick={() => {
+                    setActiveStep(index);
+                    setManualPaused(true);
+                  }}
                   type="button"
                 >
                   <span
@@ -350,9 +349,9 @@ export function OpportunityWalkthrough() {
           <p className="mt-1 text-xs leading-5 text-indigo-950/70">
             {currentStep.description}
           </p>
-          {(focusPaused || hoverPaused) && !manualPaused && !reducedMotion ? (
+          {manualPaused && !reducedMotion ? (
             <p className="mt-2 text-[10px] font-semibold text-indigo-700">
-              Paused while you interact
+              Paused. Select Play to resume automatic steps.
             </p>
           ) : null}
         </div>
