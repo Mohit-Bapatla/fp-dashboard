@@ -43,6 +43,8 @@ import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getStudentNotificationPreference } from "@/lib/student/notification-preferences";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { buildResumePresentation } from "@/lib/student/resume-presentation";
+import { getResumeAlignmentOpportunities } from "@/lib/student/resume-review-data";
 
 export const runtime = "nodejs";
 
@@ -187,6 +189,7 @@ export default async function StudentDashboardPage() {
           },
         }),
         getStudentNotificationPreference(profile.id),
+        getResumeAlignmentOpportunities(profile.id),
       ])
     : null;
 
@@ -195,6 +198,16 @@ export default async function StudentDashboardPage() {
   const applications = data?.[2] ?? [];
   const openingSoon = data?.[3] ?? [];
   const timezone = data?.[4]?.timezone ?? "America/Chicago";
+  const alignmentOpportunities = data?.[5] ?? [];
+  const resumePresentation = resume
+    ? buildResumePresentation({
+        alignmentOpportunities,
+        analyzedAt: resume.analyzedAt,
+        parsedText: resume.parsedText,
+        parseStatus: resume.parseStatus,
+        uploadedAt: resume.uploadedAt,
+      })
+    : null;
   const applicationSummaries = applications.map((application) => {
     const submissionAllowed =
       profile && canSubmitExistingApplication(application.status)
@@ -688,16 +701,15 @@ export default async function StudentDashboardPage() {
                   resume={
                     resume
                       ? {
-                          extractedCertifications:
-                            resume.extractedCertifications,
-                          extractedEducation: resume.extractedEducation,
-                          extractedExperience: resume.extractedExperience,
-                          extractedSkills: resume.extractedSkills,
+                          alignments: resumePresentation?.alignments ?? [],
+                          extractedSections:
+                            resumePresentation?.extractedSections ?? null,
                           fileName: resume.fileName,
                           id: resume.id,
                           parseFailureReason: resume.parseFailureReason,
-                          parsedSummary: resume.parsedSummary,
                           parseStatus: resume.parseStatus,
+                          review: resumePresentation?.review ?? null,
+                          uploadedAt: resume.uploadedAt,
                           updatedAt: resume.updatedAt,
                         }
                       : null

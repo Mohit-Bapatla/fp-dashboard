@@ -41,11 +41,7 @@ describe("resume parsing", () => {
     const education = parsed.education.join(" ");
     const experience = parsed.experience.join(" ");
 
-    expect(parsed.summary).toContain("Name: Synthetic Applicant");
-    expect(parsed.summary).toContain(
-      "Email: synthetic.applicant@example.invalid",
-    );
-    expect(parsed.summary).toContain("Phone: 202-555-0100");
+    expect(parsed.summary).toBeNull();
     expect(education).toContain("Example University");
     expect(education).toContain("BS Biology");
     expect(education).toContain("Expected May 2028");

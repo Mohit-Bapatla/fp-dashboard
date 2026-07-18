@@ -98,7 +98,10 @@ describe("resume parse action status transitions", () => {
   it("claims the record and completes after deterministic parsing succeeds", async () => {
     const result = await parseStudentResume(initialState, parseForm());
 
-    expect(result).toEqual({ error: null, success: "Resume parsed." });
+    expect(result).toEqual({
+      error: null,
+      success: "Resume analysis complete.",
+    });
     expect(mocks.resumeUpdateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         data: {
@@ -114,6 +117,7 @@ describe("resume parse action status transitions", () => {
     expect(mocks.resumeUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
+          analyzedAt: expect.any(Date),
           parseFailureReason: null,
           parseStatus: "COMPLETED",
         }),
@@ -151,6 +155,17 @@ describe("resume parse action status transitions", () => {
       error: "This resume is already being parsed. Please wait a moment.",
       success: null,
     });
+    expect(mocks.parseResume).not.toHaveBeenCalled();
+  });
+
+  it("rejects a forged resume id from another student", async () => {
+    const form = new FormData();
+    form.set("resumeId", "resume_other_student");
+
+    const result = await parseStudentResume(initialState, form);
+
+    expect(result).toEqual({ error: "Resume was not found.", success: null });
+    expect(mocks.resumeUpdateMany).not.toHaveBeenCalled();
     expect(mocks.parseResume).not.toHaveBeenCalled();
   });
 });

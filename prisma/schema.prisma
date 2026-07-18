@@ -503,6 +503,8 @@ model Resume {
   studentProfile          StudentProfile            @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
   fileName                String
   fileUrl                 String?
+  uploadedAt              DateTime                  @default(now())
+  analyzedAt              DateTime?
   parseStatus             ResumeParseStatus         @default(NOT_STARTED)
   parseFailureReason      ResumeParseFailureReason?
   parsedText              String?

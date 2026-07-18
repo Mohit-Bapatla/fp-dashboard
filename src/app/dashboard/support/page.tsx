@@ -10,6 +10,7 @@ import { syncCurrentUserFromClerk } from "@/lib/auth/user-sync";
 import { getPartnerNavItems } from "@/lib/partner/navigation";
 import { getStaffNavItems } from "@/lib/staff/navigation";
 import { getStudentNavItems } from "@/lib/student/navigation";
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/support-contact";
 
 const reportDetails = [
   "Your role and the account email you used.",
@@ -58,8 +59,9 @@ export default async function SupportPage() {
             title="Existing feedback"
           />
           <SupportCard
-            description="Email the FP beta support contact with the issue details below."
-            href="mailto:support@example.com?subject=FP%20Dashboard%20Beta%20Support"
+            actionLabel="Email support"
+            description={`Email ${SUPPORT_EMAIL} with the issue details below.`}
+            href={SUPPORT_MAILTO}
             icon={Mail}
             title="Email support"
           />
@@ -87,8 +89,16 @@ export default async function SupportPage() {
             ))}
           </ul>
           <p className="mt-5 text-sm leading-6 text-muted-foreground">
-            Replace `support@example.com` with the FP team support inbox before
-            inviting external beta users.
+            Need help with the FP Dashboard? Email{" "}
+            <a
+              aria-label={`Email Future Physicians support at ${SUPPORT_EMAIL}`}
+              className="font-medium text-primary underline underline-offset-4 hover:text-primary/80"
+              href={SUPPORT_MAILTO}
+            >
+              {SUPPORT_EMAIL}
+            </a>{" "}
+            and include what you expected, what happened, steps to reproduce the
+            issue, and any helpful screenshots.
           </p>
         </section>
       </div>
@@ -161,11 +171,13 @@ function getGuideHref(role: DashboardRole) {
 }
 
 function SupportCard({
+  actionLabel = "Open",
   description,
   href,
   icon: Icon,
   title,
 }: {
+  actionLabel?: string;
   description: string;
   href: string;
   icon: typeof LifeBuoy;
@@ -178,12 +190,22 @@ function SupportCard({
       <p className="mt-2 text-sm leading-6 text-muted-foreground">
         {description}
       </p>
-      <Link
-        className="mt-5 inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
-        href={href}
-      >
-        Open
-      </Link>
+      {href.startsWith("mailto:") ? (
+        <a
+          aria-label={`${actionLabel} at ${SUPPORT_EMAIL}`}
+          className="mt-5 inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          href={href}
+        >
+          {actionLabel}
+        </a>
+      ) : (
+        <Link
+          className="mt-5 inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          href={href}
+        >
+          {actionLabel}
+        </Link>
+      )}
     </article>
   );
 }

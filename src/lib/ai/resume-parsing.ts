@@ -11,12 +11,20 @@ import {
   createSupabaseAdminClient,
   resumeBucketName,
 } from "@/lib/storage/supabase-admin";
+import {
+  extractStructuredResumeSections,
+  normalizeResumeSourceText,
+  resumeSectionKeys,
+  stripResumeContactDetails,
+  type StructuredResumeSections,
+} from "@/lib/student/resume-structure";
 
 export type ParsedResumeData = {
   certifications: string[];
   education: string[];
   experience: string[];
   projects: string[];
+  sections: StructuredResumeSections;
   skills: string[];
   summary: string | null;
   text: string;
@@ -108,6 +116,11 @@ const commonSkillTerms = [
 ];
 
 const sectionHeadings = {
+  activities: [
+    "activities",
+    "extracurricular activities",
+    "community activities",
+  ],
   certifications: [
     "certification",
     "certifications",
@@ -124,13 +137,30 @@ const sectionHeadings = {
     "professional experience",
     "work experience",
     "clinical experience",
-    "volunteer experience",
-    "research experience",
     "employment",
+  ],
+  honors: [
+    "honors",
+    "awards",
+    "honors and awards",
+    "awards and honors",
+    "scholarships",
+  ],
+  leadership: [
+    "leadership",
     "leadership experience",
-    "activities",
+    "leadership and service",
+    "leadership and activities",
   ],
   projects: ["projects", "selected projects", "technical projects"],
+  research: ["research", "research experience", "publications"],
+  school: [
+    "school",
+    "school involvement",
+    "campus involvement",
+    "school and campus involvement",
+    "student organizations",
+  ],
   skills: [
     "skills",
     "core competencies",
@@ -138,6 +168,12 @@ const sectionHeadings = {
     "technical skills",
     "clinical skills",
     "relevant skills",
+  ],
+  volunteering: [
+    "volunteering",
+    "volunteer experience",
+    "community service",
+    "service",
   ],
 } as const;
 
@@ -154,25 +190,7 @@ function cleanText(value: string) {
 }
 
 function normalizeResumeText(value: string) {
-  const withNormalizedBreaks = value
-    .replace(/\u00a0/g, " ")
-    .replace(/\r/g, "\n")
-    .replace(/[|\u00b7]/g, " ")
-    .replace(/[\u2022\u25cf\u25aa\u25e6]/g, "\n")
-    .replace(/\t+/g, " ")
-    .replace(/[ \f\v]+/g, " ")
-    .replace(
-      /([a-z0-9)])\s+(Technical Skills|Education|Experience|Certifications|Certificates|Licenses|Projects|Summary|Objective)\s*:?/gi,
-      "$1\n$2\n",
-    )
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-
-  return withNormalizedBreaks
-    .split(/\n/)
-    .map((line) => line.replace(/\s{2,}/g, " ").trim())
-    .join("\n")
-    .trim();
+  return normalizeResumeSourceText(value);
 }
 
 function uniqueStrings(values: string[]) {
@@ -221,6 +239,33 @@ function uniqueSkills(values: string[]) {
     .slice(0, 24);
 }
 
+function groundedAiValues(values: string[], sourceText: string) {
+  const sourceTokens = new Set(
+    sourceText.toLowerCase().match(/[a-z0-9+#.]{3,}/g) ?? [],
+  );
+
+  return values.filter((value) => {
+    const valueTokens = value.toLowerCase().match(/[a-z0-9+#.]{3,}/g) ?? [];
+    const meaningfulTokens = valueTokens.filter(
+      (token) => !["and", "for", "the", "with"].includes(token),
+    );
+
+    if (meaningfulTokens.length === 0) {
+      return false;
+    }
+
+    const supported = meaningfulTokens.filter((token) =>
+      sourceTokens.has(token),
+    ).length;
+    const numbers = value.match(/\d+(?:[.,]\d+)?/g) ?? [];
+
+    return (
+      supported / meaningfulTokens.length >= 0.8 &&
+      numbers.every((number) => sourceText.includes(number))
+    );
+  });
+}
+
 function getLines(text: string) {
   return text
     .split(/\r?\n/)
@@ -257,7 +302,7 @@ function parseHeadingLine(line: string) {
       }
 
       const inlinePattern = new RegExp(
-        `^${escapeRegExp(heading)}\\s*[:\\-\\u2013\\u2014]?\\s*(.+)$`,
+        `^${escapeRegExp(heading)}\\s*[:\\-\\u2013\\u2014]\\s*(.+)$`,
         "i",
       );
       const match = compactLine.match(inlinePattern);
@@ -534,59 +579,53 @@ function extractExperienceFallback(lines: string[]) {
 
 function extractCertificationFallback(lines: string[]) {
   const certificationPattern =
-    /\b(certified|certification|certificate|license|licensed|bls|cpr|first aid|hipaa|training)\b/i;
+    /\b(?:certified|licensed)\s+(?:in|as)\b|\b(?:BLS|CPR|CNA|EMT|first aid)\s+(?:certified|certification)\b|\b(?:holds?|earned)\b.{0,60}\b(?:certification|certificate|license)\b/i;
+  const accomplishmentPattern =
+    /\b(hosted|facilitated|taught|organized|led|coordinated|provided)\b/i;
 
   return uniqueStrings(
     lines.filter((line) => {
-      return certificationPattern.test(line) && line.length <= 180;
+      return (
+        certificationPattern.test(line) &&
+        !accomplishmentPattern.test(line) &&
+        line.length <= 180
+      );
     }),
   );
-}
-
-function extractContactSummary(lines: string[]) {
-  const joined = lines.join(" ");
-  const email = joined.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.at(0);
-  const phone = joined
-    .match(/(?:\+?1[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}/)
-    ?.at(0);
-  const name = lines.slice(0, 4).find((line) => {
-    const words = line.split(/\s+/);
-
-    return words.length >= 2 && words.length <= 4 && !line.includes("@");
-  });
-
-  return { email, name, phone };
 }
 
 function deterministicParse(text: string): ParsedResumeData {
   const normalizedText = normalizeResumeText(text);
   const cleaned = cleanText(normalizedText);
   const lines = getLines(normalizedText);
+  const sections = extractStructuredResumeSections(normalizedText);
   const skillSection = extractSection(lines, "skills");
   const skills = uniqueSkills([
+    ...sections.skills,
     ...splitPotentialSkills(skillSection),
     ...skillsFromKnownTerms(cleaned),
   ]);
-  const education = extractEducationSection(lines);
-  const experience = extractSection(lines, "experience");
-  const inferredExperience = extractRoleFirstExperience(lines);
-  const projects = extractProjectNames(lines);
-  const certifications = extractSection(lines, "certifications");
-  const contact = extractContactSummary(lines);
-  const explicitSummary = extractSummarySection(lines);
-  const summaryLead = (explicitSummary || cleaned)
-    .split(/(?<=[.!?])\s+/)
-    .slice(0, 2)
-    .join(" ")
-    .slice(0, 500);
-  const contactParts = [
-    contact.name ? `Name: ${contact.name}` : null,
-    contact.email ? `Email: ${contact.email}` : null,
-    contact.phone ? `Phone: ${contact.phone}` : null,
-  ].filter(Boolean);
-  const summary = cleaned
-    ? [...contactParts, summaryLead].filter(Boolean).join("\n")
-    : null;
+  const education = sections.education.length
+    ? sections.education
+    : extractEducationSection(lines);
+  const explicitExperience = sections.experience;
+  const hasSeparateActivitySection = [
+    ...sections.activities,
+    ...sections.honors,
+    ...sections.leadership,
+    ...sections.school,
+  ].length;
+  const inferredExperience = hasSeparateActivitySection
+    ? []
+    : extractRoleFirstExperience(lines);
+  const projects = sections.projects.length
+    ? sections.projects.filter((entry) => !isAchievementLine(entry))
+    : extractProjectNames(lines);
+  const certifications = sections.certifications;
+  const explicitSummary =
+    sections.summary.join(" ") || extractSummarySection(lines);
+  const summary =
+    stripResumeContactDetails(explicitSummary).slice(0, 1_200) || null;
 
   return {
     certifications: certifications.length
@@ -594,13 +633,16 @@ function deterministicParse(text: string): ParsedResumeData {
       : extractCertificationFallback(lines),
     education: education.length ? education : extractEducationFallback(lines),
     experience: uniqueStrings([
-      ...(experience.length ? experience : inferredExperience),
-      ...(experience.length || inferredExperience.length
+      ...(explicitExperience.length ? explicitExperience : inferredExperience),
+      ...sections.volunteering,
+      ...sections.research,
+      ...(explicitExperience.length || inferredExperience.length
         ? []
         : extractExperienceFallback(lines)),
       ...projects.map((project) => `Project: ${project}`),
     ]),
     projects,
+    sections,
     skills,
     summary,
     text: normalizedText,
@@ -833,12 +875,21 @@ async function extractResumeText(
 }
 
 async function enrichResumeWithOpenAi(text: string) {
+  const privateSections = extractStructuredResumeSections(text);
+  const privateText = resumeSectionKeys
+    .filter((key) => privateSections[key].length > 0)
+    .map((key) => `${key}:\n${privateSections[key].join("\n")}`)
+    .join("\n\n")
+    .slice(0, 12000);
+
   return createStructuredJsonResponse<AiResumeParseResult>({
     input: [
       "Extract resume information for a healthcare opportunity dashboard.",
       "Do not infer protected or sensitive attributes.",
-      "Return concise, factual fields only.",
-      `Resume text:\n${text.slice(0, 16000)}`,
+      "Return concise, factual fields supported verbatim by the resume only.",
+      "Do not invent credentials, skills, impact, hours, or experiences.",
+      "Contact details have been removed because they are not needed.",
+      `Resume text:\n${privateText}`,
     ].join("\n\n"),
     schema: resumeSchema,
     schemaName: "resume_parse",
@@ -907,28 +958,40 @@ export async function parseResumeBytes({
   }
 
   try {
+    const groundedCertifications = groundedAiValues(
+      aiResult.certifications,
+      cleanedText,
+    );
+    const groundedEducation = groundedAiValues(aiResult.education, cleanedText);
+    const groundedExperience = groundedAiValues(
+      aiResult.experience,
+      cleanedText,
+    );
+    const groundedSkills = groundedAiValues(aiResult.skills, cleanedText);
+
     return {
       certifications: uniqueStrings(
-        aiResult.certifications.length
-          ? aiResult.certifications
+        groundedCertifications.length
+          ? groundedCertifications
           : fallback.certifications,
       ),
       education: uniqueStrings(
-        aiResult.education.length ? aiResult.education : fallback.education,
+        groundedEducation.length ? groundedEducation : fallback.education,
       ),
       experience: uniqueStrings(
-        aiResult.experience.length
+        groundedExperience.length
           ? [
-              ...aiResult.experience,
+              ...groundedExperience,
               ...fallback.projects.map((project) => `Project: ${project}`),
             ]
           : fallback.experience,
       ),
       projects: fallback.projects,
+      sections: fallback.sections,
       skills: uniqueSkills(
-        aiResult.skills.length ? aiResult.skills : fallback.skills,
+        groundedSkills.length ? groundedSkills : fallback.skills,
       ),
-      summary: aiResult.summary?.trim() || fallback.summary,
+      summary: fallback.summary,
       text: cleanedText,
       usedEnrichment: true,
     } satisfies ParsedResumeResult;
