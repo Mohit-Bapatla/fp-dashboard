@@ -6,6 +6,7 @@ import type {
   OpportunityType,
   OpportunityVerificationStatus,
   PartnerStatus,
+  PartnerVerificationStatus,
 } from "@/generated/prisma/enums";
 import {
   isSafeExternalUrl,
@@ -30,6 +31,30 @@ export function validateOpportunityPublishReadiness(
     errors.push("The opportunity must be verified before publishing.");
   if (!input.lastVerifiedAt)
     errors.push("A last verified date is required before publishing.");
+  return { errors, ready: errors.length === 0 };
+}
+
+export type OpportunityOrganizationReadinessInput = {
+  organizationVerificationStatus: PartnerVerificationStatus;
+  status?: OpportunityStatus;
+  verificationStatus?: OpportunityVerificationStatus;
+};
+
+export function validateOpportunityOrganizationReadiness({
+  organizationVerificationStatus,
+  status,
+  verificationStatus,
+}: OpportunityOrganizationReadinessInput) {
+  const requiresVerifiedOrganization =
+    status === "PUBLISHED" || verificationStatus === "VERIFIED";
+  const errors =
+    requiresVerifiedOrganization &&
+    organizationVerificationStatus !== "VERIFIED"
+      ? [
+          "The partner organization must be verified before an opportunity can be verified or published.",
+        ]
+      : [];
+
   return { errors, ready: errors.length === 0 };
 }
 

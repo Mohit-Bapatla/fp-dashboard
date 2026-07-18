@@ -138,7 +138,10 @@ export function studentDirectoryOpportunityWhere(
   return {
     availabilityStatus: { in: [...preparableAvailabilityStatuses] },
     OR: [{ deadline: null }, { deadline: { gte: now } }],
-    organization: { isSystemPlaceholder: false },
+    organization: {
+      isSystemPlaceholder: false,
+      verificationStatus: "VERIFIED",
+    },
     status: "PUBLISHED",
     verificationStatus: "VERIFIED",
     visibility: "PUBLIC_DIRECTORY",
@@ -166,7 +169,10 @@ export function studentSubmittableOpportunityWhere(
     ],
     availabilityStatus: { in: [...submittableAvailabilityStatuses] },
     id: opportunityId,
-    organization: { isSystemPlaceholder: false },
+    organization: {
+      isSystemPlaceholder: false,
+      verificationStatus: "VERIFIED",
+    },
     status: "PUBLISHED",
     verificationStatus: "VERIFIED",
     visibility: "PUBLIC_DIRECTORY",
@@ -179,7 +185,10 @@ function studentOpportunityAccessWhere(
   return {
     OR: [
       {
-        organization: { isSystemPlaceholder: false },
+        organization: {
+          isSystemPlaceholder: false,
+          verificationStatus: "VERIFIED",
+        },
         status: "PUBLISHED",
         verificationStatus: "VERIFIED",
         visibility: "PUBLIC_DIRECTORY",
@@ -235,7 +244,10 @@ export function studentAccessibleReadOnlyOpportunityWhere(
     id: opportunityId,
     OR: [
       {
-        organization: { isSystemPlaceholder: false },
+        organization: {
+          isSystemPlaceholder: false,
+          verificationStatus: "VERIFIED",
+        },
         status: { in: ["PUBLISHED", "CLOSED", "ARCHIVED"] },
         verificationStatus: { in: ["VERIFIED", "ARCHIVED"] },
         visibility: "PUBLIC_DIRECTORY",
@@ -264,7 +276,10 @@ export function studentReadOnlyOpportunityWhere(
 ): Prisma.OpportunityWhereInput {
   return {
     id: opportunityId,
-    organization: { isSystemPlaceholder: false },
+    organization: {
+      isSystemPlaceholder: false,
+      verificationStatus: "VERIFIED",
+    },
     status: { in: ["PUBLISHED", "CLOSED", "ARCHIVED"] },
     verificationStatus: { in: ["VERIFIED", "ARCHIVED"] },
     visibility: "PUBLIC_DIRECTORY",

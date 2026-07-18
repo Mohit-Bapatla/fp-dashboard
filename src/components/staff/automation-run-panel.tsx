@@ -65,8 +65,13 @@ export function AutomationRunPanel() {
             />
           </div>
 
-          <div className="mt-4 overflow-hidden rounded-md border border-border">
-            <table className="min-w-full divide-y divide-border text-sm">
+          <div
+            aria-label="Operational workflow run results"
+            className="mt-4 overflow-x-auto rounded-md border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            role="region"
+            tabIndex={0}
+          >
+            <table className="w-full min-w-[42rem] divide-y divide-border text-sm">
               <thead className="bg-background">
                 <tr className="text-left text-muted-foreground">
                   <th className="px-3 py-2 font-medium">Rule</th>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { BrandMark } from "@/components/shared/brand-mark";
 import { cn } from "@/lib/utils";
 
 import type { DashboardNavItem, DashboardRole } from "./role-config";
@@ -29,34 +30,33 @@ export function DashboardSidebar({ role, navItems }: DashboardSidebarProps) {
   }, []);
 
   return (
-    <aside className="hidden border-r border-border bg-background md:flex md:w-72 md:flex-col">
-      <div className="border-b border-border p-6">
-        <Link
-          className="flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
-          href="/"
-        >
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Icon aria-hidden="true" className="h-5 w-5" />
+    <aside className="hidden shrink-0 border-r border-border/80 bg-card md:sticky md:top-0 md:flex md:h-screen md:w-64 md:flex-col">
+      <div className="px-5 py-4">
+        <BrandMark className="w-full" />
+      </div>
+
+      <div className="mx-3 flex items-center gap-3 rounded-[14px] border border-primary/10 bg-blue-surface px-3 py-3">
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-white/80 bg-card text-primary shadow-sm">
+          <Icon aria-hidden="true" className="size-4.5" />
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-[13px] font-semibold text-brand-navy">
+            {meta.label} dashboard
           </span>
-          <span>
-            <span className="block text-sm font-semibold text-foreground">
-              FP Dashboard
-            </span>
-            <span className="block text-xs text-muted-foreground">
-              {meta.eyebrow}
-            </span>
+          <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
+            {meta.eyebrow}
           </span>
-        </Link>
+        </span>
       </div>
 
       <nav
         aria-label={`${meta.label} navigation`}
-        className="flex-1 space-y-5 overflow-y-auto p-4"
+        className="flex-1 space-y-4 overflow-y-auto px-3 py-4"
       >
         {groupedItems.map(([groupName, items]) => (
-          <div className="space-y-1" key={groupName ?? "main"}>
+          <div className="space-y-1.5" key={groupName ?? "main"}>
             {groupName ? (
-              <p className="px-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              <p className="px-3 pb-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
                 {groupName}
               </p>
             ) : null}
@@ -66,12 +66,13 @@ export function DashboardSidebar({ role, navItems }: DashboardSidebarProps) {
               if (item.href === "#") {
                 return (
                   <span
-                    className="flex cursor-default select-none items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground/50"
+                    aria-disabled="true"
+                    className="flex min-h-10 cursor-default select-none items-center gap-3 rounded-xl px-3 py-2 text-[13px] font-medium text-muted-foreground/45"
                     key={item.label}
                   >
                     <ItemIcon
                       aria-hidden="true"
-                      className="h-4 w-4 shrink-0 opacity-40"
+                      className="size-4 shrink-0 opacity-50"
                     />
                     <span>{item.label}</span>
                   </span>
@@ -82,9 +83,9 @@ export function DashboardSidebar({ role, navItems }: DashboardSidebarProps) {
                 <Link
                   aria-current={item.active ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
+                    "group flex min-h-10 items-center gap-3 rounded-xl px-3 py-2 text-[13px] font-medium text-muted-foreground transition-colors duration-200 hover:bg-blue-surface hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card",
                     item.active &&
-                      "bg-primary/10 text-foreground font-semibold",
+                      "bg-primary font-semibold text-primary-foreground shadow-[0_7px_18px_rgba(47,111,237,0.2)] hover:bg-primary-hover hover:text-primary-foreground",
                   )}
                   href={item.href}
                   key={item.label}
@@ -92,15 +93,17 @@ export function DashboardSidebar({ role, navItems }: DashboardSidebarProps) {
                   <ItemIcon
                     aria-hidden="true"
                     className={cn(
-                      "h-4 w-4 shrink-0",
-                      item.active ? "text-primary" : "text-muted-foreground/60",
+                      "size-4 shrink-0 transition-colors",
+                      item.active
+                        ? "text-primary-foreground"
+                        : "text-muted-foreground/70 group-hover:text-primary",
                     )}
                   />
                   <span>{item.label}</span>
                   {item.active && (
                     <span
-                      className="ml-auto h-1.5 w-1.5 rounded-full bg-primary"
                       aria-hidden="true"
+                      className="ml-auto size-1.5 rounded-full bg-primary-foreground/90"
                     />
                   )}
                 </Link>

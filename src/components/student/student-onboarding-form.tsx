@@ -1,7 +1,14 @@
 "use client";
 
 import { Check, ChevronLeft, ChevronRight, Plus, Save, X } from "lucide-react";
-import { useActionState, useMemo, useState, type ReactNode } from "react";
+import {
+  useActionState,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 import { saveStudentProfile } from "@/app/dashboard/student/onboarding/actions";
 import type { StudentOnboardingActionState } from "@/lib/student/onboarding-state";
@@ -14,6 +21,7 @@ import {
 
 type StudentOnboardingFormProps = {
   initialState: StudentOnboardingActionState;
+  returnTo?: string;
 };
 
 type TextFieldProps = {
@@ -164,6 +172,8 @@ function TextField({
   values,
 }: TextFieldProps) {
   const error = errors[name];
+  const controlId = `student-${name}`;
+  const errorId = `${controlId}-error`;
   const className = cn(
     "mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-primary",
     error && "border-red-400 focus:border-red-500",
@@ -175,23 +185,33 @@ function TextField({
       {required ? <span className="text-primary"> *</span> : null}
       {rows ? (
         <textarea
+          aria-describedby={error ? errorId : undefined}
+          aria-invalid={Boolean(error)}
+          aria-required={required || undefined}
           className={className}
           defaultValue={values[name]}
+          id={controlId}
           name={name}
           placeholder={placeholder}
           rows={rows}
         />
       ) : (
         <input
+          aria-describedby={error ? errorId : undefined}
+          aria-invalid={Boolean(error)}
+          aria-required={required || undefined}
           className={className}
           defaultValue={values[name]}
+          id={controlId}
           name={name}
           placeholder={placeholder}
           type={type}
         />
       )}
       {error ? (
-        <span className="mt-1 block text-xs text-red-600">{error}</span>
+        <span className="mt-1 block text-xs text-red-600" id={errorId}>
+          {error}
+        </span>
       ) : null}
     </label>
   );
@@ -206,23 +226,31 @@ function SelectField({
   values,
 }: SelectFieldProps) {
   const error = errors[name];
+  const controlId = `student-${name}`;
+  const errorId = `${controlId}-error`;
 
   return (
     <label className="block text-sm font-medium text-foreground">
       {label}
       {required ? <span className="text-primary"> *</span> : null}
       <select
+        aria-describedby={error ? errorId : undefined}
+        aria-invalid={Boolean(error)}
+        aria-required={required || undefined}
         className={cn(
           "mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-primary",
           error && "border-red-400 focus:border-red-500",
         )}
         defaultValue={values[name] as string}
+        id={controlId}
         name={name}
       >
         {children}
       </select>
       {error ? (
-        <span className="mt-1 block text-xs text-red-600">{error}</span>
+        <span className="mt-1 block text-xs text-red-600" id={errorId}>
+          {error}
+        </span>
       ) : null}
     </label>
   );
@@ -240,6 +268,7 @@ function SpecialtyTagInput({
   );
   const [customValue, setCustomValue] = useState("");
   const error = errors.interestedSpecialties;
+  const errorId = "student-interested-specialties-error";
 
   function addSpecialty(value: string) {
     const normalized = normalizeSpecialty(value);
@@ -266,9 +295,18 @@ function SpecialtyTagInput({
   );
 
   return (
-    <fieldset className="rounded-lg border border-border bg-muted/20 p-4">
+    <fieldset
+      aria-describedby={error ? errorId : undefined}
+      aria-invalid={Boolean(error)}
+      className="rounded-lg border border-border bg-muted/20 p-4"
+    >
       <legend className="px-1 text-sm font-medium text-foreground">
-        Interested specialties <span className="text-primary">*</span>
+        Interested specialties
+        <span aria-hidden="true" className="text-primary">
+          {" "}
+          *
+        </span>
+        <span className="sr-only"> (required)</span>
       </legend>
       <input
         name="interestedSpecialties"
@@ -285,7 +323,7 @@ function SpecialtyTagInput({
               {specialty}
               <button
                 aria-label={`Remove ${specialty}`}
-                className="rounded-full text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="-mr-2 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 onClick={() => removeSpecialty(specialty)}
                 type="button"
               >
@@ -299,12 +337,21 @@ function SpecialtyTagInput({
           Choose a few interests so matching can start with consistent data.
         </p>
       )}
-      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+      <label
+        className="mt-4 block text-sm font-medium text-foreground"
+        htmlFor="student-custom-specialty"
+      >
+        Add a custom specialty
+      </label>
+      <div className="mt-2 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
         <input
+          aria-describedby={error ? errorId : undefined}
+          aria-invalid={Boolean(error)}
           className={cn(
             "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground shadow-sm outline-none transition focus:border-primary",
             error && "border-red-400 focus:border-red-500",
           )}
+          id="student-custom-specialty"
           onChange={(event) => setCustomValue(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter") {
@@ -312,7 +359,7 @@ function SpecialtyTagInput({
               addSpecialty(customValue);
             }
           }}
-          placeholder="Add a custom specialty"
+          placeholder="Example: Pediatric cardiology"
           value={customValue}
         />
         <button
@@ -327,7 +374,7 @@ function SpecialtyTagInput({
       <div className="mt-4 flex flex-wrap gap-2">
         {availableSuggestions.map((suggestion) => (
           <button
-            className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-primary hover:bg-primary/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="min-h-11 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-primary hover:bg-primary/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             key={suggestion}
             onClick={() => addSpecialty(suggestion)}
             type="button"
@@ -337,7 +384,9 @@ function SpecialtyTagInput({
         ))}
       </div>
       {error ? (
-        <span className="mt-2 block text-xs text-red-600">{error}</span>
+        <span className="mt-2 block text-xs text-red-600" id={errorId}>
+          {error}
+        </span>
       ) : null}
     </fieldset>
   );
@@ -345,6 +394,7 @@ function SpecialtyTagInput({
 
 export function StudentOnboardingForm({
   initialState,
+  returnTo = "/dashboard/student",
 }: StudentOnboardingFormProps) {
   const [state, formAction, isPending] = useActionState(
     saveStudentProfile,
@@ -356,11 +406,19 @@ export function StudentOnboardingForm({
     initialGradeYear.selectedValue,
   );
   const [saveRequested, setSaveRequested] = useState(false);
+  const errorSummaryRef = useRef<HTMLDivElement>(null);
   const progress = useMemo(
     () => Math.round(((step + 1) / steps.length) * 100),
     [step],
   );
   const isSaving = saveRequested && isPending;
+  const hasErrors = Boolean(
+    state.formError || Object.values(state.fieldErrors).some(Boolean),
+  );
+
+  useEffect(() => {
+    if (hasErrors) errorSummaryRef.current?.focus();
+  }, [hasErrors, state.fieldErrors, state.formError]);
 
   return (
     <form
@@ -375,6 +433,7 @@ export function StudentOnboardingForm({
         }
       }}
     >
+      <input name="returnTo" type="hidden" value={returnTo} />
       <div className="border-b border-border p-6">
         <nav aria-label="Form progress" className="mb-5">
           <ol className="flex items-center">
@@ -439,9 +498,15 @@ export function StudentOnboardingForm({
         </div>
       </div>
 
-      {state.formError ? (
-        <div className="border-b border-red-200 bg-red-50 px-6 py-3 text-sm text-red-700">
-          {state.formError}
+      {hasErrors ? (
+        <div
+          className="border-b border-red-200 bg-red-50 px-6 py-3 text-sm text-red-700 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red-600"
+          ref={errorSummaryRef}
+          role="alert"
+          tabIndex={-1}
+        >
+          {state.formError ??
+            "Review the highlighted fields before saving your profile."}
         </div>
       ) : null}
 
@@ -483,11 +548,19 @@ export function StudentOnboardingForm({
             <label className="block text-sm font-medium text-foreground">
               Grade year <span className="text-primary">*</span>
               <select
+                aria-describedby={
+                  state.fieldErrors.gradeYear
+                    ? "student-grade-year-error"
+                    : undefined
+                }
+                aria-invalid={Boolean(state.fieldErrors.gradeYear)}
+                aria-required="true"
                 className={cn(
                   "mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-primary",
                   state.fieldErrors.gradeYear &&
                     "border-red-400 focus:border-red-500",
                 )}
+                id="student-grade-year"
                 name="gradeYear"
                 onChange={(event) => setSelectedGradeYear(event.target.value)}
                 value={selectedGradeYear}
@@ -500,7 +573,10 @@ export function StudentOnboardingForm({
                 ))}
               </select>
               {state.fieldErrors.gradeYear ? (
-                <span className="mt-1 block text-xs text-red-600">
+                <span
+                  className="mt-1 block text-xs text-red-600"
+                  id="student-grade-year-error"
+                >
                   {state.fieldErrors.gradeYear}
                 </span>
               ) : null}
@@ -510,6 +586,13 @@ export function StudentOnboardingForm({
                 Tell us your academic stage{" "}
                 <span className="text-primary">*</span>
                 <input
+                  aria-describedby={
+                    state.fieldErrors.gradeYearCustom
+                      ? "student-grade-year-custom-error"
+                      : undefined
+                  }
+                  aria-invalid={Boolean(state.fieldErrors.gradeYearCustom)}
+                  aria-required="true"
                   className={cn(
                     "mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-primary",
                     state.fieldErrors.gradeYearCustom &&
@@ -518,12 +601,16 @@ export function StudentOnboardingForm({
                   defaultValue={
                     state.values.gradeYearCustom || initialGradeYear.customValue
                   }
+                  id="student-grade-year-custom"
                   name="gradeYearCustom"
                   placeholder="Example: Dual-enrollment senior, post-bacc applicant"
                   type="text"
                 />
                 {state.fieldErrors.gradeYearCustom ? (
-                  <span className="mt-1 block text-xs text-red-600">
+                  <span
+                    className="mt-1 block text-xs text-red-600"
+                    id="student-grade-year-custom-error"
+                  >
                     {state.fieldErrors.gradeYearCustom}
                   </span>
                 ) : null}
@@ -595,9 +682,21 @@ export function StudentOnboardingForm({
         <section className={cn("space-y-5", step !== 2 && "hidden")}>
           <SpecialtyTagInput errors={state.fieldErrors} values={state.values} />
 
-          <fieldset>
+          <fieldset
+            aria-describedby={
+              state.fieldErrors.opportunityTypes
+                ? "student-opportunity-types-error"
+                : undefined
+            }
+            aria-invalid={Boolean(state.fieldErrors.opportunityTypes)}
+          >
             <legend className="text-sm font-medium text-foreground">
-              Opportunity types <span className="text-primary">*</span>
+              Opportunity types
+              <span aria-hidden="true" className="text-primary">
+                {" "}
+                *
+              </span>
+              <span className="sr-only"> (required)</span>
             </legend>
             <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {opportunityTypeOptions.map((type) => (
@@ -623,7 +722,10 @@ export function StudentOnboardingForm({
               ))}
             </div>
             {state.fieldErrors.opportunityTypes ? (
-              <span className="mt-2 block text-xs text-red-600">
+              <span
+                className="mt-2 block text-xs text-red-600"
+                id="student-opportunity-types-error"
+              >
                 {state.fieldErrors.opportunityTypes}
               </span>
             ) : null}
@@ -716,7 +818,7 @@ export function StudentOnboardingForm({
 
       <div className="flex flex-col justify-between gap-3 border-t border-border p-6 sm:flex-row">
         <button
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={step === 0 || isSaving}
           onClick={() => setStep((current) => Math.max(current - 1, 0))}
           type="button"
@@ -727,7 +829,7 @@ export function StudentOnboardingForm({
 
         {step < steps.length - 1 ? (
           <button
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isSaving}
             onClick={(event) => {
               event.preventDefault();
@@ -741,7 +843,7 @@ export function StudentOnboardingForm({
           </button>
         ) : (
           <button
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isSaving}
             formAction={formAction}
             onClick={() => setSaveRequested(true)}

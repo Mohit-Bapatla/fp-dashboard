@@ -1,7 +1,7 @@
 "use client";
 
 import { Send } from "lucide-react";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 
 import { createStudentPlacementRequest } from "@/app/dashboard/placement-requests/actions";
 import {
@@ -23,11 +23,33 @@ export function StudentPlacementRequestForm() {
     createStudentPlacementRequest,
     initialStudentPlacementRequestActionState,
   );
+  const formRef = useRef<HTMLFormElement>(null);
+  const formErrorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const invalidControl = formRef.current?.querySelector<HTMLElement>(
+      '[aria-invalid="true"]',
+    );
+
+    if (invalidControl) {
+      invalidControl.focus();
+      return;
+    }
+
+    if (state.formError) {
+      formErrorRef.current?.focus();
+    }
+  }, [state.fieldErrors, state.formError]);
 
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} className="space-y-6" ref={formRef}>
       {state.formError ? (
-        <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div
+          className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2"
+          ref={formErrorRef}
+          role="alert"
+          tabIndex={-1}
+        >
           {state.formError}
         </div>
       ) : null}
@@ -35,14 +57,22 @@ export function StudentPlacementRequestForm() {
       <label className="block text-sm font-medium text-foreground">
         Request title
         <input
+          aria-describedby={
+            state.fieldErrors.title ? "placement-title-error" : undefined
+          }
+          aria-invalid={Boolean(state.fieldErrors.title)}
           className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus:border-foreground"
           defaultValue={state.values.title}
+          id="placement-title"
           name="title"
           placeholder="Help me find a cardiology shadowing placement"
           required
         />
         {state.fieldErrors.title ? (
-          <span className="mt-2 block text-sm text-red-600">
+          <span
+            className="mt-2 block text-sm text-red-600"
+            id="placement-title-error"
+          >
             {state.fieldErrors.title}
           </span>
         ) : null}
@@ -142,13 +172,23 @@ export function StudentPlacementRequestForm() {
       <label className="block text-sm font-medium text-foreground">
         Context for the placement team
         <textarea
+          aria-describedby={
+            state.fieldErrors.description
+              ? "placement-description-error"
+              : undefined
+          }
+          aria-invalid={Boolean(state.fieldErrors.description)}
           className="mt-2 min-h-32 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus:border-foreground"
           defaultValue={state.values.description}
+          id="placement-description"
           name="description"
           placeholder="Tell us what you have already tried, what you are hoping to learn, or any constraints we should know."
         />
         {state.fieldErrors.description ? (
-          <span className="mt-2 block text-sm text-red-600">
+          <span
+            className="mt-2 block text-sm text-red-600"
+            id="placement-description-error"
+          >
             {state.fieldErrors.description}
           </span>
         ) : null}
@@ -160,7 +200,7 @@ export function StudentPlacementRequestForm() {
       </div>
 
       <button
-        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         disabled={pending}
         type="submit"
       >

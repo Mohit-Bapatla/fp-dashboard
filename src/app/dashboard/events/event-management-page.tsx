@@ -199,7 +199,10 @@ export async function EventManagementPage({
                 </details>
 
                 <div className="mt-6">
-                  <h3 className="text-sm font-semibold text-foreground">
+                  <h3
+                    className="text-sm font-semibold text-foreground"
+                    id={`registrants-${event.id}-heading`}
+                  >
                     Registrants
                   </h3>
                   {event.registrations.length === 0 ? (
@@ -207,8 +210,13 @@ export async function EventManagementPage({
                       No registrations yet.
                     </p>
                   ) : (
-                    <div className="mt-3 overflow-hidden rounded-lg border border-border">
-                      <table className="w-full text-left text-sm">
+                    <div
+                      aria-labelledby={`registrants-${event.id}-heading`}
+                      className="mt-3 overflow-x-auto rounded-lg border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      role="region"
+                      tabIndex={0}
+                    >
+                      <table className="w-full min-w-[44rem] text-left text-sm">
                         <thead className="bg-muted text-muted-foreground">
                           <tr>
                             <th className="px-4 py-3 font-medium">Student</th>

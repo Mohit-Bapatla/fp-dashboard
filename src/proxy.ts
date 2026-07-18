@@ -8,9 +8,13 @@ import {
 } from "./lib/auth/roles";
 
 const isDashboardRoute = createRouteMatcher(["/dashboard(.*)"]);
+const isPartnerOnboardingRoute = createRouteMatcher(["/partner-onboarding"]);
 
 export default clerkMiddleware(async (auth, req) => {
-  if (!isDashboardRoute(req)) {
+  const isDashboard = isDashboardRoute(req);
+  const isPartnerOnboarding = isPartnerOnboardingRoute(req);
+
+  if (!isDashboard && !isPartnerOnboarding) {
     return NextResponse.next();
   }
 
@@ -18,6 +22,13 @@ export default clerkMiddleware(async (auth, req) => {
 
   if (!userId) {
     return redirectToSignIn({ returnBackUrl: req.url });
+  }
+
+  // Partner onboarding has its own server-side eligibility checks. It must be
+  // reachable by newly signed-in STUDENT accounts without changing dashboard
+  // role-based access control.
+  if (isPartnerOnboarding) {
+    return NextResponse.next();
   }
 
   const role = getRoleFromSessionClaims(sessionClaims);

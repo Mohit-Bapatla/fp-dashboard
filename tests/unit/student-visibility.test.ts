@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { OpportunityAvailabilityStatus } from "@/generated/prisma/enums";
 import {
+  isOpportunityCurrentlyAvailable,
   isOpportunityDiscoverable,
   isOpportunityPreparable,
   isOpportunitySubmittable,
   isStudentOpportunityPreparable,
   isStudentOpportunitySubmittable,
   studentAccessiblePreparationOpportunityWhere,
+  studentApplicationOpportunityWhere,
+  studentDirectoryOpportunityWhere,
   studentPreparationOpportunityWhere,
   studentReadOnlyOpportunityWhere,
   studentSubmittableOpportunityWhere,
@@ -31,6 +34,25 @@ function opportunity(
 }
 
 describe("student opportunity visibility", () => {
+  it("includes only verified, published records with a current status and deadline", () => {
+    const queryTime = new Date("2026-01-01T00:00:00.000Z");
+
+    expect(studentDirectoryOpportunityWhere(queryTime)).toEqual({
+      availabilityStatus: { in: ["OPEN", "OPENING_SOON", "ROLLING"] },
+      organization: {
+        isSystemPlaceholder: false,
+        verificationStatus: "VERIFIED",
+      },
+      OR: [{ deadline: null }, { deadline: { gte: queryTime } }],
+      status: "PUBLISHED",
+      verificationStatus: "VERIFIED",
+      visibility: "PUBLIC_DIRECTORY",
+    });
+    expect(isOpportunityCurrentlyAvailable("OPEN")).toBe(true);
+    expect(isOpportunityCurrentlyAvailable("OPENING_SOON")).toBe(true);
+    expect(isOpportunityCurrentlyAvailable("ROLLING")).toBe(true);
+  });
+
   it("keeps OPENING_SOON discoverable and preparable", () => {
     const openingSoon = opportunity("OPENING_SOON", {
       opensAt: new Date("2026-08-15T12:00:00.000Z"),
@@ -40,12 +62,18 @@ describe("student opportunity visibility", () => {
     expect(isOpportunityPreparable(openingSoon, now)).toBe(true);
     expect(studentPreparationOpportunityWhere("opp-1", now)).toMatchObject({
       id: "opp-1",
-      organization: { isSystemPlaceholder: false },
+      organization: {
+        isSystemPlaceholder: false,
+        verificationStatus: "VERIFIED",
+      },
       status: "PUBLISHED",
       verificationStatus: "VERIFIED",
       visibility: "PUBLIC_DIRECTORY",
       availabilityStatus: { in: ["OPEN", "OPENING_SOON", "ROLLING"] },
     });
+    expect(studentApplicationOpportunityWhere("opp-1", now)).toEqual(
+      studentPreparationOpportunityWhere("opp-1", now),
+    );
   });
 
   it("never treats OPENING_SOON as submittable", () => {
@@ -123,7 +151,10 @@ describe("student opportunity visibility", () => {
       ],
       availabilityStatus: { in: ["OPEN", "ROLLING"] },
       id: "opp-1",
-      organization: { isSystemPlaceholder: false },
+      organization: {
+        isSystemPlaceholder: false,
+        verificationStatus: "VERIFIED",
+      },
       status: "PUBLISHED",
       verificationStatus: "VERIFIED",
       visibility: "PUBLIC_DIRECTORY",

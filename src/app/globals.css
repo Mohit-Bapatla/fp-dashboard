@@ -1,32 +1,36 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* Dark mode is opt-in via .dark class — light mode is the default experience */
+/* Bright Clinical: shared semantic tokens for marketing and dashboard surfaces. */
 @custom-variant dark (&:is(.dark, .dark *));
 
 :root {
-  /* Surfaces */
-  --background: #fffaf2;
-  --foreground: #0f172a;
+  --page: #f7fafe;
+  --background: #ffffff;
+  --foreground: #10213a;
   --card: #ffffff;
-  --card-foreground: #0f172a;
-
-  /* Muted / subtle */
-  --muted: #f4eee3;
-  --muted-foreground: #475569;
-
-  /* Borders */
-  --border: #e6dccd;
-
-  /* Primary — blue-600, Future Physicians brand blue */
-  --primary: #2563eb;
+  --card-foreground: #10213a;
+  --muted: #ebf3ff;
+  --muted-foreground: #5f6f82;
+  --border: #dce6f1;
+  --primary: #245fd5;
+  --primary-hover: #1b4eae;
   --primary-foreground: #ffffff;
-
-  /* Focus ring */
-  --ring: #2563eb;
+  --secondary: #0b716e;
+  --secondary-foreground: #ffffff;
+  --accent-warm: #f2b84b;
+  --success: #116b4e;
+  --warning: #7c4900;
+  --error: #c53f4a;
+  --info: #245fd5;
+  --disabled: #a8b5c4;
+  --ring: #245fd5;
+  --brand-navy: #10213a;
+  --blue-surface: #ebf3ff;
 }
 
 @theme inline {
+  --color-page: var(--page);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -35,17 +39,25 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent-warm: var(--accent-warm);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+  --color-disabled: var(--disabled);
   --color-ring: var(--ring);
-  --font-sans:
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, sans-serif;
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    monospace;
+  --color-brand-navy: var(--brand-navy);
+  --color-blue-surface: var(--blue-surface);
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
 }
 
 .dark {
+  --page: #0b1220;
   --background: #0f172a;
   --foreground: #f8fafc;
   --card: #1e293b;
@@ -54,7 +66,10 @@
   --muted-foreground: #94a3b8;
   --border: #334155;
   --primary: #60a5fa;
+  --primary-hover: #93c5fd;
   --primary-foreground: #1e3a8a;
+  --brand-navy: #f8fafc;
+  --blue-surface: #172554;
   --ring: #60a5fa;
 }
 
@@ -62,15 +77,71 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
+}
+
 body {
-  background: var(--background);
+  background: var(--page);
   color: var(--foreground);
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
+  font-family: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  overflow-x: clip;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--primary) 20%, white);
+  color: var(--brand-navy);
+}
+
+a,
+button,
+input,
+select,
+textarea,
+summary {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled),
+summary {
+  cursor: pointer;
+}
+
+.pathway-grid {
+  background-image:
+    linear-gradient(to right, rgba(47, 111, 237, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(47, 111, 237, 0.07) 1px, transparent 1px),
+    radial-gradient(
+      circle at 78% 18%,
+      rgba(22, 166, 161, 0.16),
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at 18% 85%,
+      rgba(47, 111, 237, 0.12),
+      transparent 20%
+    );
+  background-size:
+    56px 56px,
+    56px 56px,
+    100% 100%,
+    100% 100%;
+  mask-image: linear-gradient(to bottom, black, transparent 92%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

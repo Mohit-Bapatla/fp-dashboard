@@ -178,7 +178,7 @@ describe("application submission actions", () => {
     ]);
   });
 
-  it("confirms an external PREPARING application without FP statement, host email, or host notification", async () => {
+  it("confirms a legacy external-public PREPARING application without replacing the deadline predicate", async () => {
     mocks.opportunityFindFirst.mockResolvedValue({
       ...validAvailability,
       applicationMethod: "EXTERNAL_PORTAL",
@@ -198,6 +198,44 @@ describe("application submission actions", () => {
     form.set("confirmedExternalSubmission", "on");
     await expect(confirmExternalApplicationSubmission(form)).rejects.toThrow(
       "external=1",
+    );
+    expect(mocks.opportunityFindFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          AND: expect.arrayContaining([
+            expect.objectContaining({
+              OR: expect.arrayContaining([
+                expect.objectContaining({
+                  organization: {
+                    isSystemPlaceholder: false,
+                    verificationStatus: "VERIFIED",
+                  },
+                  status: "PUBLISHED",
+                  verificationStatus: "VERIFIED",
+                  visibility: "PUBLIC_DIRECTORY",
+                }),
+              ]),
+            }),
+            {
+              OR: [{ deadline: null }, { deadline: { gte: expect.any(Date) } }],
+            },
+            {
+              OR: [{ opensAt: null }, { opensAt: { lte: expect.any(Date) } }],
+            },
+          ]),
+          applicationMethod: "EXTERNAL_PORTAL",
+          availabilityStatus: { in: ["OPEN", "ROLLING"] },
+          id: "opp-1",
+          OR: [
+            { officialApplicationUrl: { not: null } },
+            {
+              sourceType: "STUDENT_ADDED",
+              studentSourceUrlNormalized: { not: null },
+              visibility: "STUDENT_PRIVATE",
+            },
+          ],
+        }),
+      }),
     );
     expect(mocks.applicationUpsert).toHaveBeenCalledWith(
       expect.objectContaining({

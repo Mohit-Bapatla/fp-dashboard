@@ -26,6 +26,12 @@ Required for a normal deployed app:
 - `CLERK_SECRET_KEY`
 - `DATABASE_URL`
 
+Required for an approved database migration job:
+
+- `DIRECT_URL` — a direct, non-pooler PostgreSQL connection to the approved
+  target database. `prisma.config.ts` deliberately prefers this value over
+  `DATABASE_URL` for Prisma CLI commands.
+
 Recommended:
 
 - `SUPABASE_URL`
@@ -46,12 +52,41 @@ Optional:
 
 ## Database
 
-Run migrations against the target database:
+Use `prisma migrate dev` only while creating migrations against a local
+development database:
 
 ```bash
 npm run db:migrate
 npm run db:generate
 ```
+
+Before deployment, validate the complete migration history against disposable
+PostgreSQL 16 as described in [Migration validation](migration-validation.md).
+Production and shared-database migrations must be applied with
+`prisma migrate deploy` through an explicitly approved deployment workflow;
+never point the disposable validator at Supabase or another shared database.
+
+For that approved job, set the runtime and direct URLs explicitly and keep the
+schema pinned to `public`:
+
+```bash
+DATABASE_URL="postgresql://<runtime-role>:<password>@<approved-host>:5432/<approved-database>?schema=public"
+DIRECT_URL="postgresql://<migration-role>:<password>@<approved-direct-host>:5432/<approved-database>?schema=public"
+npx prisma migrate deploy
+```
+
+Confirm the host, database, role, and `schema=public` target before running the
+command. Do not run the seed command. Apply migrations before the application
+release, or atomically in the same approved deployment workflow before new code
+receives traffic; this release must not serve opportunity-directory requests
+against a database that is missing the navigator migration.
+
+The `20260715020500_secure_private_workflow_tables` follow-up migration enables
+RLS without public policies on the opportunity navigator's three new private
+workflow tables. Before a Supabase deployment, confirm that the runtime Prisma
+role is the approved direct database role and review the project's Data API
+schema exposure and grants. Do not add anon/authenticated policies for these
+Clerk-owned records without a separate authorization design.
 
 Seed only in safe non-production or demo environments:
 

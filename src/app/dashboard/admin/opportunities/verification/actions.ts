@@ -5,6 +5,7 @@ import {
   getActorIdFromClerkUserId,
 } from "@/lib/audit/audit-log";
 import { assertAdminAccess } from "@/lib/admin/authorization";
+import { validateOpportunityOrganizationReadiness } from "@/lib/admin/opportunity-validation";
 import { prisma } from "@/lib/db/prisma";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 const value = (data: FormData, key: string) => {
@@ -32,9 +33,17 @@ export async function setOpportunityVerification(formData: FormData) {
     : "NEEDS_REVIEW";
   const current = await prisma.opportunity.findFirst({
     where: { id, visibility: "PUBLIC_DIRECTORY" },
-    select: { id: true },
+    select: {
+      id: true,
+      organization: { select: { verificationStatus: true } },
+    },
   });
   if (!current) return;
+  const organizationReadiness = validateOpportunityOrganizationReadiness({
+    organizationVerificationStatus: current.organization.verificationStatus,
+    verificationStatus: status,
+  });
+  if (!organizationReadiness.ready) return;
   await prisma.opportunity.update({
     where: { id },
     data: {

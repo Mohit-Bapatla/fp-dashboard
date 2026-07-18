@@ -7,9 +7,11 @@ import { prisma } from "@/lib/db/prisma";
 
 export async function syncCurrentUserFromClerk({
   clerkUserId,
+  preserveExistingRole = false,
   role,
 }: {
   clerkUserId: string;
+  preserveExistingRole?: boolean;
   role: AppRole;
 }) {
   const clerkUser = await currentUser();
@@ -40,7 +42,9 @@ export async function syncCurrentUserFromClerk({
         lastName: existingUser.lastName
           ? undefined
           : (clerkUser?.lastName ?? undefined),
-        role,
+        // Transition flows opt out because their session claim can lag the
+        // role established under the shared account-transition lock.
+        role: preserveExistingRole ? undefined : role,
       },
     });
   }

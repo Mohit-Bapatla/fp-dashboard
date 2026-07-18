@@ -64,7 +64,10 @@ function PaginationLink({
 }) {
   if (disabled) {
     return (
-      <span className="inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-muted-foreground opacity-50">
+      <span
+        aria-disabled="true"
+        className="inline-flex min-h-11 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-muted-foreground opacity-50"
+      >
         {children}
       </span>
     );
@@ -72,7 +75,7 @@ function PaginationLink({
 
   return (
     <Link
-      className="inline-flex min-h-10 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
+      className="inline-flex min-h-11 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       href={href}
     >
       {children}

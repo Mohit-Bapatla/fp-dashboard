@@ -1,10 +1,14 @@
-import { Building2, Globe2, Mail, MapPin } from "lucide-react";
+import { Building2, Globe2, Mail, MapPin, ShieldAlert } from "lucide-react";
 
-import type { PartnerStatus } from "@/generated/prisma/enums";
+import type {
+  PartnerStatus,
+  PartnerVerificationStatus,
+} from "@/generated/prisma/enums";
 
 type PartnerOrganizationSummary = {
   name: string;
   status: PartnerStatus;
+  verificationStatus: PartnerVerificationStatus;
   website: string | null;
   type: string | null;
   description: string | null;
@@ -43,6 +47,8 @@ export function PartnerDashboardSummary({
   organization,
   organizationCount,
 }: PartnerDashboardSummaryProps) {
+  const isVerified = organization.verificationStatus === "VERIFIED";
+
   return (
     <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -58,23 +64,49 @@ export function PartnerDashboardSummary({
               "Organization details will become editable in a later partner or admin workflow."}
           </p>
         </div>
-        <span
-          className={[
-            "inline-flex shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium",
-            organization.status === "PARTNERED"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : organization.status === "REJECTED" ||
-                  organization.status === "PAUSED"
-                ? "border-slate-200 bg-slate-50 text-slate-600"
-                : organization.status === "INTERESTED" ||
-                    organization.status === "MEETING_SCHEDULED"
-                  ? "border-amber-200 bg-amber-50 text-amber-700"
-                  : "border-border bg-muted/50 text-muted-foreground",
-          ].join(" ")}
-        >
-          {formatStatus(organization.status)}
-        </span>
+        <div className="flex flex-wrap gap-2">
+          <span
+            className={[
+              "inline-flex shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium",
+              organization.status === "PARTNERED"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : organization.status === "REJECTED" ||
+                    organization.status === "PAUSED"
+                  ? "border-slate-200 bg-slate-50 text-slate-600"
+                  : organization.status === "INTERESTED" ||
+                      organization.status === "MEETING_SCHEDULED"
+                    ? "border-amber-200 bg-amber-50 text-amber-700"
+                    : "border-border bg-muted/50 text-muted-foreground",
+            ].join(" ")}
+          >
+            {formatStatus(organization.status)}
+          </span>
+          <span
+            className={[
+              "inline-flex shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium",
+              isVerified
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-amber-200 bg-amber-50 text-amber-800",
+            ].join(" ")}
+          >
+            {isVerified ? "Verified" : "Verification pending"}
+          </span>
+        </div>
       </div>
+
+      {!isVerified ? (
+        <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+          <div className="flex items-center gap-2 font-semibold">
+            <ShieldAlert aria-hidden="true" className="size-4" />
+            Organization not yet verified or approved
+          </div>
+          <p className="mt-1">
+            This private workspace can prepare draft information, but Future
+            Physicians must verify the organization and approve each opportunity
+            before anything is published to students.
+          </p>
+        </div>
+      ) : null}
 
       <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <SummaryFact
