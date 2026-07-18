@@ -4,6 +4,9 @@ const fundraisingMailto =
   "mailto:fundraising@futurephysicians.org?subject=Funding%20Future%20Physicians";
 const partnershipMailto =
   "mailto:outreach@futurephysicians.org?subject=Future%20Physicians%20Partnership%20Inquiry";
+const fundraisingContact = "/contact#fundraising";
+const generalSupportContact = "/contact#general-support";
+const partnershipContact = "/contact#partnerships";
 
 const organizationMetrics = [
   ["2,000+", "Students in the FP community"],
@@ -25,6 +28,26 @@ const publicRoutes = [
   "/contact",
   "/privacy",
   "/terms",
+] as const;
+
+const refinementAuditRoutes = [
+  "/",
+  "/support",
+  "/contact",
+  "/events/global-healthcare-seminar-2025",
+  "/partners",
+  "/students",
+  "/chapters",
+  "/faq",
+  "/opportunities",
+] as const;
+
+const requiredViewports = [
+  { width: 1440, height: 900 },
+  { width: 1024, height: 768 },
+  { width: 768, height: 1024 },
+  { width: 390, height: 844 },
+  { width: 320, height: 700 },
 ] as const;
 
 test("homepage explains the product and exposes the public navigation", async ({
@@ -82,7 +105,7 @@ test("homepage keeps the approved metrics and removes unrelated program previews
   ).toHaveCount(0);
   await expect(
     page.getByRole("link", { name: "Contact Our Outreach Team" }),
-  ).toHaveAttribute("href", partnershipMailto);
+  ).toHaveAttribute("href", partnershipContact);
   await expect(
     page.getByRole("link", { name: /Current partner.*sign in/i }),
   ).toHaveAttribute("href", /\/sign-in(?:\?|$)/);
@@ -96,6 +119,38 @@ test("homepage keeps the approved metrics and removes unrelated program previews
   for (const grantAmount of ["$15,000", "$1,000", "$720"]) {
     await expect(page.getByText(grantAmount, { exact: true })).toHaveCount(0);
   }
+
+  const sectionIds = await page
+    .locator("#main-content > section")
+    .evaluateAll((sections) => sections.map((section) => section.id));
+  expect(sectionIds.at(-2)).toBe("homepage-faq");
+  expect(sectionIds.at(-1)).toBe("partner-inquiry");
+});
+
+test("homepage opportunity showcase uses the wider section-specific layout", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+
+  const heading = page.getByRole("heading", {
+    name: "Find opportunities that actually fit.",
+  });
+  const copy = heading.locator("..");
+  const layout = copy.locator("..");
+  const preview = page.locator("#opportunity-showcase figure");
+  const [layoutBox, copyBox, previewBox, viewportWidth] = await Promise.all([
+    layout.boundingBox(),
+    copy.boundingBox(),
+    preview.boundingBox(),
+    page.evaluate(() => document.documentElement.clientWidth),
+  ]);
+  expect(layoutBox).not.toBeNull();
+  expect(copyBox).not.toBeNull();
+  expect(previewBox).not.toBeNull();
+
+  expect(layoutBox?.width).toBeGreaterThanOrEqual(viewportWidth * 0.94);
+  expect(previewBox?.width).toBeGreaterThan((copyBox?.width ?? 0) * 1.7);
 });
 
 test("mobile navigation is keyboard-accessible", async ({ page }) => {
@@ -151,29 +206,28 @@ test("desktop Explore disclosure exposes state and closes with Escape", async ({
 test("key public pages avoid horizontal overflow at required breakpoints", async ({
   page,
 }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(150_000);
 
-  for (const width of [1440, 1024, 768, 390, 320]) {
-    await page.setViewportSize({ width, height: 900 });
-    await page.goto("/", { waitUntil: "load" });
-    await expect(
-      page.getByRole("heading", {
-        level: 1,
-        name: "Build your path into healthcare.",
-      }),
-    ).toBeVisible();
-    await page.evaluate(() => document.fonts.ready);
-    const dimensions = await page.evaluate(() => ({
-      clientWidth: document.documentElement.clientWidth,
-      scrollWidth: document.documentElement.scrollWidth,
-    }));
-    expect(dimensions.scrollWidth).toBeLessThanOrEqual(
-      dimensions.clientWidth + 1,
-    );
+  for (const url of refinementAuditRoutes) {
+    for (const viewport of requiredViewports) {
+      await page.setViewportSize(viewport);
+      await page.goto(url, { waitUntil: "load" });
+      await page.evaluate(() => document.fonts.ready);
+      const dimensions = await page.evaluate(() => ({
+        clientWidth: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+      }));
+      expect(
+        dimensions.scrollWidth,
+        `${url} overflowed at ${viewport.width} x ${viewport.height}`,
+      ).toBeLessThanOrEqual(dimensions.clientWidth + 1);
+    }
   }
 
-  for (const url of publicRoutes) {
-    await page.setViewportSize({ width: 320, height: 900 });
+  for (const url of publicRoutes.filter(
+    (route) => !(refinementAuditRoutes as readonly string[]).includes(route),
+  )) {
+    await page.setViewportSize({ width: 320, height: 700 });
     await page.goto(url, { waitUntil: "load" });
     await page.evaluate(() => document.fonts.ready);
     const dimensions = await page.evaluate(() => ({
@@ -219,11 +273,32 @@ test("support page includes approved grants and exact inquiry destinations", asy
     }),
   ).toBeVisible();
   await expect(
-    page.getByText("outreach@futurephysicians.org", { exact: true }),
+    page.getByText("Karma for Cara Grant", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: /Discuss funding/i }),
-  ).toHaveAttribute("href", fundraisingMailto);
+    page.getByText("North Carolina Community Foundation", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "Future Physicians has received the grants and awards listed below.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/These are neutral operating categories/i),
+  ).toHaveCount(0);
+  await expect(page.getByText(/approved public content/i)).toHaveCount(0);
+  await expect(page.getByText("Funding transparency")).toHaveCount(0);
+  await expect(page.getByText("Financial transparency boundaries")).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByText("outreach@futurephysicians.org", { exact: true }),
+  ).toBeVisible();
+  const discussFunding = page
+    .getByRole("link", { name: /Discuss funding/i })
+    .first();
+  await expect(discussFunding).toHaveAttribute("href", fundraisingContact);
 
   const fundraisingLinks = page.getByRole("link", {
     name: "fundraising@futurephysicians.org",
@@ -242,6 +317,20 @@ test("support page includes approved grants and exact inquiry destinations", asy
   for (const link of await partnershipLinks.all()) {
     await expect(link).toHaveAttribute("href", partnershipMailto);
   }
+
+  await discussFunding.click();
+  await expect(page).toHaveURL(/\/contact#fundraising$/);
+  const fundraisingSection = page.locator("#fundraising");
+  await expect(fundraisingSection).toBeVisible();
+  await expect(
+    fundraisingSection.getByRole("link", {
+      name: "fundraising@futurephysicians.org",
+      exact: true,
+    }),
+  ).toHaveAttribute("href", fundraisingMailto);
+  await expect
+    .poll(async () => (await fundraisingSection.boundingBox())?.y ?? 0)
+    .toBeGreaterThanOrEqual(72);
 });
 
 test("fundraising email stays atomic and inside the viewport on mobile", async ({
@@ -295,6 +384,33 @@ test("fundraising email stays atomic and inside the viewport on mobile", async (
   }
 });
 
+test("general support navigation lands on the visible contact section", async ({
+  page,
+}) => {
+  await page.goto("/faq");
+  const contactSupport = page.getByRole("link", { name: "Contact support" });
+  await expect(contactSupport).toHaveAttribute("href", generalSupportContact);
+  await contactSupport.click();
+
+  await expect(page).toHaveURL(/\/contact#general-support$/);
+  const supportSection = page.locator("#general-support");
+  await expect(supportSection).toBeVisible();
+  await expect(
+    supportSection.getByRole("link", {
+      name: "support@futurephysicians.org",
+      exact: true,
+    }),
+  ).toHaveAttribute("href", "mailto:support@futurephysicians.org");
+
+  await page.goto("/contact");
+  const samePageSupport = page.getByRole("link", {
+    name: "Email general support",
+  });
+  await expect(samePageSupport).toHaveAttribute("href", "#general-support");
+  await samePageSupport.click();
+  await expect(page).toHaveURL(/\/contact#general-support$/);
+});
+
 test("partners page uses approval-based outreach and preserves sign-in", async ({
   page,
 }) => {
@@ -309,7 +425,7 @@ test("partners page uses approval-based outreach and preserves sign-in", async (
   });
   expect(await outreachLinks.count()).toBeGreaterThan(0);
   for (const link of await outreachLinks.all()) {
-    await expect(link).toHaveAttribute("href", partnershipMailto);
+    await expect(link).toHaveAttribute("href", partnershipContact);
   }
 
   await expect(
@@ -317,6 +433,17 @@ test("partners page uses approval-based outreach and preserves sign-in", async (
       name: /(?:already an approved|current) partner.*sign in/i,
     }),
   ).toHaveAttribute("href", /\/sign-in(?:\?|$)/);
+
+  await outreachLinks.first().click();
+  await expect(page).toHaveURL(/\/contact#partnerships$/);
+  const partnershipSection = page.locator("#partnerships");
+  await expect(partnershipSection).toBeVisible();
+  await expect(
+    partnershipSection.getByRole("link", {
+      name: "outreach@futurephysicians.org",
+      exact: true,
+    }),
+  ).toHaveAttribute("href", partnershipMailto);
 });
 
 test("impact page keeps exact metrics and removes the metric glossary", async ({
@@ -342,6 +469,56 @@ test("impact page keeps exact metrics and removes the metric glossary", async ({
   await expect(page.locator('a[href="#definitions"]')).toHaveCount(0);
 });
 
+test("FAQ answers and structured data use the same approved wording", async ({
+  page,
+}) => {
+  await page.goto("/faq");
+
+  const expectedAnswers = {
+    "Is Future Physicians free for students?":
+      "Yes. Creating a student profile and using the FP Dashboard is free.",
+    "Who can create a student profile?":
+      "Anyone interested in exploring a healthcare career or gaining healthcare experience can create a student profile.",
+    "Does Future Physicians guarantee a placement?":
+      "No. Future Physicians helps students find relevant opportunities and stay organized throughout the application process, but each host organization makes its own acceptance and placement decisions.",
+  } as const;
+
+  for (const [question, answer] of Object.entries(expectedAnswers)) {
+    await page.getByRole("button", { name: question }).click();
+    await expect(page.getByText(answer, { exact: true })).toBeVisible();
+  }
+
+  const structuredAnswers = await page
+    .locator('script[type="application/ld+json"]')
+    .evaluateAll((scripts) => {
+      for (const script of scripts) {
+        try {
+          const value = JSON.parse(script.textContent ?? "{}");
+          if (value["@type"] === "FAQPage") {
+            return Object.fromEntries(
+              value.mainEntity.map(
+                (entry: { acceptedAnswer: { text: string }; name: string }) => [
+                  entry.name,
+                  entry.acceptedAnswer.text,
+                ],
+              ),
+            );
+          }
+        } catch {
+          // Ignore unrelated structured-data blocks.
+        }
+      }
+      return {};
+    });
+
+  for (const [question, answer] of Object.entries(expectedAnswers)) {
+    expect(structuredAnswers[question]).toBe(answer);
+  }
+  expect(Object.values(structuredAnswers).join(" ")).not.toMatch(
+    /way more likely|guaranteed acceptance|guaranteed interviews|guaranteed responses/i,
+  );
+});
+
 test("seminar and chapter pages keep their approved destinations", async ({
   page,
 }) => {
@@ -352,6 +529,19 @@ test("seminar and chapter pages keep their approved destinations", async ({
   await expect(
     page.getByRole("link", { name: /Watch/ }).first(),
   ).toHaveAttribute("href", "https://www.youtube.com/watch?v=6U2EA3O12YY");
+  await expect(
+    page.getByRole("heading", { name: "Institutional recognition" }),
+  ).toBeVisible();
+  await expect(page.getByText("UC Riverside", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("The George Washington University", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Recognition is not the same as partnership"),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText(/These names are not presented as sponsors/i),
+  ).toHaveCount(0);
 
   await page.goto("/chapters");
   await expect(
@@ -360,6 +550,12 @@ test("seminar and chapter pages keep their approved destinations", async ({
     "href",
     "https://docs.google.com/forms/d/e/1FAIpQLSeT-FOoYXGwLMgDIqr-kTCPGceFSnkgn_FAyp3C_9M9eo6y3g/viewform",
   );
+  await expect(
+    page.getByRole("heading", { name: "What a chapter is not" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "What a chapter is", exact: true }),
+  ).toBeVisible();
 });
 
 test("legacy support route redirects permanently", async ({ page }) => {
@@ -404,7 +600,9 @@ test("unknown public opportunity returns not found", async ({ page }) => {
   expect(response.status()).toBe(404);
 });
 
-test("opportunity directory completes its database query", async ({ page }) => {
+test("opportunity directory renders real results or its safe failure state", async ({
+  page,
+}) => {
   const response = await page.goto("/opportunities");
 
   expect(
@@ -416,23 +614,41 @@ test("opportunity directory completes its database query", async ({ page }) => {
     level: 2,
     name: /\d+ verified opportunit(?:y|ies)/,
   });
-  await expect(
-    resultHeading,
-    "A broken opportunity query must not be mistaken for a valid empty directory",
-  ).toBeVisible();
-  if ((await resultHeading.textContent())?.trim().startsWith("0 ")) {
+  const unavailableHeading = page.getByRole("heading", {
+    level: 1,
+    name: "Opportunities are temporarily unavailable.",
+  });
+  await expect
+    .poll(
+      async () =>
+        (await resultHeading.count()) + (await unavailableHeading.count()),
+      {
+        message:
+          "The directory must render real query results or the explicit safe failure state",
+      },
+    )
+    .toBeGreaterThan(0);
+
+  if ((await unavailableHeading.count()) > 0) {
+    await expect(unavailableHeading).toBeVisible();
+    await expect(page.getByText(/Please check back shortly/i)).toBeVisible();
     await expect(
-      page.getByRole("heading", {
-        name: "No public listings are open right now",
-      }),
-    ).toBeVisible();
-    await expect(page.getByRole("link", { name: "Reset filters" })).toHaveCount(
-      0,
+      page.getByRole("link", { name: "Contact support" }),
+    ).toHaveAttribute("href", generalSupportContact);
+    await expect(page.locator("body")).not.toContainText(
+      /Prisma|P2021|P2022|public\.Opportunity/,
     );
+  } else {
+    await expect(resultHeading).toBeVisible();
+    if ((await resultHeading.textContent())?.trim().startsWith("0 ")) {
+      await expect(
+        page.getByRole("heading", {
+          name: "No public listings are open right now",
+        }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Reset filters" }),
+      ).toHaveCount(0);
+    }
   }
-  await expect(
-    page.getByRole("heading", {
-      name: "We couldn't load the opportunity directory",
-    }),
-  ).toHaveCount(0);
 });

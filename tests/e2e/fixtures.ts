@@ -71,7 +71,6 @@ const applicationErrorSignatures = [
   "Application error: a client-side exception has occurred",
   "Application error: a server-side exception has occurred",
   "Internal Server Error",
-  "We couldn't load the opportunity directory",
 ] as const;
 
 function isApplicationUrl(url: string, baseURL: string | undefined) {

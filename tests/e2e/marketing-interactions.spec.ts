@@ -77,10 +77,12 @@ test("FAQ content is immediately readable with reduced motion", async ({
   expect(maximumTransitionMs).toBeLessThanOrEqual(1);
 });
 
-test("guided walkthrough supports manual selection and pauses during interaction", async ({
+test("guided walkthrough advances automatically and supports explicit pause and play", async ({
   page,
 }) => {
   test.setTimeout(45_000);
+  await page.clock.install();
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
 
   const walkthrough = page.getByRole("region", {
@@ -98,43 +100,60 @@ test("guided walkthrough supports manual selection and pauses during interaction
     ).toBeVisible();
   }
 
-  const reviewEligibility = walkthrough.getByRole("button", {
+  const firstStep = walkthrough.getByRole("button", {
+    name: "Select a type",
+  });
+  const secondStep = walkthrough.getByRole("button", {
+    name: "Open a verified opportunity",
+  });
+  const thirdStep = walkthrough.getByRole("button", {
     name: "Review eligibility",
   });
-  await reviewEligibility.click();
-  await expect(reviewEligibility).toHaveAttribute("aria-pressed", "true");
-  await expect(
-    walkthrough.getByText("Step 3 of 5", { exact: true }),
-  ).toBeVisible();
+  const fourthStep = walkthrough.getByRole("button", {
+    name: "Save or apply",
+  });
 
-  // Focus inside the walkthrough pauses the two-second automatic advance.
-  await expect(reviewEligibility).toBeFocused();
-  await expect(
-    walkthrough.getByText("Paused while you interact", { exact: true }),
-  ).toBeVisible();
-  await page.waitForTimeout(2_200);
-  await expect(reviewEligibility).toHaveAttribute("aria-pressed", "true");
+  await expect(firstStep).toHaveAttribute("aria-pressed", "true");
+  await page.waitForTimeout(150);
+  await page.clock.fastForward(4_100);
+  await expect(secondStep).toHaveAttribute("aria-pressed", "true");
 
-  // Hovering also pauses after focus leaves the region.
-  await page.evaluate(() =>
-    (document.activeElement as HTMLElement | null)?.blur(),
-  );
+  // A resting pointer no longer makes the walkthrough appear permanently static.
   await walkthrough.hover();
-  await page.waitForTimeout(2_200);
-  await expect(reviewEligibility).toHaveAttribute("aria-pressed", "true");
+  await page.clock.fastForward(4_100);
+  await expect(thirdStep).toHaveAttribute("aria-pressed", "true");
 
   const pause = walkthrough.getByRole("button", {
     name: "Pause product walkthrough",
   });
   await pause.click();
+  const play = walkthrough.getByRole("button", {
+    name: "Play product walkthrough",
+  });
+  await expect(play).toBeVisible();
+  await page.clock.fastForward(8_200);
+  await expect(thirdStep).toHaveAttribute("aria-pressed", "true");
+
+  await firstStep.click();
+  await expect(firstStep).toHaveAttribute("aria-pressed", "true");
   await expect(
-    walkthrough.getByRole("button", { name: "Play product walkthrough" }),
+    walkthrough.getByText("Paused. Select Play to resume automatic steps."),
   ).toBeVisible();
+  await page.clock.fastForward(4_100);
+  await expect(firstStep).toHaveAttribute("aria-pressed", "true");
+
+  await play.click();
+  await page.clock.fastForward(4_100);
+  await expect(secondStep).toHaveAttribute("aria-pressed", "true");
+
+  await fourthStep.click();
+  await expect(fourthStep).toHaveAttribute("aria-pressed", "true");
 });
 
 test("guided walkthrough stays static but manually selectable with reduced motion", async ({
   page,
 }) => {
+  await page.clock.install();
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
 
@@ -156,6 +175,126 @@ test("guided walkthrough stays static but manually selectable with reduced motio
   await expect(
     walkthrough.getByText("Step 5 of 5", { exact: true }),
   ).toBeVisible();
-  await page.waitForTimeout(2_200);
+  await page.clock.fastForward(8_200);
   await expect(trackNextStep).toHaveAttribute("aria-pressed", "true");
+});
+
+test("partner preview uses keyboard controls and local applicant state", async ({
+  page,
+}) => {
+  await page.goto("/partners");
+  const mutationRequests: string[] = [];
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    const isClerkEnvironmentRefresh =
+      url.hostname.endsWith(".clerk.accounts.dev") &&
+      url.pathname === "/v1/environment";
+    if (request.method() !== "GET" && !isClerkEnvironmentRefresh) {
+      mutationRequests.push(`${request.method()} ${request.url()}`);
+    }
+  });
+  const preview = page.getByRole("region", {
+    name: "Interactive partner workspace preview",
+  });
+  const applicants = preview.getByRole("button", { name: "Applicants" });
+  await applicants.focus();
+  await page.keyboard.press("Enter");
+  await expect(applicants).toHaveAttribute("aria-pressed", "true");
+
+  await preview.getByRole("button", { name: "Student 01" }).click();
+  await preview
+    .getByRole("group", { name: "Update Student 01 status" })
+    .getByRole("button", { name: "Reviewing" })
+    .click();
+  await expect(
+    preview.getByText("Student 01 moved to Reviewing in this demonstration.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+
+  await preview
+    .getByRole("group", { name: "Applicant status filters" })
+    .getByRole("button", { name: "New", exact: true })
+    .click();
+  await expect(
+    preview.getByText("No illustrative applicants are in this status."),
+  ).toBeVisible();
+  await expect(
+    preview.getByRole("group", { name: "Update Student 01 status" }),
+  ).toHaveCount(0);
+
+  await preview.getByRole("button", { name: "Opportunities" }).click();
+  await preview.getByRole("button", { name: /Research skills cohort/ }).click();
+  const placements = preview.getByRole("button", { name: "Placements" });
+  await placements.click();
+  await expect(placements).toHaveAttribute("aria-pressed", "true");
+  await expect(preview.getByText("Confirmed placements")).toBeVisible();
+  await expect(
+    preview.getByRole("progressbar", {
+      name: "Research skills cohort placement progress",
+    }),
+  ).toHaveAttribute("aria-valuenow", "0");
+  await expect(
+    preview.getByText(
+      "0 confirmed of 12 available places for research skills cohort.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  expect(mutationRequests).toEqual([]);
+});
+
+test("student preview saves an opportunity and reflects an application locally", async ({
+  page,
+}) => {
+  await page.goto("/students");
+  const mutationRequests: string[] = [];
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    const isClerkEnvironmentRefresh =
+      url.hostname.endsWith(".clerk.accounts.dev") &&
+      url.pathname === "/v1/environment";
+    if (request.method() !== "GET" && !isClerkEnvironmentRefresh) {
+      mutationRequests.push(`${request.method()} ${request.url()}`);
+    }
+  });
+  const preview = page.getByRole("region", {
+    name: "Interactive student workspace preview",
+  });
+  const research = preview
+    .getByRole("group", { name: "Opportunity categories" })
+    .getByRole("button", { name: "Research" });
+  await research.focus();
+  await page.keyboard.press("Enter");
+  await expect(research).toHaveAttribute("aria-pressed", "true");
+
+  await preview.getByRole("button", { name: "Save opportunity" }).click();
+  await expect(
+    preview.getByRole("button", { name: "Unsave opportunity" }),
+  ).toBeVisible();
+
+  await preview
+    .getByRole("button", { name: "Start illustrative application" })
+    .click();
+  await expect(
+    preview.getByRole("button", { name: "Applications" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    preview.getByText("Guided research experience", { exact: true }),
+  ).toBeVisible();
+  await expect(preview.getByText("Preparing", { exact: true })).toBeVisible();
+
+  await preview.getByRole("button", { name: "Discover" }).click();
+  await preview
+    .getByRole("button", { name: "Start illustrative application" })
+    .click();
+  await expect(
+    preview.getByText(
+      "This illustrative application is already in your workspace. Nothing was submitted or sent.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(
+    preview.getByText("Guided research experience", { exact: true }),
+  ).toHaveCount(1);
+  expect(mutationRequests).toEqual([]);
 });
