@@ -12,26 +12,37 @@ OUTPUT = Path(__file__).parent
 
 def create_text_pdf() -> None:
     pdf = canvas.Canvas(str(OUTPUT / "synthetic-text-resume.pdf"), pagesize=letter)
-    lines = [
+    first_page = [
         "Synthetic Student",
         "synthetic.student@example.invalid | 202-555-0100",
+        "Summary",
+        "Curious biology student who enjoys community health education and data analysis.",
         "Education",
         "Example University, Bachelor of Science in Biology, expected 2028",
+        "Honors/Awards",
+        "Community Science Scholarship",
         "Experience",
-        "Clinical volunteer, 120 hours",
-        "Research assistant, molecular biology laboratory",
-        "Skills",
-        "Patient communication, data analysis, teamwork",
+        "- Coordinated a health-literacy program serving 75 local",
+        "  students each semester.",
+        "- Analyzed survey results with SQL and shared findings with program leaders.",
     ]
     y = 740
-    for line in lines:
+    for line in first_page:
         pdf.drawString(72, y, line)
         y -= 24
     pdf.showPage()
-    pdf.drawString(72, 740, "Leadership and service")
-    pdf.drawString(72, 716, "Peer mentor and community health volunteer")
-    pdf.drawString(72, 692, "Certifications")
-    pdf.drawString(72, 668, "Basic Life Support")
+    second_page = [
+        "School",
+        "Student Council Wellness Lead",
+        "- Hosted CPR training for 45 students and coordinated",
+        "  volunteer instructors.",
+        "Skills",
+        "SQL, CPR education, GPA data analysis, FP outreach",
+    ]
+    y = 740
+    for line in second_page:
+        pdf.drawString(72, y, line)
+        y -= 24
     pdf.save()
 
 

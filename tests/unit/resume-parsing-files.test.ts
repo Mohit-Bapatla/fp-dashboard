@@ -28,8 +28,16 @@ describe("resume file extraction", () => {
 
     expect(parsed.text.length).toBeGreaterThan(100);
     expect(parsed.education.join(" ")).toContain("Example University");
-    expect(parsed.experience.join(" ")).toContain("Clinical volunteer");
-    expect(parsed.certifications.join(" ")).toContain("Basic Life Support");
+    expect(parsed.experience.join(" ")).toContain(
+      "Coordinated a health-literacy program serving 75 local students each semester.",
+    );
+    expect(parsed.sections.honors.join(" ")).toContain(
+      "Community Science Scholarship",
+    );
+    expect(parsed.sections.school.join(" ")).toContain(
+      "Hosted CPR training for 45 students and coordinated volunteer instructors.",
+    );
+    expect(parsed.certifications).toEqual([]);
   });
 
   it("rejects an image-only-like PDF with insufficient selectable text", async () => {
@@ -105,6 +113,28 @@ describe("resume file extraction", () => {
         stage: "openai_enrichment",
       }),
     );
+  });
+
+  it("discards AI fields that are not grounded in the resume", async () => {
+    const parsed = await parseResumeBytes({
+      bytes: fixture("synthetic-text-resume.pdf"),
+      enrichResume: async () => ({
+        certifications: ["Certified Nursing Assistant"],
+        education: ["Prestigious Medical University"],
+        experience: ["Completed 900 invented clinical hours"],
+        skills: ["Phlebotomy"],
+        summary: "Guaranteed acceptance based on invented experience.",
+      }),
+      fileName: "synthetic-text-resume.pdf",
+      mimeType: "application/pdf",
+      resumeId: "resume_ungrounded_ai_test",
+    });
+
+    expect(parsed.certifications).toEqual([]);
+    expect(parsed.education.join(" ")).toContain("Example University");
+    expect(parsed.experience.join(" ")).not.toContain("900");
+    expect(parsed.skills).not.toContain("Phlebotomy");
+    expect(parsed.summary).not.toContain("acceptance");
   });
 
   it("rejects an unsupported extension before parsing", async () => {

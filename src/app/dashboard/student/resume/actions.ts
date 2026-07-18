@@ -165,6 +165,7 @@ export async function uploadStudentResume(
           id: context.resume.id,
         },
         data: {
+          analyzedAt: null,
           fileName: resumeFile.name,
           extractedCertifications: [],
           extractedEducation: [],
@@ -175,6 +176,7 @@ export async function uploadStudentResume(
           parseStatus: "NOT_STARTED",
           parsedSummary: null,
           parsedText: null,
+          uploadedAt: new Date(),
         },
         select: {
           id: true,
@@ -184,6 +186,7 @@ export async function uploadStudentResume(
     } else {
       const resume = await prisma.resume.create({
         data: {
+          analyzedAt: null,
           extractedCertifications: [],
           extractedEducation: [],
           extractedExperience: [],
@@ -195,6 +198,7 @@ export async function uploadStudentResume(
           parseStatus: "NOT_STARTED",
           parsedSummary: null,
           parsedText: null,
+          uploadedAt: new Date(),
         },
         select: {
           id: true,
@@ -221,7 +225,6 @@ export async function uploadStudentResume(
     entityId: resumeId,
     entityType: "Resume",
     metadata: {
-      fileName: resumeFile.name,
       studentProfileId: context.profileId,
     },
   });
@@ -284,7 +287,6 @@ export async function deleteStudentResume(
     entityId: context.resume.id,
     entityType: "Resume",
     metadata: {
-      fileName: context.resume.fileName,
       studentProfileId: context.profileId,
     },
   });
@@ -387,6 +389,7 @@ export async function parseStudentResume(
               id: resumeId,
             },
             data: {
+              analyzedAt: new Date(),
               extractedCertifications: deterministicResume.certifications,
               extractedEducation: deterministicResume.education,
               extractedExperience: deterministicResume.experience,
@@ -422,7 +425,7 @@ export async function parseStudentResume(
 
       return {
         error: null,
-        success: "Resume parsed without optional enrichment.",
+        success: "Resume analyzed without optional enrichment.",
       };
     }
 
@@ -503,7 +506,7 @@ export async function parseStudentResume(
 
   return {
     error: null,
-    success: "Resume parsed.",
+    success: "Resume analysis complete.",
   };
 }
 
