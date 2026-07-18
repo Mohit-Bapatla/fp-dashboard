@@ -16,6 +16,12 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
 });
 
+const marketingMotionBootScript = `
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.documentElement.dataset.marketingMotion = 'enabled';
+  }
+`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
@@ -54,10 +60,17 @@ export default function RootLayout({
 }>) {
   return (
     <html
+      suppressHydrationWarning
       data-scroll-behavior="smooth"
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{ __html: marketingMotionBootScript }}
+          id="marketing-motion-boot"
+        />
+      </head>
       <body className="flex min-h-full flex-col">
         <ClerkProvider>{children}</ClerkProvider>
       </body>
