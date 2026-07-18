@@ -66,14 +66,14 @@ test("opportunity card details keep valid definition-list semantics", async ({
   await page.goto("/opportunities", { waitUntil: "domcontentloaded" });
 
   const detailLists = page.locator("article dl");
+  const unavailableHeading = page.getByRole("heading", {
+    level: 1,
+    name: "Opportunities are temporarily unavailable.",
+  });
+  await expect(detailLists.first().or(unavailableHeading)).toBeVisible();
   const detailListCount = await detailLists.count();
   if (detailListCount === 0) {
-    await expect(
-      page.getByRole("heading", {
-        level: 1,
-        name: "Opportunities are temporarily unavailable.",
-      }),
-    ).toBeVisible();
+    await expect(unavailableHeading).toBeVisible();
     test.skip(
       true,
       "Opportunity-card semantics are database-gated while the deployed schema lacks Opportunity.",
