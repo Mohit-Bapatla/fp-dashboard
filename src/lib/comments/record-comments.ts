@@ -67,6 +67,25 @@ async function getAccessForEntity({
   userId: string;
   userRole: UserRole;
 }): Promise<RecordCommentAccess> {
+  if (isStaffRole(userRole) && entityType === "APPLICATION") {
+    const publicApplication = await prisma.application.findFirst({
+      where: {
+        id: entityId,
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
+        },
+      },
+      select: { id: true },
+    });
+    return publicApplication
+      ? {
+          canCreate: ["INTERNAL", "PARTNER_VISIBLE", "STUDENT_VISIBLE"],
+          canView: ["INTERNAL", "PARTNER_VISIBLE", "STUDENT_VISIBLE"],
+        }
+      : { canCreate: [], canView: [] };
+  }
+
   if (isStaffRole(userRole)) {
     return {
       canCreate: ["INTERNAL", "PARTNER_VISIBLE", "STUDENT_VISIBLE"],
@@ -82,8 +101,10 @@ async function getAccessForEntity({
       select: {
         opportunity: {
           select: {
+            visibility: true,
             organization: {
               select: {
+                isSystemPlaceholder: true,
                 members: {
                   select: {
                     userId: true,
@@ -116,7 +137,11 @@ async function getAccessForEntity({
       (member) => member.userId,
     );
 
-    if (partnerMemberIds.includes(userId)) {
+    if (
+      application.opportunity.visibility === "PUBLIC_DIRECTORY" &&
+      !application.opportunity.organization.isSystemPlaceholder &&
+      partnerMemberIds.includes(userId)
+    ) {
       return {
         canCreate: ["PARTNER_VISIBLE"],
         canView: ["PARTNER_VISIBLE", "STUDENT_VISIBLE"],

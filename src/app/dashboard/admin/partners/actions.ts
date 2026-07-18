@@ -15,6 +15,7 @@ import {
   enforceRateLimit,
   formatRateLimitMessage,
 } from "@/lib/security/rate-limit";
+import { isStudentExternalOrganizationName } from "@/lib/student/external-opportunity";
 
 const partnerStatuses: PartnerStatus[] = [
   "NOT_CONTACTED",
@@ -75,6 +76,9 @@ export async function createAdminPartnerOrganization(formData: FormData) {
 
   if (!name) {
     redirect(`${redirectTo}?partnerError=missing-name`);
+  }
+  if (isStudentExternalOrganizationName(name)) {
+    redirect(`${redirectTo}?partnerError=reserved-name`);
   }
 
   const organization = await prisma.partnerOrganization.upsert({
@@ -161,9 +165,10 @@ export async function linkPartnerUserToOrganization(formData: FormData) {
         id: true,
       },
     }),
-    prisma.partnerOrganization.findUnique({
+    prisma.partnerOrganization.findFirst({
       where: {
         id: organizationId,
+        isSystemPlaceholder: false,
       },
       select: {
         id: true,

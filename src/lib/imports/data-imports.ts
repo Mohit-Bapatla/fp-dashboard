@@ -18,6 +18,7 @@ import {
   parseCsv,
   splitImportList,
 } from "@/lib/imports/csv";
+import { isStudentExternalOrganizationName } from "@/lib/student/external-opportunity";
 
 export const importTypes = ["students", "partners", "opportunities"] as const;
 export type ImportType = (typeof importTypes)[number];
@@ -267,6 +268,7 @@ async function previewPartners(rows: ReturnType<typeof parseCsv>["rows"]) {
     .filter(Boolean);
   const existing = await prisma.partnerOrganization.findMany({
     where: {
+      isSystemPlaceholder: false,
       OR: [
         { name: { in: names } },
         { contactEmail: { in: contactEmails } },
@@ -358,6 +360,7 @@ async function previewOpportunities(
   defaultStatus: Extract<OpportunityStatus, "DRAFT" | "PENDING_APPROVAL">,
 ) {
   const organizations = await prisma.partnerOrganization.findMany({
+    where: { isSystemPlaceholder: false },
     select: {
       id: true,
       name: true,
@@ -368,6 +371,7 @@ async function previewOpportunities(
     organizations.map((org) => [normalizeDuplicateKey(org.name), org]),
   );
   const existingOpportunities = await prisma.opportunity.findMany({
+    where: { visibility: "PUBLIC_DIRECTORY" },
     select: {
       organizationId: true,
       title: true,
@@ -778,8 +782,9 @@ export async function importPreviewRows({
           },
         });
 
-        if (!name || duplicate) {
-          summary.skippedInvalid += name ? 0 : 1;
+        const reservedName = isStudentExternalOrganizationName(name);
+        if (!name || reservedName || duplicate) {
+          summary.skippedInvalid += !name || reservedName ? 1 : 0;
           summary.skippedDuplicates += duplicate ? 1 : 0;
           continue;
         }
@@ -791,6 +796,7 @@ export async function importPreviewRows({
             country: getStringValue(row, "country") || null,
             description: getStringValue(row, "description") || null,
             healthcareFocus: getStringValue(row, "healthcareFocus") || null,
+            isSystemPlaceholder: false,
             location: getStringValue(row, "location") || null,
             name: getStringValue(row, "name"),
             specialtyAreas: getStringArrayValue(row, "specialtyAreas"),
@@ -806,9 +812,10 @@ export async function importPreviewRows({
         const title = getStringValue(row, "title");
         const status = getStringValue(row, "status");
         const organization = organizationId
-          ? await prisma.partnerOrganization.findUnique({
+          ? await prisma.partnerOrganization.findFirst({
               where: {
                 id: organizationId,
+                isSystemPlaceholder: false,
               },
               select: {
                 id: true,
@@ -819,8 +826,9 @@ export async function importPreviewRows({
           organization && title
             ? await prisma.opportunity.findFirst({
                 where: {
-                  organizationId,
+                  organizationId: organization.id,
                   title,
+                  visibility: "PUBLIC_DIRECTORY",
                 },
                 select: {
                   id: true,
@@ -862,7 +870,7 @@ export async function importPreviewRows({
             eligibilityRequirements:
               getStringValue(row, "eligibilityRequirements") || null,
             location: getStringValue(row, "location") || null,
-            organizationId,
+            organizationId: organization.id,
             paidStatus: getStringValue(row, "paidStatus") || null,
             remoteType: getStringValue(row, "remoteType") || null,
             requiredDocuments: getStringArrayValue(row, "requiredDocuments"),
@@ -886,6 +894,8 @@ export async function importPreviewRows({
               "availabilityStatus",
             ) as OpportunityAvailabilityStatus,
             verificationStatus: "NEEDS_REVIEW",
+            visibility: "PUBLIC_DIRECTORY",
+            sourceType: "FP_CATALOG",
             cycleLabel: getStringValue(row, "cycleLabel") || null,
             city: getStringValue(row, "city") || null,
             state: getStringValue(row, "state") || null,

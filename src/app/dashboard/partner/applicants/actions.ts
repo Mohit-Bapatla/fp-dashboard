@@ -87,8 +87,12 @@ export async function updatePartnerApplicationStatus(formData: FormData) {
         not: "WITHDRAWN",
       },
       opportunity: {
+        visibility: "PUBLIC_DIRECTORY",
         organizationId: {
           in: context.organizationIds,
+        },
+        organization: {
+          isSystemPlaceholder: false,
         },
       },
     },
@@ -181,8 +185,12 @@ export async function createPartnerApplicantResumeSignedUrl(
     where: {
       id: applicationId,
       opportunity: {
+        visibility: "PUBLIC_DIRECTORY",
         organizationId: {
           in: context.organizationIds,
+        },
+        organization: {
+          isSystemPlaceholder: false,
         },
       },
     },

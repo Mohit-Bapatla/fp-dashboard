@@ -9,6 +9,7 @@ import {
   applicationStatementMaxLength,
   emptyStudentApplicationActionState,
 } from "@/lib/student/application-validation";
+import { formatResumeDate } from "@/lib/student/resume-date";
 
 type StudentApplicationFormProps = {
   opportunityId: string;
@@ -134,7 +135,7 @@ export function StudentApplicationForm({
                   {resume.fileName}
                 </span>
                 <span className="mt-1 block text-sm text-muted-foreground">
-                  Updated {resume.updatedAt.toLocaleDateString()}
+                  Updated {formatResumeDate(resume.updatedAt)}
                 </span>
               </span>
             </label>

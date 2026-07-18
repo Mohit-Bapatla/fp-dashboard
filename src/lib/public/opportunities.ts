@@ -103,9 +103,11 @@ const publicOpportunitySelect = {
   specialty: true,
   startsAt: true,
   state: true,
+  status: true,
   title: true,
   transportationNotes: true,
   type: true,
+  verificationStatus: true,
   workAuthorizationRequired: true,
 } satisfies Prisma.OpportunitySelect;
 
@@ -364,6 +366,7 @@ export async function getPublicOpportunityFilterOptions() {
   const opportunities = await prisma.opportunity.findMany({
     select: {
       location: true,
+      opensAt: true,
       paidStatus: true,
       remoteType: true,
       specialty: true,

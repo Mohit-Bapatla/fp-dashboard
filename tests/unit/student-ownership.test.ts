@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applicationOwnership,
+  applicationTaskOwnership,
   savedOpportunityOwnership,
 } from "@/lib/student/owned-records";
 
@@ -18,6 +19,14 @@ describe("student-owned record scopes", () => {
     expect(applicationOwnership("profile-a", "application-1")).toEqual({
       id: "application-1",
       studentProfileId: "profile-a",
+    });
+  });
+  it("scopes task IDs through their parent application owner", () => {
+    expect(applicationTaskOwnership("profile-a", "task-1")).toEqual({
+      id: "task-1",
+      application: {
+        studentProfileId: "profile-a",
+      },
     });
   });
 });

@@ -3,27 +3,36 @@ import { RoleBadge } from "@/components/dashboard/role-badge";
 import { assertAdminAccess } from "@/lib/admin/authorization";
 import { getAdminNavItems } from "@/lib/admin/navigation";
 import { prisma } from "@/lib/db/prisma";
-import { resolveCorrectionReport, setOpportunityVerification } from "./actions";
+import {
+  resolveCorrectionReport,
+  resolveExternalOpportunityVerification,
+  setOpportunityVerification,
+} from "./actions";
 
 export default async function VerificationQueuePage() {
   await assertAdminAccess();
   const now = new Date(),
     soon = new Date(now);
   soon.setDate(now.getDate() + 14);
-  const [opportunities, reports] = await Promise.all([
+  const [opportunities, reports, externalRequests] = await Promise.all([
     prisma.opportunity.findMany({
       where: {
-        OR: [
+        visibility: "PUBLIC_DIRECTORY",
+        AND: [
           {
-            verificationStatus: {
-              in: ["NEEDS_REVIEW", "STALE", "BROKEN_LINK"],
-            },
-          },
-          { officialSourceUrl: null },
-          { nextVerificationAt: { lte: soon } },
-          {
-            deadline: { lt: now },
-            availabilityStatus: { in: ["OPEN", "ROLLING"] },
+            OR: [
+              {
+                verificationStatus: {
+                  in: ["NEEDS_REVIEW", "STALE", "BROKEN_LINK"],
+                },
+              },
+              { officialSourceUrl: null },
+              { nextVerificationAt: { lte: soon } },
+              {
+                deadline: { lt: now },
+                availabilityStatus: { in: ["OPEN", "ROLLING"] },
+              },
+            ],
           },
         ],
       },
@@ -37,9 +46,31 @@ export default async function VerificationQueuePage() {
       },
     }),
     prisma.opportunityCorrectionReport.findMany({
-      where: { status: "OPEN" },
+      where: {
+        status: "OPEN",
+        opportunity: { visibility: "PUBLIC_DIRECTORY" },
+      },
       orderBy: { createdAt: "asc" },
       include: { opportunity: { select: { title: true } } },
+    }),
+    prisma.externalOpportunityVerificationRequest.findMany({
+      where: {
+        status: "PENDING",
+        opportunity: { visibility: "STUDENT_PRIVATE" },
+      },
+      orderBy: { createdAt: "asc" },
+      take: 100,
+      select: {
+        createdAt: true,
+        id: true,
+        opportunity: {
+          select: {
+            officialSourceUrl: true,
+            studentOrganizationName: true,
+            title: true,
+          },
+        },
+      },
     }),
   ]);
   return (
@@ -103,6 +134,77 @@ export default async function VerificationQueuePage() {
               </div>
             </article>
           ))}
+        </section>
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">
+            Student-added sources ({externalRequests.length})
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Reviewing a source resolves the intake request only. It never
+            publishes or converts the student&apos;s private record.
+          </p>
+          {externalRequests.map((request) => (
+            <article
+              className="rounded-xl border border-border bg-background p-5"
+              key={request.id}
+            >
+              <h3 className="font-semibold">{request.opportunity.title}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {request.opportunity.studentOrganizationName} · submitted{" "}
+                {new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(
+                  request.createdAt,
+                )}
+              </p>
+              {request.opportunity.officialSourceUrl ? (
+                <a
+                  className="mt-3 inline-flex min-h-10 items-center rounded-lg border border-border px-3 py-2 text-sm font-medium"
+                  href={request.opportunity.officialSourceUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Open submitted source
+                </a>
+              ) : null}
+              <form
+                action={resolveExternalOpportunityVerification}
+                className="mt-4 flex flex-col gap-2 sm:flex-row"
+              >
+                <input name="requestId" type="hidden" value={request.id} />
+                <label
+                  className="sr-only"
+                  htmlFor={`request-notes-${request.id}`}
+                >
+                  Review notes
+                </label>
+                <input
+                  className="min-h-10 min-w-64 flex-1 rounded-lg border border-border px-3 py-2 text-sm"
+                  id={`request-notes-${request.id}`}
+                  maxLength={1000}
+                  name="resolutionNotes"
+                  placeholder="Sanitized review notes"
+                />
+                <button
+                  className="min-h-10 rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground"
+                  name="resolution"
+                  value="APPROVED"
+                >
+                  Approve for catalog intake
+                </button>
+                <button
+                  className="min-h-10 rounded-lg border border-border px-3 py-2 text-sm"
+                  name="resolution"
+                  value="REJECTED"
+                >
+                  Reject source
+                </button>
+              </form>
+            </article>
+          ))}
+          {externalRequests.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">
+              No student-added sources are waiting for review.
+            </p>
+          ) : null}
         </section>
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">

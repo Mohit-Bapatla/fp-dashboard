@@ -10,6 +10,10 @@ import {
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
 import { assertStudentAccess } from "@/lib/student/authorization";
+import { buildResumePresentation } from "@/lib/student/resume-presentation";
+import { getResumeAlignmentOpportunities } from "@/lib/student/resume-review-data";
+
+export const runtime = "nodejs";
 
 function listToText(value: string[]) {
   return value.join(", ");
@@ -49,14 +53,26 @@ export default async function StudentProfilePage() {
   const user = await getCurrentStudentProfile(userId);
   const profile = user.studentProfile;
   const gradeYearValues = getGradeYearValues(profile?.gradeYear);
-  const resume = profile
-    ? await prisma.resume.findFirst({
-        where: {
-          studentProfileId: profile.id,
-        },
-        orderBy: {
-          updatedAt: "desc",
-        },
+  const [resume, alignmentOpportunities] = profile
+    ? await Promise.all([
+        prisma.resume.findFirst({
+          where: {
+            studentProfileId: profile.id,
+          },
+          orderBy: {
+            updatedAt: "desc",
+          },
+        }),
+        getResumeAlignmentOpportunities(profile.id),
+      ])
+    : [null, []];
+  const resumePresentation = resume
+    ? buildResumePresentation({
+        alignmentOpportunities,
+        analyzedAt: resume.analyzedAt,
+        parsedText: resume.parsedText,
+        parseStatus: resume.parseStatus,
+        uploadedAt: resume.uploadedAt,
       })
     : null;
   const initialState: StudentOnboardingActionState = {
@@ -118,14 +134,15 @@ export default async function StudentProfilePage() {
           resume={
             resume
               ? {
-                  extractedCertifications: resume.extractedCertifications,
-                  extractedEducation: resume.extractedEducation,
-                  extractedExperience: resume.extractedExperience,
-                  extractedSkills: resume.extractedSkills,
+                  alignments: resumePresentation?.alignments ?? [],
+                  extractedSections:
+                    resumePresentation?.extractedSections ?? null,
                   id: resume.id,
                   fileName: resume.fileName,
-                  parsedSummary: resume.parsedSummary,
+                  parseFailureReason: resume.parseFailureReason,
                   parseStatus: resume.parseStatus,
+                  review: resumePresentation?.review ?? null,
+                  uploadedAt: resume.uploadedAt,
                   updatedAt: resume.updatedAt,
                 }
               : null

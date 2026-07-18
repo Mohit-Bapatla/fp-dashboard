@@ -12,9 +12,12 @@ import Link from "next/link";
 import { MatchExplanationPanel } from "@/components/matching/match-explanation-panel";
 import type { OpportunityType } from "@/generated/prisma/enums";
 import type {
+  ApplicationStatus,
   OpportunityAvailabilityStatus,
   OpportunityRelationshipType,
+  OpportunityStatus,
   OpportunityVerificationStatus,
+  OpportunityVisibility,
 } from "@/generated/prisma/enums";
 import { EligibilityBadge } from "@/components/opportunities/eligibility-badge";
 import {
@@ -71,6 +74,9 @@ export type StudentOpportunityDetailData = {
   essayQuestionCount: number | null;
   scheduleRequirements: string | null;
   estimatedWeeklyHours: number | null;
+  status: OpportunityStatus;
+  studentOrganizationName: string | null;
+  visibility: OpportunityVisibility;
   organization: {
     name: string;
     website: string | null;
@@ -90,18 +96,21 @@ export type SimilarOpportunityData = {
 export type StudentOpportunityApplyState =
   | {
       kind: "alreadyApplied";
+      status: ApplicationStatus;
       submittedAt: Date | null;
     }
   | {
-      kind: "canApply";
+      kind: "canPrepare";
+      submissionAllowed: boolean;
     }
-  | { kind: "workspace"; applicationId: string }
+  | {
+      kind: "workspace";
+      applicationId: string;
+      submissionAllowed: boolean;
+    }
   | { kind: "unavailable" }
   | {
       kind: "needsProfile";
-    }
-  | {
-      kind: "needsResume";
     };
 
 export function getStudentOpportunityOnboardingHref(returnTo: string) {
@@ -132,6 +141,7 @@ function fieldValue(value: string | null) {
 
 export function StudentOpportunityDetail({
   applyState,
+  awaitingOpening,
   explanation,
   match,
   opportunity,
@@ -139,8 +149,10 @@ export function StudentOpportunityDetail({
   eligibility,
   isSaved,
   followReopening,
+  submissionAllowed,
 }: {
   applyState: StudentOpportunityApplyState;
+  awaitingOpening: boolean;
   explanation: MatchExplanation | null;
   match: MatchScoreResult | null;
   opportunity: StudentOpportunityDetailData;
@@ -148,7 +160,13 @@ export function StudentOpportunityDetail({
   eligibility: EligibilityResult;
   isSaved: boolean;
   followReopening: boolean;
+  submissionAllowed: boolean;
 }) {
+  const isPrivateStudentOpportunity =
+    opportunity.visibility === "STUDENT_PRIVATE";
+  const organizationName =
+    opportunity.studentOrganizationName ?? opportunity.organization.name;
+
   return (
     <div className="space-y-8">
       <Link
@@ -158,12 +176,14 @@ export function StudentOpportunityDetail({
         <ArrowLeft aria-hidden="true" className="h-4 w-4" />
         Back to opportunities
       </Link>
-      <Link
-        className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
-        href={`/opportunities/${opportunity.id}`}
-      >
-        View public preview
-      </Link>
+      {!isPrivateStudentOpportunity ? (
+        <Link
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+          href={`/opportunities/${opportunity.id}`}
+        >
+          View public preview
+        </Link>
+      ) : null}
 
       <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -178,6 +198,16 @@ export function StudentOpportunityDetail({
               <OpportunityRelationshipBadge
                 relationshipType={opportunity.relationshipType}
               />
+              {isPrivateStudentOpportunity ? (
+                <>
+                  <span className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-700">
+                    Private
+                  </span>
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                    Not verified
+                  </span>
+                </>
+              ) : null}
               <EligibilityBadge category={eligibility.category} />
               {match ? (
                 <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
@@ -189,10 +219,11 @@ export function StudentOpportunityDetail({
               {opportunity.title}
             </h1>
             <p className="mt-3 text-base font-medium text-muted-foreground">
-              {opportunity.organization.name}
+              {organizationName}
             </p>
           </div>
           <StudentOpportunityPrimaryActions
+            canSave={!isPrivateStudentOpportunity}
             isSaved={isSaved}
             opportunityId={opportunity.id}
             applyState={applyState}
@@ -220,6 +251,11 @@ export function StudentOpportunityDetail({
           />
           <DetailFact
             icon={CalendarDays}
+            label="Applications open"
+            value={formatDate(opportunity.opensAt)}
+          />
+          <DetailFact
+            icon={CalendarDays}
             label="Deadline"
             value={formatDate(opportunity.deadline)}
           />
@@ -232,12 +268,18 @@ export function StudentOpportunityDetail({
             }
           />
           <DetailFact
-            label="Published"
+            label={isPrivateStudentOpportunity ? "Added" : "Published"}
             value={formatDate(opportunity.publishedAt ?? opportunity.createdAt)}
           />
           <DetailFact
-            label="Last verified"
-            value={formatDate(opportunity.lastVerifiedAt)}
+            label={
+              isPrivateStudentOpportunity ? "Directory status" : "Last verified"
+            }
+            value={
+              isPrivateStudentOpportunity
+                ? "Private student entry"
+                : formatDate(opportunity.lastVerifiedAt)
+            }
           />
           <DetailFact
             label="Program dates"
@@ -260,6 +302,19 @@ export function StudentOpportunityDetail({
             }
           />
         </div>
+        {awaitingOpening ? (
+          <div className="mt-5 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
+            <p className="font-semibold text-foreground">
+              {opportunity.opensAt
+                ? `Applications open ${formatDate(opportunity.opensAt)}`
+                : "Applications are opening soon"}
+            </p>
+            <p className="mt-2 text-muted-foreground">
+              You can prepare your materials now. Submission and external
+              confirmation remain unavailable until the opportunity opens.
+            </p>
+          </div>
+        ) : null}
         <div className="mt-5 rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
           <OpportunityRelationshipDisclaimer
             relationshipType={opportunity.relationshipType}
@@ -273,14 +328,20 @@ export function StudentOpportunityDetail({
               rel="noreferrer"
               target="_blank"
             >
-              Official source
+              {isPrivateStudentOpportunity
+                ? "Student-provided source"
+                : "Official source"}
             </a>
           ) : (
             <span className="text-sm text-muted-foreground">
-              Official source not published
+              {isPrivateStudentOpportunity
+                ? "Student-provided source unavailable"
+                : "Official source unavailable"}
             </span>
           )}
-          {opportunity.officialApplicationUrl ? (
+          {!isPrivateStudentOpportunity &&
+          submissionAllowed &&
+          opportunity.officialApplicationUrl ? (
             <a
               className="text-sm font-medium text-primary underline"
               href={opportunity.officialApplicationUrl}
@@ -304,50 +365,56 @@ export function StudentOpportunityDetail({
               type="submit"
             >
               {followReopening
-                ? "Stop reopening alerts"
-                : "Follow for reopening"}
+                ? awaitingOpening
+                  ? "Stop opening alerts"
+                  : "Stop reopening alerts"
+                : awaitingOpening
+                  ? "Follow for opening alert"
+                  : "Follow for reopening"}
             </button>
           </form>
         ) : null}
       </section>
 
-      <details className="rounded-xl border border-border bg-background p-6">
-        <summary className="cursor-pointer font-semibold">
-          Report incorrect information
-        </summary>
-        <form action={reportIncorrectOpportunity} className="mt-4 grid gap-3">
-          <input name="opportunityId" type="hidden" value={opportunity.id} />
-          <select
-            className="rounded-lg border border-border p-2 text-sm"
-            name="category"
-          >
-            <option value="BROKEN_LINK">Broken link</option>
-            <option value="INCORRECT_DEADLINE">Incorrect deadline</option>
-            <option value="ELIGIBILITY_ERROR">Eligibility error</option>
-            <option value="PROGRAM_CLOSED">Program closed</option>
-            <option value="DUPLICATE">Duplicate</option>
-            <option value="OTHER">Other</option>
-          </select>
-          <textarea
-            className="rounded-lg border border-border p-2 text-sm"
-            name="details"
-            placeholder="What should the team verify?"
-            rows={4}
-          />
-          <input
-            className="rounded-lg border border-border p-2 text-sm"
-            name="sourceUrl"
-            placeholder="Supporting source URL (optional)"
-            type="url"
-          />
-          <button
-            className="w-fit rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-            type="submit"
-          >
-            Send report
-          </button>
-        </form>
-      </details>
+      {!isPrivateStudentOpportunity ? (
+        <details className="rounded-xl border border-border bg-background p-6">
+          <summary className="cursor-pointer font-semibold">
+            Report incorrect information
+          </summary>
+          <form action={reportIncorrectOpportunity} className="mt-4 grid gap-3">
+            <input name="opportunityId" type="hidden" value={opportunity.id} />
+            <select
+              className="rounded-lg border border-border p-2 text-sm"
+              name="category"
+            >
+              <option value="BROKEN_LINK">Broken link</option>
+              <option value="INCORRECT_DEADLINE">Incorrect deadline</option>
+              <option value="ELIGIBILITY_ERROR">Eligibility error</option>
+              <option value="PROGRAM_CLOSED">Program closed</option>
+              <option value="DUPLICATE">Duplicate</option>
+              <option value="OTHER">Other</option>
+            </select>
+            <textarea
+              className="rounded-lg border border-border p-2 text-sm"
+              name="details"
+              placeholder="What should the team verify?"
+              rows={4}
+            />
+            <input
+              className="rounded-lg border border-border p-2 text-sm"
+              name="sourceUrl"
+              placeholder="Supporting source URL (optional)"
+              type="url"
+            />
+            <button
+              className="w-fit rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+              type="submit"
+            >
+              Send report
+            </button>
+          </form>
+        </details>
+      ) : null}
 
       <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
@@ -444,13 +511,16 @@ export function StudentOpportunityDetail({
               Host organization
             </h2>
             <p className="mt-3 text-sm font-medium text-foreground">
-              {opportunity.organization.name}
+              {organizationName}
             </p>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              {opportunity.organization.description ||
-                "More host details will be added later."}
+              {isPrivateStudentOpportunity
+                ? "These organization details came from the external source you added."
+                : opportunity.organization.description ||
+                  "More host details will be added later."}
             </p>
-            {opportunity.organization.website ? (
+            {!isPrivateStudentOpportunity &&
+            opportunity.organization.website ? (
               <a
                 className="mt-4 inline-flex rounded text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 href={opportunity.organization.website}
@@ -498,10 +568,12 @@ export function StudentOpportunityDetail({
 
 export function StudentOpportunityPrimaryActions({
   applyState,
+  canSave,
   isSaved,
   opportunityId,
 }: {
   applyState: StudentOpportunityApplyState;
+  canSave: boolean;
   isSaved: boolean;
   opportunityId: string;
 }) {
@@ -510,7 +582,7 @@ export function StudentOpportunityPrimaryActions({
   return (
     <>
       <ApplyCallToAction opportunityId={opportunityId} state={applyState} />
-      {applyState.kind === "needsProfile" ? (
+      {!canSave ? null : applyState.kind === "needsProfile" ? (
         <Link
           className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           href={getStudentOpportunityOnboardingHref(detailPath)}
@@ -573,12 +645,14 @@ function ApplyCallToAction({
             aria-hidden="true"
             className="h-4 w-4 text-emerald-600"
           />
-          Application submitted
+          {state.submittedAt
+            ? "Application submitted"
+            : `Application ${formatEnumLabel(state.status).toLowerCase()}`}
         </div>
         <p className="mt-2 text-emerald-700">
           {state.submittedAt
             ? `Submitted ${formatDate(state.submittedAt)}.`
-            : "Your application has been submitted."}
+            : "Submission has not been recorded for this application."}
         </p>
         <Link
           className="mt-3 inline-flex items-center gap-1.5 rounded text-xs font-medium text-emerald-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
@@ -601,7 +675,9 @@ function ApplyCallToAction({
         className="inline-flex min-h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground"
         href={`/dashboard/student/applications/${state.applicationId}`}
       >
-        Continue application
+        {state.submissionAllowed
+          ? "Continue application"
+          : "Continue preparation"}
       </Link>
     );
 
@@ -614,19 +690,7 @@ function ApplyCallToAction({
         href={getStudentOpportunityOnboardingHref(applyPath)}
       >
         <UserRound aria-hidden="true" className="h-4 w-4" />
-        Complete profile to apply
-      </Link>
-    );
-  }
-
-  if (state.kind === "needsResume") {
-    return (
-      <Link
-        className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-        href="/dashboard/student"
-      >
-        <FileText aria-hidden="true" className="h-4 w-4" />
-        Upload resume to apply
+        Complete profile to prepare
       </Link>
     );
   }
@@ -638,7 +702,7 @@ function ApplyCallToAction({
         className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         type="submit"
       >
-        Start application plan
+        {state.submissionAllowed ? "Start application" : "Start preparation"}
       </button>
     </form>
   );

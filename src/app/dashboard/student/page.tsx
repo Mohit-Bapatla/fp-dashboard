@@ -1,159 +1,267 @@
-import { auth } from "@clerk/nextjs/server";
 import {
   ArrowRight,
-  BellRing,
+  CalendarClock,
   ClipboardCheck,
-  FileClock,
-  GraduationCap,
-  LifeBuoy,
-  MapPin,
-  Rocket,
-  Target,
+  FileText,
+  ListChecks,
+  Plus,
+  Sparkles,
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
 
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { RoleBadge } from "@/components/dashboard/role-badge";
-import { StatCard } from "@/components/dashboard/stat-card";
-import { StudentResumeManager } from "@/components/student/student-resume-manager";
-import {
-  RecommendationEventTracker,
-  TrackedRecommendationLink,
-} from "@/components/student/recommendation-event-tracker";
-import { prisma } from "@/lib/db/prisma";
-import { getRecommendationExplanation } from "@/lib/matching/explanations";
-import { getRecommendedOpportunities } from "@/lib/matching/recommendations";
-import { EligibilityBadge } from "@/components/opportunities/eligibility-badge";
-import { OpportunityRelationshipBadge } from "@/components/opportunities/opportunity-relationship-badge";
+import { startApplicationWorkspace } from "@/app/dashboard/student/applications/workspace-actions";
 import {
   dismissRecommendation,
   saveOpportunity,
 } from "@/app/dashboard/student/saved/actions";
-import { startApplicationWorkspace } from "@/app/dashboard/student/applications/workspace-actions";
-import { cn } from "@/lib/utils";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { RoleBadge } from "@/components/dashboard/role-badge";
+import { EligibilityBadge } from "@/components/opportunities/eligibility-badge";
+import { OpportunityRelationshipBadge } from "@/components/opportunities/opportunity-relationship-badge";
+import {
+  RecommendationEventTracker,
+  TrackedRecommendationLink,
+} from "@/components/student/recommendation-event-tracker";
+import { StudentResumeManager } from "@/components/student/student-resume-manager";
+import { prisma } from "@/lib/db/prisma";
+import { getRecommendationExplanation } from "@/lib/matching/explanations";
+import { getRecommendedOpportunities } from "@/lib/matching/recommendations";
+import {
+  isStudentOpportunitySubmittable,
+  studentDirectoryOpportunityWhere,
+} from "@/lib/opportunities/student-visibility";
+import {
+  getApplicationNextAction,
+  getApplicationTaskHref,
+  getApplicationTaskProgress,
+  getTaskWhyItMatters,
+  groupApplicationTasks,
+} from "@/lib/student/application-tasks";
+import { canSubmitExistingApplication } from "@/lib/student/application-workspace";
+import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
-import { getStudentProfileCompletion } from "@/lib/student/profile-completion";
+import { getStudentNotificationPreference } from "@/lib/student/notification-preferences";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { buildResumePresentation } from "@/lib/student/resume-presentation";
+import { getResumeAlignmentOpportunities } from "@/lib/student/resume-review-data";
+
+export const runtime = "nodejs";
+
+const workspaceStatuses = new Set([
+  "DRAFT",
+  "SAVED",
+  "PLANNING",
+  "PREPARING",
+  "WAITING_FOR_RECOMMENDATION",
+  "READY_TO_SUBMIT",
+]);
+
+function formatDate(value: Date | null) {
+  if (!value) return "No date set";
+  return new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeZone: "UTC",
+  }).format(value);
+}
+
+function formatStatus(value: string) {
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
 
 export default async function StudentDashboardPage() {
-  const { redirectToSignIn, userId } = await auth();
-
-  if (!userId) {
-    return redirectToSignIn();
-  }
-
+  const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
   const profile = user.studentProfile;
-  const completion = getStudentProfileCompletion(profile);
-  const [
-    resume,
-    applicationCount,
-    activeApplicationCount,
-    acceptedApplicationCount,
-    rejectedApplicationCount,
-    withdrawnApplicationCount,
-    placementRequestCount,
-    verifiedServiceHours,
-    certificateCount,
-  ] = profile
+  const now = new Date();
+
+  const data = profile
     ? await Promise.all([
         prisma.resume.findFirst({
-          where: {
-            studentProfileId: profile.id,
-          },
-          orderBy: {
-            updatedAt: "desc",
-          },
+          where: { studentProfileId: profile.id },
+          orderBy: { updatedAt: "desc" },
         }),
-        prisma.application.count({
+        getRecommendedOpportunities(profile.id),
+        prisma.application.findMany({
           where: {
             studentProfileId: profile.id,
+            status: { notIn: ["REJECTED", "WITHDRAWN"] },
           },
-        }),
-        prisma.application.count({
-          where: {
-            studentProfileId: profile.id,
-            status: {
-              in: [
-                "SUBMITTED",
-                "UNDER_REVIEW",
-                "INTERVIEW",
-                "WAITLISTED",
-                "ACCEPTED",
-              ],
+          orderBy: { lastActivityAt: "desc" },
+          take: 12,
+          select: {
+            completionPercent: true,
+            id: true,
+            lastActivityAt: true,
+            opportunityId: true,
+            status: true,
+            tasks: {
+              orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+              select: {
+                applicationId: true,
+                completedAt: true,
+                createdAt: true,
+                description: true,
+                dueAt: true,
+                id: true,
+                required: true,
+                sortOrder: true,
+                source: true,
+                status: true,
+                studentControlled: true,
+                taskKey: true,
+                title: true,
+                type: true,
+                updatedAt: true,
+              },
+            },
+            opportunity: {
+              select: {
+                applicationMethod: true,
+                availabilityStatus: true,
+                deadline: true,
+                id: true,
+                opensAt: true,
+                organization: { select: { name: true } },
+                sourceType: true,
+                status: true,
+                studentOrganizationName: true,
+                studentOwnerProfileId: true,
+                title: true,
+                verificationStatus: true,
+                visibility: true,
+              },
             },
           },
         }),
-        prisma.application.count({
+        prisma.opportunity.findMany({
           where: {
-            studentProfileId: profile.id,
-            status: "ACCEPTED",
-          },
-        }),
-        prisma.application.count({
-          where: {
-            studentProfileId: profile.id,
-            status: "REJECTED",
-          },
-        }),
-        prisma.application.count({
-          where: {
-            studentProfileId: profile.id,
-            status: "WITHDRAWN",
-          },
-        }),
-        prisma.placementRequest.count({
-          where: {
-            studentProfileId: profile.id,
-          },
-        }),
-        prisma.serviceHourRecord.aggregate({
-          where: {
-            studentProfileId: profile.id,
-            verificationStatus: "VERIFIED",
-          },
-          _sum: {
-            hours: true,
-          },
-        }),
-        prisma.serviceHourRecord.count({
-          where: {
-            studentProfileId: profile.id,
-            certificateStatus: {
-              in: ["APPROVED", "ISSUED"],
-            },
-          },
-        }),
-      ])
-    : [null, 0, 0, 0, 0, 0, 0, { _sum: { hours: 0 } }, 0];
-  const recommendedOpportunities = profile
-    ? await getRecommendedOpportunities(profile.id)
-    : [];
-  const recentWorkspace = profile
-    ? await prisma.application.findFirst({
-        where: {
-          studentProfileId: profile.id,
-          status: {
-            in: [
-              "DRAFT",
-              "SAVED",
-              "PLANNING",
-              "PREPARING",
-              "WAITING_FOR_RECOMMENDATION",
-              "READY_TO_SUBMIT",
+            ...studentDirectoryOpportunityWhere(now),
+            availabilityStatus: "OPENING_SOON",
+            OR: [
+              {
+                savedByStudents: {
+                  some: { studentProfileId: profile.id, dismissedAt: null },
+                },
+              },
+              ...(profile.interestedSpecialties.length > 0
+                ? [{ specialty: { in: profile.interestedSpecialties } }]
+                : []),
+              ...(profile.opportunityTypes.length > 0
+                ? [{ type: { in: profile.opportunityTypes } }]
+                : []),
             ],
           },
-        },
-        orderBy: { lastActivityAt: "desc" },
-        select: {
-          id: true,
-          completionPercent: true,
-          nextAction: true,
-          opportunity: { select: { title: true, deadline: true } },
-        },
+          orderBy: [{ opensAt: "asc" }, { deadline: "asc" }],
+          take: 4,
+          select: {
+            deadline: true,
+            id: true,
+            opensAt: true,
+            organization: { select: { name: true } },
+            savedByStudents: {
+              where: { studentProfileId: profile.id, dismissedAt: null },
+              select: { followReopening: true },
+            },
+            applications: {
+              where: {
+                studentProfileId: profile.id,
+                status: {
+                  in: [
+                    "DRAFT",
+                    "SAVED",
+                    "PLANNING",
+                    "PREPARING",
+                    "WAITING_FOR_RECOMMENDATION",
+                    "READY_TO_SUBMIT",
+                  ],
+                },
+              },
+              select: { id: true },
+              take: 1,
+            },
+            specialty: true,
+            title: true,
+          },
+        }),
+        getStudentNotificationPreference(profile.id),
+        getResumeAlignmentOpportunities(profile.id),
+      ])
+    : null;
+
+  const resume = data?.[0] ?? null;
+  const recommendations = (data?.[1] ?? []).slice(0, 6);
+  const applications = data?.[2] ?? [];
+  const openingSoon = data?.[3] ?? [];
+  const timezone = data?.[4]?.timezone ?? "America/Chicago";
+  const alignmentOpportunities = data?.[5] ?? [];
+  const resumePresentation = resume
+    ? buildResumePresentation({
+        alignmentOpportunities,
+        analyzedAt: resume.analyzedAt,
+        parsedText: resume.parsedText,
+        parseStatus: resume.parseStatus,
+        uploadedAt: resume.uploadedAt,
       })
     : null;
+  const applicationSummaries = applications.map((application) => {
+    const submissionAllowed =
+      profile && canSubmitExistingApplication(application.status)
+        ? isStudentOpportunitySubmittable(
+            application.opportunity,
+            profile.id,
+            now,
+          )
+        : false;
+    return {
+      ...application,
+      nextAction: getApplicationNextAction(
+        application.tasks,
+        {
+          applicationId: application.id,
+          canSubmit: submissionAllowed,
+          opportunityId: application.opportunityId,
+        },
+        now,
+        timezone,
+      ),
+      organizationName:
+        application.opportunity.studentOrganizationName ??
+        application.opportunity.organization.name,
+      progress: getApplicationTaskProgress(
+        application.tasks,
+        application.completionPercent,
+      ),
+    };
+  });
+  const recentWorkspace = applicationSummaries.find(
+    (application) =>
+      workspaceStatuses.has(application.status) &&
+      application.tasks.some((task) => task.taskKey),
+  );
+  const openTasks = applications.flatMap((application) =>
+    application.tasks
+      .filter((task) => task.status !== "COMPLETE" && task.status !== "SKIPPED")
+      .map((task) => ({
+        ...task,
+        opportunityId: application.opportunityId,
+        opportunityTitle: application.opportunity.title,
+        organizationName:
+          application.opportunity.studentOrganizationName ??
+          application.opportunity.organization.name,
+      })),
+  );
+  const taskGroups = groupApplicationTasks(openTasks, now, timezone);
+  const urgentTasks = [
+    ...taskGroups.overdue,
+    ...taskGroups.today,
+    ...taskGroups.thisWeek,
+    ...taskGroups.later,
+  ].slice(0, 5);
 
   return (
     <DashboardShell
@@ -161,497 +269,544 @@ export default async function StudentDashboardPage() {
       role="student"
     >
       <div className="space-y-8">
-        <section className="flex flex-col justify-between gap-5 rounded-xl border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start">
+        <header className="flex flex-col justify-between gap-5 rounded-xl border border-border bg-background p-6 shadow-sm lg:flex-row lg:items-start">
           <div className="max-w-3xl">
             <RoleBadge className="mb-5" role="student" />
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
-              Learner workspace
+              Application copilot
             </p>
             <h1 className="mt-3 text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
-              Student Dashboard
+              What needs your attention
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-              Manage your student profile and track readiness for future
-              healthcare opportunity matching.
+              Move applications forward, prepare before openings, and keep each
+              required action in one private workspace.
             </p>
           </div>
-          <Link
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-            href="/dashboard/student/onboarding"
-          >
-            {profile ? "Edit profile" : "Start onboarding"}
-            <ArrowRight aria-hidden="true" className="h-4 w-4" />
-          </Link>
-        </section>
-
-        <section
-          aria-label="Student profile stats"
-          className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
-        >
-          <StatCard
-            helper={`${completion.completedFields} of ${completion.totalFields} required sections complete.`}
-            label="Profile completion"
-            value={`${completion.percent}%`}
-          />
-          <StatCard
-            helper="All applications submitted from your student profile."
-            label="Applications submitted"
-            value={applicationCount.toString()}
-          />
-          <StatCard
-            helper="Applications still submitted, under review, interviewing, or accepted."
-            label="Active applications"
-            value={activeApplicationCount.toString()}
-          />
-          <StatCard
-            helper="Personalized requests submitted to the placement team."
-            label="Placement requests"
-            value={placementRequestCount.toString()}
-          />
-          <StatCard
-            helper={`${rejectedApplicationCount} rejected and ${withdrawnApplicationCount} withdrawn.`}
-            label="Accepted"
-            value={acceptedApplicationCount.toString()}
-          />
-          <StatCard
-            helper={
-              resume
-                ? "Your private resume file is uploaded."
-                : "Upload a PDF or DOCX resume when your profile is ready."
-            }
-            label="Resume status"
-            value={resume ? "Ready" : "Missing"}
-          />
-          <StatCard
-            helper="Verified hours from accepted opportunities."
-            label="Service hours"
-            value={(verifiedServiceHours._sum.hours ?? 0).toString()}
-          />
-          <StatCard
-            helper="Approved or issued certificate records."
-            label="Certificates"
-            value={certificateCount.toString()}
-          />
-        </section>
-
-        {profile && !completion.isComplete && (
-          <NextStepCallout
-            href="/dashboard/student/onboarding"
-            label="Finish profile"
-            message={`Your profile is ${completion.percent}% complete — finish all sections to improve placement readiness.`}
-          />
-        )}
-        {profile && completion.isComplete && !resume && (
-          <NextStepCallout
-            href="/dashboard/student"
-            label="Upload resume"
-            message="Profile complete. Upload your resume so you are ready to apply faster."
-          />
-        )}
-        {profile &&
-          completion.isComplete &&
-          resume &&
-          applicationCount === 0 && (
-            <NextStepCallout
+          <div className="flex flex-wrap gap-3">
+            <Link
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium"
+              href="/dashboard/student/opportunities/add-external"
+            >
+              <Plus aria-hidden="true" className="h-4 w-4" />
+              Add external application
+            </Link>
+            <Link
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground"
               href="/dashboard/student/opportunities"
-              label="Browse opportunities"
-              message="Ready to apply — browse open opportunities and submit your first application."
-            />
-          )}
+            >
+              Browse opportunities
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+          </div>
+        </header>
 
-        {profile ? (
-          <section className="space-y-4">
-            <div>
-              <h2 className="text-xl font-semibold text-foreground">
-                Recommended opportunities
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Personalized suggestions use your profile, parsed resume data,
-                and deterministic match scoring.
-              </p>
-            </div>
-            {recommendedOpportunities.length > 0 ? (
-              <div className="grid gap-4 lg:grid-cols-3">
-                <RecommendationEventTracker
-                  events={recommendedOpportunities.map(
-                    ({ match, opportunity }) => ({
+        {!profile ? (
+          <section className="rounded-xl border border-dashed border-border bg-background p-8">
+            <UserRound aria-hidden="true" className="h-6 w-6 text-primary" />
+            <h2 className="mt-4 text-xl font-semibold">
+              Complete your application profile first
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Add your school, location, interests, and goals to unlock private
+              workspaces, task planning, and recommendations.
+            </p>
+            <Link
+              className="mt-5 inline-flex min-h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground"
+              href="/dashboard/student/onboarding"
+            >
+              Start onboarding
+            </Link>
+          </section>
+        ) : (
+          <>
+            <DashboardSection
+              actionHref="/dashboard/student/tasks"
+              actionLabel="View all tasks"
+              description="The most time-sensitive open actions across your applications."
+              icon={ListChecks}
+              title="Urgent actions"
+            >
+              {urgentTasks.length > 0 ? (
+                <div className="grid gap-3 lg:grid-cols-2">
+                  {urgentTasks.map((task) => (
+                    <article
+                      className="rounded-lg border border-border bg-muted/20 p-4"
+                      key={task.id}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                          {task.dueAt ? formatDate(task.dueAt) : "Plan next"}
+                        </p>
+                        <span className="text-xs text-muted-foreground">
+                          {task.required ? "Required" : "Optional"}
+                        </span>
+                      </div>
+                      <h3 className="mt-2 font-semibold">{task.title}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {task.opportunityTitle} {" · "} {task.organizationName}
+                      </p>
+                      <p className="mt-3 text-sm text-muted-foreground">
+                        {getTaskWhyItMatters(task, now, timezone)}
+                      </p>
+                      <Link
+                        className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium"
+                        href={getApplicationTaskHref(task, task.opportunityId)}
+                      >
+                        Open action
+                        <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                      </Link>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <SectionEmpty message="No open application tasks yet. Start an application or add an external one to build a plan." />
+              )}
+            </DashboardSection>
+
+            <DashboardSection
+              description="Resume the workspace you touched most recently."
+              icon={ClipboardCheck}
+              title="Continue where you left off"
+            >
+              {recentWorkspace ? (
+                <article className="rounded-lg border border-border bg-muted/20 p-5">
+                  <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {recentWorkspace.organizationName}
+                      </p>
+                      <h3 className="mt-1 text-lg font-semibold">
+                        {recentWorkspace.opportunity.title}
+                      </h3>
+                      {recentWorkspace.opportunity.visibility ===
+                      "STUDENT_PRIVATE" ? (
+                        <PrivateOpportunityLabels />
+                      ) : null}
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {recentWorkspace.progress.percent}% ready
+                        {recentWorkspace.nextAction
+                          ? ` · Next: ${recentWorkspace.nextAction.task.title}`
+                          : " · All required tasks complete"}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {formatStatus(recentWorkspace.status)} · Deadline{" "}
+                        {formatDate(recentWorkspace.opportunity.deadline)}
+                      </p>
+                    </div>
+                    <Link
+                      className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground"
+                      href={`/dashboard/student/applications/${recentWorkspace.id}`}
+                    >
+                      Continue workspace
+                    </Link>
+                  </div>
+                </article>
+              ) : (
+                <SectionEmpty message="No preparation workspace yet. Browse opportunities or add an external application." />
+              )}
+            </DashboardSection>
+
+            <DashboardSection
+              actionHref="/dashboard/student/opportunities"
+              actionLabel="Browse all"
+              description="Up to six verified opportunities ranked from your profile and resume."
+              icon={Sparkles}
+              title="Recommended opportunities"
+            >
+              {recommendations.length > 0 ? (
+                <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                  <RecommendationEventTracker
+                    events={recommendations.map(({ match, opportunity }) => ({
                       eventType: "IMPRESSION",
                       matchScore: match.score,
                       opportunityId: opportunity.id,
                       source: "student_dashboard_recommendation",
-                    }),
+                    }))}
+                  />
+                  {recommendations.map(
+                    ({ eligibility, match, opportunity }) => {
+                      const explanation = getRecommendationExplanation(match);
+                      return (
+                        <article
+                          className="rounded-lg border border-border bg-background p-5"
+                          key={opportunity.id}
+                        >
+                          <div className="flex flex-wrap items-center gap-2">
+                            <EligibilityBadge category={eligibility.category} />
+                            <OpportunityRelationshipBadge
+                              relationshipType={opportunity.relationshipType}
+                            />
+                          </div>
+                          <p className="mt-4 text-xs font-medium text-muted-foreground">
+                            {opportunity.organization.name}
+                          </p>
+                          <h3 className="mt-1 font-semibold">
+                            {opportunity.title}
+                          </h3>
+                          <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                            {(explanation.whyRecommended.length > 0
+                              ? explanation.whyRecommended.slice(0, 2)
+                              : ["Matches details in your application profile."]
+                            ).map((reason) => (
+                              <li key={reason}>{reason}</li>
+                            ))}
+                          </ul>
+                          <p className="mt-3 text-xs font-medium text-muted-foreground">
+                            {opportunity.opensAt
+                              ? `Opens ${formatDate(opportunity.opensAt)}`
+                              : opportunity.deadline
+                                ? `Deadline ${formatDate(opportunity.deadline)}`
+                                : "Rolling or date not published"}
+                          </p>
+                          <TrackedRecommendationLink
+                            className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium"
+                            href={`/dashboard/student/opportunities/${opportunity.id}?source=recommendation`}
+                            matchScore={match.score}
+                            opportunityId={opportunity.id}
+                            source="student_dashboard_recommendation"
+                          >
+                            View details
+                            <ArrowRight
+                              aria-hidden="true"
+                              className="h-4 w-4"
+                            />
+                          </TrackedRecommendationLink>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <form action={saveOpportunity}>
+                              <input
+                                name="opportunityId"
+                                type="hidden"
+                                value={opportunity.id}
+                              />
+                              <button
+                                className="rounded-lg border border-border px-3 py-2 text-sm"
+                                type="submit"
+                              >
+                                Save
+                              </button>
+                            </form>
+                            <form action={dismissRecommendation}>
+                              <input
+                                name="opportunityId"
+                                type="hidden"
+                                value={opportunity.id}
+                              />
+                              <button
+                                className="rounded-lg border border-border px-3 py-2 text-sm"
+                                type="submit"
+                              >
+                                Dismiss
+                              </button>
+                            </form>
+                            <form action={startApplicationWorkspace}>
+                              <input
+                                name="opportunityId"
+                                type="hidden"
+                                value={opportunity.id}
+                              />
+                              <button
+                                className="rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground"
+                                type="submit"
+                              >
+                                Start preparation
+                              </button>
+                            </form>
+                          </div>
+                        </article>
+                      );
+                    },
                   )}
-                />
-                {recommendedOpportunities.map(
-                  ({ eligibility, match, opportunity, vectorSimilarity }) => (
+                </div>
+              ) : (
+                <SectionEmpty message="Recommendations will appear as verified opportunities match your profile." />
+              )}
+            </DashboardSection>
+
+            <DashboardSection
+              actionHref="/dashboard/student/saved"
+              actionLabel="View saved"
+              description="Followed or relevant opportunities that are not accepting submissions yet."
+              icon={CalendarClock}
+              title="Opening soon"
+            >
+              {openingSoon.length > 0 ? (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {openingSoon.map((opportunity) => (
                     <article
-                      className="rounded-lg border border-border bg-background p-5 shadow-sm"
+                      className="rounded-lg border border-border bg-muted/20 p-4"
                       key={opportunity.id}
                     >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <EligibilityBadge category={eligibility.category} />
-                        <OpportunityRelationshipBadge
-                          relationshipType={opportunity.relationshipType}
-                        />
-                        <p className="text-xs font-medium text-muted-foreground">
-                          {opportunity.organization.name}
-                        </p>
-                      </div>
-                      {vectorSimilarity > 0 ? (
-                        <p className="mt-3 text-xs font-medium text-muted-foreground">
-                          Semantic similarity is helping rank this
-                          recommendation.
-                        </p>
-                      ) : null}
-                      <h3 className="mt-4 text-base font-semibold text-foreground">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                        {opportunity.opensAt
+                          ? `Opens ${formatDate(opportunity.opensAt)}`
+                          : "Opening date pending"}
+                      </p>
+                      <h3 className="mt-2 font-semibold">
                         {opportunity.title}
                       </h3>
-                      <p className="mt-2 text-xs font-medium text-muted-foreground">
-                        Why it may fit · ranking score {match.score}
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {opportunity.organization.name}
                       </p>
-                      <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
-                        {getRecommendationExplanation(match)
-                          .whyRecommended.slice(0, 2)
-                          .map((reason) => (
-                            <li key={reason}>{reason}</li>
-                          ))}
-                      </ul>
-                      <p className="mt-3 text-xs font-medium text-muted-foreground">
-                        Improve fit:{" "}
-                        {getRecommendationExplanation(match).improvementTips.at(
-                          0,
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        {opportunity.savedByStudents[0]?.followReopening
+                          ? "Following for an opening alert"
+                          : opportunity.savedByStudents.length > 0
+                            ? "Saved by you"
+                            : opportunity.specialty
+                              ? `Relevant to ${opportunity.specialty}`
+                              : "Relevant to your profile"}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Preparation:{" "}
+                        {opportunity.applications.length > 0
+                          ? "workspace started"
+                          : "not started"}
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Link
+                          className="inline-flex min-h-10 items-center rounded-lg border border-border px-3 text-sm font-medium"
+                          href={`/dashboard/student/opportunities/${opportunity.id}`}
+                        >
+                          View details
+                        </Link>
+                        {opportunity.applications[0] ? (
+                          <Link
+                            className="inline-flex min-h-10 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground"
+                            href={`/dashboard/student/applications/${opportunity.applications[0].id}`}
+                          >
+                            Continue preparation
+                          </Link>
+                        ) : (
+                          <form action={startApplicationWorkspace}>
+                            <input
+                              name="opportunityId"
+                              type="hidden"
+                              value={opportunity.id}
+                            />
+                            <button
+                              className="min-h-10 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground"
+                              type="submit"
+                            >
+                              Start preparation
+                            </button>
+                          </form>
                         )}
-                      </p>
-                      <TrackedRecommendationLink
-                        className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
-                        href={`/dashboard/student/opportunities/${opportunity.id}?source=recommendation`}
-                        matchScore={match.score}
-                        opportunityId={opportunity.id}
-                        source="student_dashboard_recommendation"
-                      >
-                        View details
-                        <ArrowRight aria-hidden="true" className="h-4 w-4" />
-                      </TrackedRecommendationLink>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <form action={saveOpportunity}>
-                          <input
-                            name="opportunityId"
-                            type="hidden"
-                            value={opportunity.id}
-                          />
-                          <button
-                            className="rounded-md border border-border px-3 py-2 text-sm"
-                            type="submit"
-                          >
-                            Save
-                          </button>
-                        </form>
-                        <form action={dismissRecommendation}>
-                          <input
-                            name="opportunityId"
-                            type="hidden"
-                            value={opportunity.id}
-                          />
-                          <button
-                            className="rounded-md border border-border px-3 py-2 text-sm"
-                            type="submit"
-                          >
-                            Dismiss
-                          </button>
-                        </form>
-                        <form action={startApplicationWorkspace}>
-                          <input
-                            name="opportunityId"
-                            type="hidden"
-                            value={opportunity.id}
-                          />
-                          <button
-                            className="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground"
-                            type="submit"
-                          >
-                            Start application
-                          </button>
-                        </form>
                       </div>
                     </article>
-                  ),
-                )}
-              </div>
-            ) : (
-              <div className="rounded-lg border border-dashed border-border bg-background p-5 text-sm leading-6 text-muted-foreground">
-                Recommendations will appear after published opportunities are
-                available and your profile is complete enough to compare.
-              </div>
-            )}
-          </section>
-        ) : null}
-
-        {recentWorkspace ? (
-          <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
-              Continue where you left off
-            </p>
-            <h2 className="mt-3 text-xl font-semibold">
-              {recentWorkspace.opportunity.title}
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {recentWorkspace.completionPercent}% complete ·{" "}
-              {recentWorkspace.nextAction ??
-                "Review your preparation checklist."}
-            </p>
-            <Link
-              className="mt-4 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-              href={`/dashboard/student/applications/${recentWorkspace.id}`}
-            >
-              Continue application
-            </Link>
-          </section>
-        ) : null}
-
-        {profile ? (
-          <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-            <article className="rounded-xl border border-border bg-background p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-foreground">
-                    Profile summary
-                  </h2>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    This is the information Future Physicians will use for
-                    future matching workflows.
-                  </p>
+                  ))}
                 </div>
-                <div
-                  className={cn(
-                    "rounded-full border px-3 py-1 text-xs font-medium",
-                    completion.isComplete
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : "border-border bg-muted/50 text-muted-foreground",
-                  )}
-                >
-                  {completion.isComplete ? "Complete" : "In progress"}
-                </div>
-              </div>
+              ) : (
+                <SectionEmpty message="No followed or relevant opportunities are opening soon." />
+              )}
+            </DashboardSection>
 
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <ProfileDetail
-                  icon={GraduationCap}
-                  label="School"
-                  value={profile.school}
-                />
-                <ProfileDetail
-                  icon={UserRound}
-                  label="Grade year"
-                  value={profile.gradeYear}
-                />
-                <ProfileDetail
-                  icon={MapPin}
-                  label="Location"
-                  value={[profile.city, profile.state, profile.country]
-                    .filter(Boolean)
-                    .join(", ")}
-                />
-                <ProfileDetail
-                  icon={Target}
-                  label="Remote preference"
-                  value={profile.remotePreference ?? "No preference set"}
-                />
-              </div>
-            </article>
-
-            <article className="rounded-xl border border-border bg-background p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-foreground">
-                Interests
-              </h2>
-              <div className="mt-5 space-y-4">
-                <ProfileList
-                  label="Specialties"
-                  values={profile.interestedSpecialties}
-                />
-                <ProfileList
-                  label="Opportunity types"
-                  values={profile.opportunityTypes}
-                />
-                <ProfileList
-                  label="Availability"
-                  values={profile.availability}
-                />
-                <ProfileList label="Languages" values={profile.languages} />
-              </div>
-            </article>
-          </section>
-        ) : (
-          <section className="rounded-xl border border-dashed border-border bg-background p-8 shadow-sm">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-muted text-primary">
-              <ClipboardCheck aria-hidden="true" className="h-6 w-6" />
-            </div>
-            <h2 className="mt-6 text-xl font-semibold text-foreground">
-              Create your profile to get started
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Your dashboard is ready, but we need your school, location,
-              interests, and goals before future matching workflows can use your
-              profile.
-            </p>
-            <Link
-              className="mt-6 inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              href="/dashboard/student/onboarding"
+            <DashboardSection
+              actionHref="/dashboard/student/applications"
+              actionLabel="View all applications"
+              description="Active applications with their calculated next action."
+              icon={ClipboardCheck}
+              title="Your applications"
             >
-              Start onboarding
-              <ArrowRight aria-hidden="true" className="h-4 w-4" />
-            </Link>
-          </section>
-        )}
+              {applicationSummaries.length > 0 ? (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {applicationSummaries.slice(0, 6).map((application) => (
+                    <article
+                      className="rounded-lg border border-border bg-background p-4"
+                      key={application.id}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-medium">
+                          {formatStatus(application.status)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {application.progress.percent}% complete
+                        </span>
+                      </div>
+                      <h3 className="mt-3 font-semibold">
+                        {application.opportunity.title}
+                      </h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {application.organizationName}
+                      </p>
+                      {application.opportunity.visibility ===
+                      "STUDENT_PRIVATE" ? (
+                        <PrivateOpportunityLabels />
+                      ) : null}
+                      <p className="mt-3 text-sm text-muted-foreground">
+                        {application.nextAction
+                          ? `Next: ${application.nextAction.task.title}`
+                          : "No required preparation task is currently open."}
+                      </p>
+                      <Link
+                        className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium"
+                        href={`/dashboard/student/applications/${application.id}`}
+                      >
+                        Open workspace
+                        <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                      </Link>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <SectionEmpty message="You do not have an active application yet." />
+              )}
+            </DashboardSection>
 
-        <section className="grid gap-4 lg:grid-cols-2">
-          <StudentResumeManager
-            hasProfile={Boolean(profile)}
-            resume={
-              resume
-                ? {
-                    extractedCertifications: resume.extractedCertifications,
-                    extractedEducation: resume.extractedEducation,
-                    extractedExperience: resume.extractedExperience,
-                    extractedSkills: resume.extractedSkills,
-                    id: resume.id,
-                    fileName: resume.fileName,
-                    parsedSummary: resume.parsedSummary,
-                    parseStatus: resume.parseStatus,
-                    updatedAt: resume.updatedAt,
+            <DashboardSection
+              description="Finish the reusable pieces that make every application faster."
+              icon={FileText}
+              title="Application readiness"
+            >
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <ReadinessCard
+                  complete={Boolean(profile.school && profile.gradeYear)}
+                  detail={
+                    profile.school && profile.gradeYear
+                      ? "School and education level saved"
+                      : "Add school and education level"
                   }
-                : null
-            }
-          />
-          <article className="rounded-xl border border-border bg-background p-6 shadow-sm">
-            <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-muted text-primary">
-              <ClipboardCheck aria-hidden="true" className="h-5 w-5" />
-            </div>
-            <h2 className="mt-5 text-base font-semibold text-foreground">
-              Application tracker
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              {applicationCount === 0
-                ? "Once you apply to opportunities, your submissions will appear here for tracking."
-                : `${applicationCount} ${applicationCount === 1 ? "application" : "applications"} tracked${activeApplicationCount > 0 ? ` — ${activeApplicationCount} active` : ""}.`}
-            </p>
-            <Link
-              className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              href="/dashboard/student/applications"
-            >
-              View applications
-              <ArrowRight aria-hidden="true" className="h-4 w-4" />
-            </Link>
-          </article>
-          <article className="rounded-lg border border-border bg-background p-6 shadow-sm">
-            <FileClock aria-hidden="true" className="h-5 w-5 text-primary" />
-            <h2 className="mt-4 text-base font-semibold text-foreground">
-              Can&apos;t find an opportunity?
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Submit a personalized placement request when the opportunity board
-              does not have the right fit for your goals or availability.
-            </p>
-            <Link
-              className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
-              href="/dashboard/student/placement-requests"
-            >
-              View placement requests
-              <ArrowRight aria-hidden="true" className="h-4 w-4" />
-            </Link>
-          </article>
-          <article className="rounded-lg border border-border bg-background p-6 shadow-sm">
-            <Rocket aria-hidden="true" className="h-5 w-5 text-primary" />
-            <h2 className="mt-4 text-base font-semibold text-foreground">
-              Student beta guide
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Review the beta checklist for profile setup, resume upload,
-              opportunity browsing, applications, notifications, and feedback.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link
-                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
-                href="/dashboard/student/beta"
-              >
-                <BellRing aria-hidden="true" className="h-4 w-4" />
-                Beta guide
-              </Link>
-              <Link
-                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted"
-                href="/dashboard/support"
-              >
-                <LifeBuoy aria-hidden="true" className="h-4 w-4" />
-                Support
-              </Link>
-            </div>
-          </article>
-        </section>
+                  href="/dashboard/student/profile"
+                  label="Basic profile"
+                />
+                <ReadinessCard
+                  complete={
+                    profile.interestedSpecialties.length > 0 &&
+                    profile.opportunityTypes.length > 0
+                  }
+                  detail="Healthcare interests and opportunity types"
+                  href="/dashboard/student/profile"
+                  label="Opportunity preferences"
+                />
+                <ReadinessCard
+                  complete={Boolean(resume)}
+                  detail={resume ? resume.fileName : "Upload a PDF or DOCX"}
+                  href="/dashboard/student#resume"
+                  label="Resume"
+                />
+                <ReadinessCard
+                  complete={profile.availability.length > 0}
+                  detail={
+                    profile.availability.length > 0
+                      ? "General availability saved"
+                      : "Add reusable availability"
+                  }
+                  href="/dashboard/student/profile"
+                  label="General availability"
+                />
+              </div>
+              <div className="mt-5" id="resume">
+                <StudentResumeManager
+                  hasProfile
+                  resume={
+                    resume
+                      ? {
+                          alignments: resumePresentation?.alignments ?? [],
+                          extractedSections:
+                            resumePresentation?.extractedSections ?? null,
+                          fileName: resume.fileName,
+                          id: resume.id,
+                          parseFailureReason: resume.parseFailureReason,
+                          parseStatus: resume.parseStatus,
+                          review: resumePresentation?.review ?? null,
+                          uploadedAt: resume.uploadedAt,
+                          updatedAt: resume.updatedAt,
+                        }
+                      : null
+                  }
+                />
+              </div>
+            </DashboardSection>
+          </>
+        )}
       </div>
     </DashboardShell>
   );
 }
 
-type NextStepCalloutProps = {
-  message: string;
+function DashboardSection({
+  actionHref,
+  actionLabel,
+  children,
+  description,
+  icon: Icon,
+  title,
+}: {
+  actionHref?: string;
+  actionLabel?: string;
+  children: React.ReactNode;
+  description: string;
+  icon: typeof ListChecks;
+  title: string;
+}) {
+  return (
+    <section className="rounded-xl border border-border bg-background p-6 shadow-sm">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-primary">
+            <Icon aria-hidden="true" className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold">{title}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          </div>
+        </div>
+        {actionHref && actionLabel ? (
+          <Link
+            className="text-sm font-medium text-primary hover:underline"
+            href={actionHref}
+          >
+            {actionLabel}
+          </Link>
+        ) : null}
+      </div>
+      <div className="mt-5">{children}</div>
+    </section>
+  );
+}
+
+function SectionEmpty({ message }: { message: string }) {
+  return (
+    <p className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm leading-6 text-muted-foreground">
+      {message}
+    </p>
+  );
+}
+
+function PrivateOpportunityLabels() {
+  return (
+    <div className="mt-2 flex flex-wrap gap-2">
+      <span className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-700">
+        Private
+      </span>
+      <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+        Not verified
+      </span>
+    </div>
+  );
+}
+
+function ReadinessCard({
+  complete,
+  detail,
+  href,
+  label,
+}: {
+  complete: boolean;
+  detail: string;
   href: string;
   label: string;
-};
-
-function NextStepCallout({ message, href, label }: NextStepCalloutProps) {
+}) {
   return (
-    <aside className="flex items-center justify-between gap-4 rounded-xl border border-primary/20 bg-primary/[0.04] px-5 py-4">
-      <p className="text-sm text-muted-foreground">{message}</p>
-      <Link
-        className="shrink-0 rounded text-sm font-medium text-primary transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
-        href={href}
-      >
-        {label} <span aria-hidden="true">→</span>
-      </Link>
-    </aside>
-  );
-}
-
-type ProfileDetailProps = {
-  icon: typeof GraduationCap;
-  label: string;
-  value: string | null;
-};
-
-function ProfileDetail({ icon: Icon, label, value }: ProfileDetailProps) {
-  return (
-    <div className="rounded-lg border border-border bg-muted/30 p-4">
-      <Icon aria-hidden="true" className="h-4 w-4 text-primary" />
-      <p className="mt-3 text-sm font-medium text-muted-foreground">{label}</p>
-      <p className="mt-1 text-base font-semibold text-foreground">
-        {value || "Not provided"}
+    <Link
+      className="rounded-lg border border-border bg-muted/20 p-4 transition hover:bg-muted"
+      href={href}
+    >
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {complete ? "Ready" : "Needs attention"}
       </p>
-    </div>
-  );
-}
-
-type ProfileListProps = {
-  label: string;
-  values: readonly string[];
-};
-
-function ProfileList({ label, values }: ProfileListProps) {
-  return (
-    <div>
-      <p className="text-sm font-medium text-muted-foreground">{label}</p>
-      {values.length > 0 ? (
-        <div className="mt-2 flex flex-wrap gap-2">
-          {values.map((value) => (
-            <span
-              className="rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-foreground"
-              key={value}
-            >
-              {value}
-            </span>
-          ))}
-        </div>
-      ) : (
-        <p className="mt-2 text-sm text-muted-foreground">Not provided</p>
-      )}
-    </div>
+      <h3 className="mt-2 font-semibold">{label}</h3>
+      <p className="mt-1 text-sm text-muted-foreground">{detail}</p>
+    </Link>
   );
 }

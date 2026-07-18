@@ -22,6 +22,7 @@ describe("application workspace submission", () => {
         getApplyPageDecision({
           applicationMethod: "FP_INTERNAL",
           existingStatus: status,
+          submissionAllowed: true,
         }).kind,
       ).toBe("BLOCKED");
     }
@@ -39,12 +40,14 @@ describe("application workspace submission", () => {
         getApplyPageDecision({
           applicationMethod: "FP_INTERNAL",
           existingStatus: status,
+          submissionAllowed: true,
         }).kind,
       ).toBe("INTERNAL_SUBMISSION");
       expect(
         getApplyPageDecision({
           applicationMethod: "EXTERNAL_PORTAL",
           existingStatus: status,
+          submissionAllowed: true,
         }).kind,
       ).toBe("EXTERNAL_CONFIRMATION");
     }
@@ -56,5 +59,21 @@ describe("application workspace submission", () => {
     expect(getEffectiveApplicationMethod("FP_OWNED", "FP_INTERNAL")).toBe(
       "FP_INTERNAL",
     );
+  });
+  it("keeps preparatory records out of submission flows before opening", () => {
+    expect(
+      getApplyPageDecision({
+        applicationMethod: "FP_INTERNAL",
+        existingStatus: "PREPARING",
+        submissionAllowed: false,
+      }).kind,
+    ).toBe("PREPARATION_ONLY");
+    expect(
+      getApplyPageDecision({
+        applicationMethod: "EXTERNAL_PORTAL",
+        existingStatus: null,
+        submissionAllowed: false,
+      }).kind,
+    ).toBe("PREPARATION_ONLY");
   });
 });

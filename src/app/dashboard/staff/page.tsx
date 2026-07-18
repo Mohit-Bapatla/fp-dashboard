@@ -13,9 +13,27 @@ import Link from "next/link";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { assertPlacementQueueAccess } from "@/lib/placement-requests/authorization";
 import { getStaffNavItems } from "@/lib/staff/navigation";
+
+const visibleOutreachTaskScope = {
+  AND: [
+    {
+      OR: [
+        { partnerOrganizationId: null },
+        { partnerOrganization: { isSystemPlaceholder: false } },
+      ],
+    },
+    {
+      OR: [
+        { contactId: null },
+        { contact: { organization: { isSystemPlaceholder: false } } },
+      ],
+    },
+  ],
+} satisfies Prisma.OutreachTaskWhereInput;
 
 export default async function StaffDashboardPage() {
   const { userId } = await assertPlacementQueueAccess();
@@ -50,17 +68,23 @@ export default async function StaffDashboardPage() {
         },
       },
     }),
-    prisma.partnerOrganization.count(),
-    prisma.outreachContact.count(),
+    prisma.partnerOrganization.count({
+      where: { isSystemPlaceholder: false },
+    }),
+    prisma.outreachContact.count({
+      where: { organization: { isSystemPlaceholder: false } },
+    }),
     prisma.outreachContact.count({
       where: {
         nextFollowUpAt: {
           lte: new Date(),
         },
+        organization: { isSystemPlaceholder: false },
       },
     }),
     prisma.outreachTask.count({
       where: {
+        ...visibleOutreachTaskScope,
         dueAt: {
           lte: new Date(),
         },
@@ -72,6 +96,7 @@ export default async function StaffDashboardPage() {
     currentUser
       ? prisma.outreachTask.count({
           where: {
+            ...visibleOutreachTaskScope,
             assignedToId: currentUser.id,
             status: {
               not: "COMPLETED",
@@ -82,6 +107,7 @@ export default async function StaffDashboardPage() {
     currentUser
       ? prisma.outreachTask.count({
           where: {
+            ...visibleOutreachTaskScope,
             assignedToId: currentUser.id,
             status: "COMPLETED",
           },
@@ -90,6 +116,7 @@ export default async function StaffDashboardPage() {
     currentUser
       ? prisma.outreachTask.count({
           where: {
+            ...visibleOutreachTaskScope,
             assignedToId: currentUser.id,
             dueAt: {
               lte: new Date(),
@@ -102,11 +129,13 @@ export default async function StaffDashboardPage() {
       : Promise.resolve(0),
     prisma.outreachTask.count({
       where: {
+        ...visibleOutreachTaskScope,
         status: "BLOCKED",
       },
     }),
     prisma.outreachTask.count({
       where: {
+        ...visibleOutreachTaskScope,
         status: "COMPLETED",
       },
     }),

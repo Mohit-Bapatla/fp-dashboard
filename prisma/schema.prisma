@@ -94,6 +94,68 @@ enum OpportunityAvailabilityStatus {
   ARCHIVED
 }
 
+enum OpportunityVisibility {
+  PUBLIC_DIRECTORY
+  STUDENT_PRIVATE
+}
+
+enum OpportunitySourceType {
+  FP_CATALOG
+  STUDENT_ADDED
+}
+
+enum ExternalOpportunityVerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum ApplicationTaskType {
+  REVIEW_ELIGIBILITY
+  REVIEW_OFFICIAL_REQUIREMENTS
+  UPLOAD_RESUME
+  SELECT_RESUME
+  REQUEST_RECOMMENDATION
+  CONFIRM_RECOMMENDATION
+  PREPARE_ESSAY
+  REVIEW_ESSAY
+  UPLOAD_TRANSCRIPT
+  COMPLETE_PARENT_FORM
+  OPEN_EXTERNAL_PORTAL
+  SUBMIT_INTERNAL_APPLICATION
+  CONFIRM_EXTERNAL_SUBMISSION
+  SCHEDULE_INTERVIEW
+  PREPARE_FOR_INTERVIEW
+  SEND_FOLLOW_UP
+  REPORT_OUTCOME
+  CUSTOM
+}
+
+enum ApplicationTaskStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  BLOCKED
+  COMPLETE
+  SKIPPED
+}
+
+enum StudentNotificationType {
+  GENERAL
+  OPPORTUNITY_OPENING_SOON
+  OPPORTUNITY_OPENED
+  APPLICATION_DEADLINE
+  INTERNAL_TARGET_DEADLINE
+  TASK_OVERDUE
+  RECOMMENDATION_REQUEST
+  RECOMMENDATION_DEADLINE
+  INTERVIEW_REMINDER
+  POST_INTERVIEW_THANK_YOU
+  POST_SUBMISSION_FOLLOW_UP
+  OUTCOME_REPORTING
+  WEEKLY_DIGEST
+}
+
 enum OpportunityCorrectionCategory {
   BROKEN_LINK
   INCORRECT_DEADLINE
@@ -147,6 +209,14 @@ enum ResumeParseStatus {
   PROCESSING
   COMPLETED
   FAILED
+}
+
+enum ResumeParseFailureReason {
+  DOWNLOAD_FAILED
+  UNSUPPORTED_FILE_TYPE
+  UNREADABLE_DOCUMENT
+  PARSER_UNAVAILABLE
+  TEMPORARY_FAILURE
 }
 
 enum ApplicationOnboardingItemStatus {
@@ -307,42 +377,43 @@ enum EmbeddingEntityType {
 }
 
 model User {
-  id                                   String                        @id @default(cuid())
-  clerkUserId                          String                        @unique
-  email                                String                        @unique
+  id                                   String                                   @id @default(cuid())
+  clerkUserId                          String                                   @unique
+  email                                String                                   @unique
   firstName                            String?
   lastName                             String?
-  role                                 UserRole                      @default(STUDENT)
+  role                                 UserRole                                 @default(STUDENT)
   studentProfile                       StudentProfile?
   partnerMemberships                   PartnerMember[]
-  placementRequestsRequested           PlacementRequest[]            @relation("PlacementRequestRequester")
-  placementRequestsAssigned            PlacementRequest[]            @relation("PlacementRequestAssignee")
-  outreachTasksAssigned                OutreachTask[]                @relation("OutreachTaskAssignee")
-  outreachTasksCreated                 OutreachTask[]                @relation("OutreachTaskCreator")
+  placementRequestsRequested           PlacementRequest[]                       @relation("PlacementRequestRequester")
+  placementRequestsAssigned            PlacementRequest[]                       @relation("PlacementRequestAssignee")
+  outreachTasksAssigned                OutreachTask[]                           @relation("OutreachTaskAssignee")
+  outreachTasksCreated                 OutreachTask[]                           @relation("OutreachTaskCreator")
   notifications                        Notification[]
-  adminNotesAuthored                   AdminNote[]                   @relation("AdminNoteAuthor")
-  adminNotesAbout                      AdminNote[]                   @relation("AdminNoteUser")
-  auditLogs                            AuditLog[]                    @relation("AuditLogActor")
-  recordComments                       RecordComment[]               @relation("RecordCommentAuthor")
-  onboardingItemsReviewed              ApplicationOnboardingItem[]   @relation("OnboardingItemReviewer")
-  verifiedPartnerOrganizations         PartnerOrganization[]         @relation("PartnerVerifier")
-  moderatedOpportunities               Opportunity[]                 @relation("OpportunityModerator")
-  verifiedOpportunities                Opportunity[]                 @relation("OpportunityVerifier")
-  opportunityCorrectionReports         OpportunityCorrectionReport[] @relation("OpportunityCorrectionReporter")
-  reviewedOpportunityCorrectionReports OpportunityCorrectionReport[] @relation("OpportunityCorrectionReviewer")
-  claimedStudentImportRecords          StudentImportRecord[]         @relation("StudentImportClaim")
-  feedbackAuthored                     Feedback[]                    @relation("FeedbackAuthor")
-  recommendationEvents                 RecommendationEvent[]         @relation("RecommendationEventUser")
-  dataQualityAcknowledgements          DataQualityAcknowledgement[]  @relation("DataQualityAcknowledgementUser")
-  interviewRequestsCreated             InterviewRequest[]            @relation("InterviewRequestCreator")
-  interviewRequestsCanceled            InterviewRequest[]            @relation("InterviewRequestCanceler")
-  serviceHoursVerified                 ServiceHourRecord[]           @relation("ServiceHourVerifier")
-  certificatesApproved                 ServiceHourRecord[]           @relation("CertificateApprover")
-  programEventsCreated                 ProgramEvent[]                @relation("ProgramEventCreator")
-  eventRegistrationsCheckedIn          EventRegistration[]           @relation("EventRegistrationCheckIn")
-  sponsorInteractionsAuthored          SponsorInteraction[]          @relation("SponsorInteractionAuthor")
-  createdAt                            DateTime                      @default(now())
-  updatedAt                            DateTime                      @updatedAt
+  adminNotesAuthored                   AdminNote[]                              @relation("AdminNoteAuthor")
+  adminNotesAbout                      AdminNote[]                              @relation("AdminNoteUser")
+  auditLogs                            AuditLog[]                               @relation("AuditLogActor")
+  recordComments                       RecordComment[]                          @relation("RecordCommentAuthor")
+  onboardingItemsReviewed              ApplicationOnboardingItem[]              @relation("OnboardingItemReviewer")
+  verifiedPartnerOrganizations         PartnerOrganization[]                    @relation("PartnerVerifier")
+  moderatedOpportunities               Opportunity[]                            @relation("OpportunityModerator")
+  verifiedOpportunities                Opportunity[]                            @relation("OpportunityVerifier")
+  reviewedExternalOpportunityRequests  ExternalOpportunityVerificationRequest[] @relation("ExternalOpportunityVerificationReviewer")
+  opportunityCorrectionReports         OpportunityCorrectionReport[]            @relation("OpportunityCorrectionReporter")
+  reviewedOpportunityCorrectionReports OpportunityCorrectionReport[]            @relation("OpportunityCorrectionReviewer")
+  claimedStudentImportRecords          StudentImportRecord[]                    @relation("StudentImportClaim")
+  feedbackAuthored                     Feedback[]                               @relation("FeedbackAuthor")
+  recommendationEvents                 RecommendationEvent[]                    @relation("RecommendationEventUser")
+  dataQualityAcknowledgements          DataQualityAcknowledgement[]             @relation("DataQualityAcknowledgementUser")
+  interviewRequestsCreated             InterviewRequest[]                       @relation("InterviewRequestCreator")
+  interviewRequestsCanceled            InterviewRequest[]                       @relation("InterviewRequestCanceler")
+  serviceHoursVerified                 ServiceHourRecord[]                      @relation("ServiceHourVerifier")
+  certificatesApproved                 ServiceHourRecord[]                      @relation("CertificateApprover")
+  programEventsCreated                 ProgramEvent[]                           @relation("ProgramEventCreator")
+  eventRegistrationsCheckedIn          EventRegistration[]                      @relation("EventRegistrationCheckIn")
+  sponsorInteractionsAuthored          SponsorInteraction[]                     @relation("SponsorInteractionAuthor")
+  createdAt                            DateTime                                 @default(now())
+  updatedAt                            DateTime                                 @updatedAt
 
   @@index([role])
   @@index([role, createdAt])
@@ -350,43 +421,46 @@ model User {
 }
 
 model StudentProfile {
-  id                    String              @id @default(cuid())
-  userId                String              @unique
-  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  school                String?
-  gradeYear             String?
-  major                 String?
-  graduationYear        Int?
-  city                  String?
-  state                 String?
-  country               String?
-  locationPreference    String?
-  remotePreference      String?
-  ageYears              Int?
-  maximumTravelMiles    Int?
-  paidOnlyPreference    Boolean?
-  preferredSeasons      String[]            @default([])
-  certifications        String[]            @default([])
-  transportationNotes   String?
-  interestedSpecialties String[]            @default([])
-  opportunityTypes      OpportunityType[]   @default([])
-  availability          String[]            @default([])
-  languages             String[]            @default([])
-  careerGoals           String?
-  experienceLevel       String?
-  linkedinUrl           String?
-  githubUrl             String?
-  portfolioUrl          String?
-  bio                   String?
-  resumes               Resume[]
-  applications          Application[]
-  savedOpportunities    SavedOpportunity[]
-  placementRequests     PlacementRequest[]
-  adminNotes            AdminNote[]
-  serviceHourRecords    ServiceHourRecord[]
-  eventRegistrations    EventRegistration[]
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  id                                      String                                   @id @default(cuid())
+  userId                                  String                                   @unique
+  user                                    User                                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school                                  String?
+  gradeYear                               String?
+  major                                   String?
+  graduationYear                          Int?
+  city                                    String?
+  state                                   String?
+  country                                 String?
+  locationPreference                      String?
+  remotePreference                        String?
+  ageYears                                Int?
+  maximumTravelMiles                      Int?
+  paidOnlyPreference                      Boolean?
+  preferredSeasons                        String[]                                 @default([])
+  certifications                          String[]                                 @default([])
+  transportationNotes                     String?
+  interestedSpecialties                   String[]                                 @default([])
+  opportunityTypes                        OpportunityType[]                        @default([])
+  availability                            String[]                                 @default([])
+  languages                               String[]                                 @default([])
+  careerGoals                             String?
+  experienceLevel                         String?
+  linkedinUrl                             String?
+  githubUrl                               String?
+  portfolioUrl                            String?
+  bio                                     String?
+  resumes                                 Resume[]
+  applications                            Application[]
+  savedOpportunities                      SavedOpportunity[]
+  ownedExternalOpportunities              Opportunity[]                            @relation("StudentOwnedOpportunities")
+  externalOpportunityVerificationRequests ExternalOpportunityVerificationRequest[]
+  notificationPreference                  StudentNotificationPreference?
+  placementRequests                       PlacementRequest[]
+  adminNotes                              AdminNote[]
+  serviceHourRecords                      ServiceHourRecord[]
+  eventRegistrations                      EventRegistration[]
+  createdAt                               DateTime                                 @default(now())
+  updatedAt                               DateTime                                 @updatedAt
 
   @@index([graduationYear])
 }
@@ -424,21 +498,24 @@ model StudentImportRecord {
 }
 
 model Resume {
-  id                      String            @id @default(cuid())
+  id                      String                    @id @default(cuid())
   studentProfileId        String
-  studentProfile          StudentProfile    @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  studentProfile          StudentProfile            @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
   fileName                String
   fileUrl                 String?
-  parseStatus             ResumeParseStatus @default(NOT_STARTED)
+  uploadedAt              DateTime                  @default(now())
+  analyzedAt              DateTime?
+  parseStatus             ResumeParseStatus         @default(NOT_STARTED)
+  parseFailureReason      ResumeParseFailureReason?
   parsedText              String?
   parsedSummary           String?
-  extractedSkills         String[]          @default([])
-  extractedEducation      String[]          @default([])
-  extractedExperience     String[]          @default([])
-  extractedCertifications String[]          @default([])
+  extractedSkills         String[]                  @default([])
+  extractedEducation      String[]                  @default([])
+  extractedExperience     String[]                  @default([])
+  extractedCertifications String[]                  @default([])
   applications            Application[]
-  createdAt               DateTime          @default(now())
-  updatedAt               DateTime          @updatedAt
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
 
   @@index([studentProfileId])
   @@index([parseStatus])
@@ -447,6 +524,7 @@ model Resume {
 model PartnerOrganization {
   id                    String                    @id @default(cuid())
   name                  String                    @unique
+  isSystemPlaceholder   Boolean                   @default(false)
   status                PartnerStatus             @default(NOT_CONTACTED)
   website               String?
   type                  String?
@@ -477,6 +555,7 @@ model PartnerOrganization {
   updatedAt             DateTime                  @updatedAt
 
   @@index([status])
+  @@index([isSystemPlaceholder])
   @@index([status, createdAt])
   @@index([verificationStatus])
   @@index([nextFollowUpAt])
@@ -499,82 +578,91 @@ model PartnerMember {
 }
 
 model Opportunity {
-  id                          String                        @id @default(cuid())
-  organizationId              String
-  organization                PartnerOrganization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  title                       String
-  description                 String?
-  shortDescription            String?
-  fpSummary                   String?
-  type                        OpportunityType
-  specialty                   String?
-  status                      OpportunityStatus             @default(DRAFT)
-  relationshipType            OpportunityRelationshipType   @default(EXTERNAL_PUBLIC)
-  applicationMethod           ApplicationMethod              @default(EXTERNAL_PORTAL)
-  officialSourceUrl           String?
-  officialApplicationUrl      String?
-  relationshipNotes           String?
-  verificationStatus          OpportunityVerificationStatus @default(NEEDS_REVIEW)
-  lastVerifiedAt              DateTime?
-  nextVerificationAt          DateTime?
-  verifiedById                String?
-  verifiedBy                  User?                         @relation("OpportunityVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
-  verificationNotes           String?
-  brokenLinkDetectedAt        DateTime?
-  archivalReason              String?
-  availabilityStatus          OpportunityAvailabilityStatus @default(OPEN)
-  opensAt                     DateTime?
-  isRolling                   Boolean                       @default(false)
-  cycleLabel                  String?
-  location                    String?
-  remoteType                  String?
-  address                     String?
-  city                        String?
-  state                       String?
-  country                     String?
-  postalCode                  String?
-  geographicScope             String?
-  transportationNotes         String?
-  maximumTravelMiles          Int?
-  paidStatus                  String?
-  deadline                    DateTime?
-  capacity                    Int?
-  eligibilityRequirements     String?
-  minimumAge                  Int?
-  maximumAge                  Int?
-  acceptedGradeLevels         GradeLevelCode[]              @default([])
-  minimumGpa                  Float?
-  residencyRequirement        String?
-  citizenshipRequirement      String?
-  requiredExperience          String?
-  requiredCertifications      String[]                      @default([])
-  parentPermissionRequired    Boolean?
-  workAuthorizationRequired   Boolean?
-  eligibilityUnknowns         String[]                      @default([])
-  requiredDocuments           String[]                      @default([])
-  applicationInstructions     String?
-  estimatedApplicationMinutes Int?
-  essayQuestionCount          Int?
-  scheduleRequirements        String?
-  estimatedWeeklyHours        Float?
-  startsAt                    DateTime?
-  endsAt                      DateTime?
-  publishedAt                 DateTime?
-  moderationFlags             String[]                      @default([])
-  moderationNotes             String?
-  moderatedAt                 DateTime?
-  moderatedById               String?
-  moderatedBy                 User?                         @relation("OpportunityModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
-  applications                Application[]
-  savedByStudents             SavedOpportunity[]
-  correctionReports           OpportunityCorrectionReport[]
-  placementRequests           PlacementRequest[]
-  adminNotes                  AdminNote[]
-  recommendationEvents        RecommendationEvent[]
-  serviceHourRecords          ServiceHourRecord[]
-  createdAt                   DateTime                      @default(now())
-  updatedAt                   DateTime                      @updatedAt
+  id                           String                                   @id @default(cuid())
+  organizationId               String
+  organization                 PartnerOrganization                      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title                        String
+  description                  String?
+  shortDescription             String?
+  fpSummary                    String?
+  type                         OpportunityType
+  specialty                    String?
+  status                       OpportunityStatus                        @default(DRAFT)
+  relationshipType             OpportunityRelationshipType              @default(EXTERNAL_PUBLIC)
+  applicationMethod            ApplicationMethod                        @default(EXTERNAL_PORTAL)
+  officialSourceUrl            String?
+  officialApplicationUrl       String?
+  relationshipNotes            String?
+  verificationStatus           OpportunityVerificationStatus            @default(NEEDS_REVIEW)
+  lastVerifiedAt               DateTime?
+  nextVerificationAt           DateTime?
+  verifiedById                 String?
+  verifiedBy                   User?                                    @relation("OpportunityVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  verificationNotes            String?
+  brokenLinkDetectedAt         DateTime?
+  archivalReason               String?
+  visibility                   OpportunityVisibility                    @default(PUBLIC_DIRECTORY)
+  sourceType                   OpportunitySourceType                    @default(FP_CATALOG)
+  studentOwnerProfileId        String?
+  studentOwner                 StudentProfile?                          @relation("StudentOwnedOpportunities", fields: [studentOwnerProfileId], references: [id], onDelete: Cascade)
+  studentSourceUrlNormalized   String?
+  studentOrganizationName      String?
+  availabilityStatus           OpportunityAvailabilityStatus            @default(OPEN)
+  opensAt                      DateTime?
+  isRolling                    Boolean                                  @default(false)
+  cycleLabel                   String?
+  location                     String?
+  remoteType                   String?
+  address                      String?
+  city                         String?
+  state                        String?
+  country                      String?
+  postalCode                   String?
+  geographicScope              String?
+  transportationNotes          String?
+  maximumTravelMiles           Int?
+  paidStatus                   String?
+  deadline                     DateTime?
+  capacity                     Int?
+  eligibilityRequirements      String?
+  minimumAge                   Int?
+  maximumAge                   Int?
+  acceptedGradeLevels          GradeLevelCode[]                         @default([])
+  minimumGpa                   Float?
+  residencyRequirement         String?
+  citizenshipRequirement       String?
+  requiredExperience           String?
+  requiredCertifications       String[]                                 @default([])
+  parentPermissionRequired     Boolean?
+  workAuthorizationRequired    Boolean?
+  eligibilityUnknowns          String[]                                 @default([])
+  requiredDocuments            String[]                                 @default([])
+  applicationInstructions      String?
+  estimatedApplicationMinutes  Int?
+  essayQuestionCount           Int?
+  scheduleRequirements         String?
+  estimatedWeeklyHours         Float?
+  startsAt                     DateTime?
+  endsAt                       DateTime?
+  publishedAt                  DateTime?
+  moderationFlags              String[]                                 @default([])
+  moderationNotes              String?
+  moderatedAt                  DateTime?
+  moderatedById                String?
+  moderatedBy                  User?                                    @relation("OpportunityModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
+  applications                 Application[]
+  savedByStudents              SavedOpportunity[]
+  correctionReports            OpportunityCorrectionReport[]
+  placementRequests            PlacementRequest[]
+  adminNotes                   AdminNote[]
+  recommendationEvents         RecommendationEvent[]
+  serviceHourRecords           ServiceHourRecord[]
+  notifications                Notification[]
+  externalVerificationRequests ExternalOpportunityVerificationRequest[]
+  createdAt                    DateTime                                 @default(now())
+  updatedAt                    DateTime                                 @updatedAt
 
+  @@unique([studentOwnerProfileId, studentSourceUrlNormalized])
   @@index([organizationId])
   @@index([type])
   @@index([status])
@@ -582,6 +670,9 @@ model Opportunity {
   @@index([organizationId, status, createdAt])
   @@index([moderatedById])
   @@index([verifiedById])
+  @@index([visibility])
+  @@index([sourceType])
+  @@index([studentOwnerProfileId])
   @@index([verificationStatus])
   @@index([availabilityStatus])
   @@index([relationshipType])
@@ -602,7 +693,7 @@ model Application {
   opportunity            Opportunity                 @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   resume                 Resume?                     @relation(fields: [resumeId], references: [id], onDelete: SetNull)
   status                 ApplicationStatus           @default(DRAFT)
-  applicationMethod      ApplicationMethod            @default(EXTERNAL_PORTAL)
+  applicationMethod      ApplicationMethod           @default(EXTERNAL_PORTAL)
   statement              String?
   submittedAt            DateTime?
   targetDeadline         DateTime?
@@ -614,7 +705,8 @@ model Application {
   lastActivityAt         DateTime                    @default(now())
   reviewedAt             DateTime?
   onboardingItems        ApplicationOnboardingItem[]
-  checklistItems         ApplicationChecklistItem[]
+  tasks                  ApplicationTask[]
+  notifications          Notification[]
   recommendationEvents   RecommendationEvent[]
   interviewRequests      InterviewRequest[]
   serviceHourRecords     ServiceHourRecord[]
@@ -646,21 +738,33 @@ model SavedOpportunity {
   @@index([studentProfileId, updatedAt])
 }
 
-model ApplicationChecklistItem {
-  id            String      @id @default(cuid())
-  applicationId String
-  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  label         String
-  description   String?
-  required      Boolean     @default(true)
-  completedAt   DateTime?
-  source        String?
-  sortOrder     Int         @default(0)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+model ApplicationTask {
+  id                String                @id @default(cuid())
+  applicationId     String
+  application       Application           @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  type              ApplicationTaskType   @default(CUSTOM)
+  title             String                @map("label")
+  description       String?
+  status            ApplicationTaskStatus @default(NOT_STARTED)
+  required          Boolean               @default(true)
+  dueAt             DateTime?             @db.Date
+  completedAt       DateTime?
+  source            String?
+  taskKey           String?
+  studentControlled Boolean               @default(false)
+  linkedEntityType  String?
+  linkedEntityId    String?
+  sortOrder         Int                   @default(0)
+  notifications     Notification[]
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
 
-  @@unique([applicationId, label])
+  @@unique([applicationId, title])
+  @@unique([applicationId, taskKey])
   @@index([applicationId, sortOrder])
+  @@index([applicationId, status, dueAt])
+  @@index([status, dueAt])
+  @@map("ApplicationChecklistItem")
 }
 
 model OpportunityCorrectionReport {
@@ -684,6 +788,26 @@ model OpportunityCorrectionReport {
   @@index([reporterId])
   @@index([reviewedById])
   @@index([status, createdAt])
+}
+
+model ExternalOpportunityVerificationRequest {
+  id               String                                @id @default(cuid())
+  opportunityId    String
+  opportunity      Opportunity                           @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  studentProfileId String
+  studentProfile   StudentProfile                        @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  status           ExternalOpportunityVerificationStatus @default(PENDING)
+  reviewedById     String?
+  reviewedBy       User?                                 @relation("ExternalOpportunityVerificationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt       DateTime?
+  resolutionNotes  String?
+  createdAt        DateTime                              @default(now())
+  updatedAt        DateTime                              @updatedAt
+
+  @@unique([opportunityId])
+  @@index([studentProfileId, status])
+  @@index([status, createdAt])
+  @@index([reviewedById])
 }
 
 model ApplicationOnboardingItem {
@@ -1072,17 +1196,55 @@ model OutreachTask {
 }
 
 model Notification {
-  id        String    @id @default(cuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title     String
-  body      String?
-  readAt    DateTime?
-  createdAt DateTime  @default(now())
+  id                String                  @id @default(cuid())
+  userId            String
+  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              StudentNotificationType @default(GENERAL)
+  title             String
+  body              String?
+  actionUrl         String?
+  deduplicationKey  String?                 @unique
+  opportunityId     String?
+  opportunity       Opportunity?            @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  applicationId     String?
+  application       Application?            @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  applicationTaskId String?
+  applicationTask   ApplicationTask?        @relation(fields: [applicationTaskId], references: [id], onDelete: SetNull)
+  readAt            DateTime?
+  dismissedAt       DateTime?
+  emailedAt         DateTime?
+  createdAt         DateTime                @default(now())
 
   @@index([userId])
+  @@index([userId, dismissedAt, createdAt])
   @@index([readAt])
+  @@index([type, createdAt])
+  @@index([opportunityId])
+  @@index([applicationId])
+  @@index([applicationTaskId])
   @@index([createdAt])
+}
+
+model StudentNotificationPreference {
+  id                            String         @id @default(cuid())
+  studentProfileId              String         @unique
+  studentProfile                StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  inAppEnabled                  Boolean        @default(true)
+  emailEnabled                  Boolean        @default(false)
+  weeklyDigestEnabled           Boolean        @default(false)
+  openingAlertsEnabled          Boolean        @default(true)
+  deadlineAlertsEnabled         Boolean        @default(true)
+  taskReminderEnabled           Boolean        @default(true)
+  recommendationReminderEnabled Boolean        @default(true)
+  interviewReminderEnabled      Boolean        @default(true)
+  outcomeReminderEnabled        Boolean        @default(true)
+  quietHoursStart               String?
+  quietHoursEnd                 String?
+  timezone                      String         @default("America/Chicago")
+  createdAt                     DateTime       @default(now())
+  updatedAt                     DateTime       @updatedAt
+
+  @@index([weeklyDigestEnabled])
 }
 
 model AdminNote {

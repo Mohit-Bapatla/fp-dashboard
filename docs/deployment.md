@@ -96,13 +96,16 @@ npm run db:seed
 
 ## Cron
 
-`vercel.json` schedules the operational workflow endpoint. The route requires:
+`vercel.json` schedules the operational and student-reminder workflow
+endpoints. Both routes require:
 
 ```text
 Authorization: Bearer ${CRON_SECRET}
 ```
 
-Set a strong `CRON_SECRET` in Vercel. Do not expose it to the client.
+Set a random `CRON_SECRET` of at least 16 characters in Vercel. Do not expose it
+to the client. Vercel can duplicate cron events and does not retry failed
+invocations; use audit logs and a manual authenticated rerun for recovery.
 
 ## Pre-Deploy Checks
 

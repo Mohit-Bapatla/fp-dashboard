@@ -73,6 +73,7 @@ export default async function NotificationsPage() {
   const [notifications, unreadCount, totalCount] = await Promise.all([
     prisma.notification.findMany({
       where: {
+        dismissedAt: null,
         userId: user.id,
       },
       orderBy: {
@@ -80,21 +81,25 @@ export default async function NotificationsPage() {
       },
       take: 50,
       select: {
+        actionUrl: true,
         body: true,
         createdAt: true,
         id: true,
         readAt: true,
         title: true,
+        type: true,
       },
     }),
     prisma.notification.count({
       where: {
+        dismissedAt: null,
         readAt: null,
         userId: user.id,
       },
     }),
     prisma.notification.count({
       where: {
+        dismissedAt: null,
         userId: user.id,
       },
     }),

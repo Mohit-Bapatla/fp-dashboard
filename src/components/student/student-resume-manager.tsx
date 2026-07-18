@@ -18,19 +18,31 @@ import {
   type ResumeActionState,
   type ResumeDownloadActionState,
 } from "@/app/dashboard/student/resume/actions";
+import { StudentResumeReviewPanel } from "@/components/student/student-resume-review-panel";
+import {
+  getResumeParseFailureMessage,
+  isResumeProcessingStale,
+  type PersistedResumeParseFailureReason,
+} from "@/lib/student/resume-parse-state";
+import type {
+  ResumeOpportunityAlignment,
+  ResumeReview,
+} from "@/lib/student/resume-review";
+import { formatResumeDate } from "@/lib/student/resume-date";
+import type { StructuredResumeSections } from "@/lib/student/resume-structure";
 import { cn } from "@/lib/utils";
 
 type StudentResumeManagerProps = {
   hasProfile: boolean;
   resume: {
-    extractedCertifications: string[];
-    extractedEducation: string[];
-    extractedExperience: string[];
-    extractedSkills: string[];
+    alignments: ResumeOpportunityAlignment[];
+    extractedSections: StructuredResumeSections | null;
     id: string;
     fileName: string;
-    parsedSummary: string | null;
+    parseFailureReason: PersistedResumeParseFailureReason | null;
     parseStatus: string;
+    review: ResumeReview | null;
+    uploadedAt: Date;
     updatedAt: Date;
   } | null;
 };
@@ -50,6 +62,13 @@ export function StudentResumeManager({
   resume,
 }: StudentResumeManagerProps) {
   const needsReview = resume ? getNeedsReview(resume) : false;
+  const processingIsStale = Boolean(
+    resume?.parseStatus === "PROCESSING" &&
+    isResumeProcessingStale(resume.updatedAt),
+  );
+  const activelyProcessing = Boolean(
+    resume?.parseStatus === "PROCESSING" && !processingIsStale,
+  );
   const [uploadState, uploadAction, uploadPending] = useActionState(
     uploadStudentResume,
     initialResumeActionState,
@@ -83,11 +102,14 @@ export function StudentResumeManager({
           <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-muted text-primary">
             <FileText aria-hidden="true" className="h-5 w-5" />
           </div>
-          <h2 className="mt-5 text-xl font-semibold text-foreground">Resume</h2>
+          <h2 className="mt-5 text-xl font-semibold text-foreground">
+            Resume review
+          </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
             A resume is required to apply to most opportunities. Upload one PDF
-            or DOCX file. It is stored privately and accessible only via
-            temporary download links.
+            or DOCX file. FP reads it to improve matching and provide feedback,
+            but never modifies the original. It is stored privately and
+            accessible only via temporary download links.
           </p>
         </div>
         <div
@@ -112,20 +134,24 @@ export function StudentResumeManager({
             <div className="rounded-lg border border-border bg-muted/25 p-4">
               <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-foreground">
+                  <p className="break-all text-sm font-semibold text-foreground">
                     {resume.fileName}
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Updated {resume.updatedAt.toLocaleDateString()}
+                    Uploaded {formatResumeDate(resume.uploadedAt)}
                   </p>
                 </div>
                 <span
                   className={cn(
                     "inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-medium",
-                    getParseStatusClassName(resume.parseStatus),
+                    getParseStatusClassName(
+                      processingIsStale ? "FAILED" : resume.parseStatus,
+                    ),
                   )}
                 >
-                  {formatParseStatus(resume.parseStatus)}
+                  {processingIsStale
+                    ? "Retry available"
+                    : formatParseStatus(resume.parseStatus)}
                 </span>
               </div>
               {needsReview ? (
@@ -135,8 +161,8 @@ export function StudentResumeManager({
                     className="mt-0.5 h-4 w-4 shrink-0"
                   />
                   <p>
-                    Parsed details need review. The file was saved, but the
-                    parser found limited structured resume sections.
+                    Resume analysis needs review. The file was saved, but only
+                    limited structured resume sections were detected.
                   </p>
                 </div>
               ) : null}
@@ -167,60 +193,37 @@ export function StudentResumeManager({
                   <input name="resumeId" type="hidden" value={resume.id} />
                   <button
                     className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={
-                      parsePending || resume.parseStatus === "PROCESSING"
-                    }
+                    disabled={parsePending || activelyProcessing}
                     type="submit"
                   >
                     <RefreshCw aria-hidden="true" className="h-4 w-4" />
-                    {parsePending || resume.parseStatus === "PROCESSING"
-                      ? "Parsing"
-                      : resume.parseStatus === "FAILED"
-                        ? "Retry parse"
+                    {parsePending || activelyProcessing
+                      ? "Analyzing"
+                      : resume.parseStatus === "FAILED" || processingIsStale
+                        ? "Retry analysis"
                         : resume.parseStatus === "COMPLETED"
-                          ? "Re-parse"
-                          : "Parse resume"}
+                          ? "Re-analyze"
+                          : "Analyze resume"}
                   </button>
                 </form>
               </div>
 
-              {resume.parseStatus === "FAILED" ? (
+              {resume.parseStatus === "FAILED" || processingIsStale ? (
                 <p className="mt-4 text-sm leading-6 text-red-600">
-                  Parsing failed. Retry with the current file or upload a
-                  clearer PDF/DOCX resume.
+                  {processingIsStale
+                    ? "The previous analysis did not finish. Retry with the current file."
+                    : getResumeParseFailureMessage(resume.parseFailureReason)}
                 </p>
               ) : null}
-
-              {resume.parsedSummary ? (
-                <div className="mt-5 rounded-lg border border-border bg-background p-4">
-                  <p className="text-sm font-semibold text-foreground">
-                    Parsed summary
-                  </p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
-                    {resume.parsedSummary}
-                  </p>
-                </div>
-              ) : null}
-
-              {resume.extractedSkills.length > 0 ? (
-                <SkillChips label="Skills" values={resume.extractedSkills} />
-              ) : null}
-
-              <div className="mt-5 grid gap-4 lg:grid-cols-3">
-                <ParsedSection
-                  label="Education"
-                  values={resume.extractedEducation}
-                />
-                <ParsedSection
-                  label="Experience"
-                  values={resume.extractedExperience}
-                />
-                <ParsedSection
-                  label="Certifications"
-                  values={resume.extractedCertifications}
-                />
-              </div>
             </div>
+          ) : null}
+
+          {resume?.review && resume.extractedSections ? (
+            <StudentResumeReviewPanel
+              alignments={resume.alignments}
+              extractedSections={resume.extractedSections}
+              review={resume.review}
+            />
           ) : null}
 
           <form
@@ -253,7 +256,7 @@ export function StudentResumeManager({
             </div>
             <p className="mt-3 text-xs leading-5 text-muted-foreground">
               PDF and DOCX files up to 5 MB are supported. After uploading, use
-              parse or retry parse to refresh the structured resume sections.
+              Analyze resume to refresh your private review and matching data.
             </p>
           </form>
         </div>
@@ -280,6 +283,10 @@ export function StudentResumeManager({
 }
 
 function formatParseStatus(status: string) {
+  if (status === "COMPLETED") return "Analysis complete";
+  if (status === "PROCESSING") return "Analyzing";
+  if (status === "NOT_STARTED") return "Ready to analyze";
+
   return status
     .toLowerCase()
     .split("_")
@@ -308,51 +315,8 @@ function getNeedsReview(
   }
 
   return (
-    resume.extractedSkills.length === 0 &&
-    resume.extractedEducation.length === 0 &&
-    resume.extractedExperience.length === 0 &&
-    resume.extractedCertifications.length === 0
-  );
-}
-
-function SkillChips({ label, values }: { label: string; values: string[] }) {
-  return (
-    <div className="mt-5 rounded-lg border border-border bg-background p-4">
-      <p className="text-sm font-semibold text-foreground">{label}</p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {values.map((value) => (
-          <span
-            className="rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-foreground"
-            key={value}
-          >
-            {value}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ParsedSection({ label, values }: { label: string; values: string[] }) {
-  return (
-    <section className="rounded-lg border border-border bg-background p-4">
-      <p className="text-sm font-semibold text-foreground">{label}</p>
-      {values.length > 0 ? (
-        <ul className="mt-3 space-y-3 text-sm leading-6 text-muted-foreground">
-          {values.map((value) => (
-            <li className="flex gap-2" key={value}>
-              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-              <span className="min-w-0 whitespace-normal break-words">
-                {value}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          Not extracted yet.
-        </p>
-      )}
-    </section>
+    !resume.review ||
+    !resume.extractedSections ||
+    resume.review.sectionFeedback.length === 0
   );
 }

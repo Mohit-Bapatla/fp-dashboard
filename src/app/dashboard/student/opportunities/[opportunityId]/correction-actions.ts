@@ -39,8 +39,8 @@ export async function reportIncorrectOpportunity(formData: FormData) {
     windowSeconds: 3600,
   });
   if (!rate.allowed) return;
-  const opportunity = await prisma.opportunity.findUnique({
-    where: { id: opportunityId },
+  const opportunity = await prisma.opportunity.findFirst({
+    where: { id: opportunityId, visibility: "PUBLIC_DIRECTORY" },
     select: { id: true },
   });
   if (!opportunity) return;

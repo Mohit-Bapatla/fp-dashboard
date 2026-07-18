@@ -89,30 +89,10 @@ export const roleMeta: Record<
 export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
   student: [
     {
-      label: "Overview",
+      label: "Home",
       href: "/dashboard/student",
       icon: LayoutDashboard,
       active: true,
-    },
-    {
-      label: "Notifications",
-      href: "/dashboard/notifications",
-      icon: BellRing,
-    },
-    {
-      label: "Beta Guide",
-      href: "/dashboard/student/beta",
-      icon: Rocket,
-    },
-    {
-      label: "Support",
-      href: "/dashboard/support",
-      icon: LifeBuoy,
-    },
-    {
-      label: "Profile",
-      href: "/dashboard/student/profile",
-      icon: GraduationCap,
     },
     {
       label: "Opportunities",
@@ -120,22 +100,50 @@ export const roleNavigation: Record<DashboardRole, DashboardNavItem[]> = {
       icon: BriefcaseBusiness,
     },
     {
+      label: "Tasks",
+      href: "/dashboard/student/tasks",
+      icon: ListChecks,
+    },
+    {
       label: "Applications",
       href: "/dashboard/student/applications",
       icon: ClipboardCheck,
     },
+    { label: "Saved", href: "/dashboard/student/saved", icon: Bookmark },
     {
-      label: "Placement Requests",
-      href: "/dashboard/student/placement-requests",
-      icon: FileClock,
+      label: "Application Profile",
+      href: "/dashboard/student/profile",
+      icon: GraduationCap,
+    },
+    {
+      label: "Notifications",
+      href: "/dashboard/notifications",
+      icon: BellRing,
     },
     {
       label: "Events",
       href: "/dashboard/student/events",
       icon: CalendarDays,
     },
-    { label: "Saved", href: "/dashboard/student/saved", icon: Bookmark },
     { label: "Settings", href: "/dashboard/student/settings", icon: Settings },
+    {
+      label: "Placement Requests",
+      href: "/dashboard/student/placement-requests",
+      icon: FileClock,
+      group: "More",
+    },
+    {
+      label: "Beta Guide",
+      href: "/dashboard/student/beta",
+      icon: Rocket,
+      group: "More",
+    },
+    {
+      label: "Support",
+      href: "/dashboard/support",
+      icon: LifeBuoy,
+      group: "More",
+    },
   ],
   partner: [
     {

@@ -99,8 +99,12 @@ export default async function PartnerApplicantsPage({
 
   const opportunities = await prisma.opportunity.findMany({
     where: {
+      visibility: "PUBLIC_DIRECTORY",
       organizationId: {
         in: organizationIds,
+      },
+      organization: {
+        isSystemPlaceholder: false,
       },
     },
     orderBy: [
@@ -127,8 +131,12 @@ export default async function PartnerApplicantsPage({
       : "";
   const where = {
     opportunity: {
+      visibility: "PUBLIC_DIRECTORY" as const,
       organizationId: {
         in: organizationIds,
+      },
+      organization: {
+        isSystemPlaceholder: false,
       },
       ...(opportunityId ? { id: opportunityId } : {}),
     },
@@ -180,6 +188,16 @@ export default async function PartnerApplicantsPage({
           },
         },
         interviewRequests: {
+          where: {
+            application: {
+              opportunity: {
+                visibility: "PUBLIC_DIRECTORY",
+                organization: {
+                  isSystemPlaceholder: false,
+                },
+              },
+            },
+          },
           orderBy: {
             createdAt: "desc",
           },
@@ -205,6 +223,17 @@ export default async function PartnerApplicantsPage({
           },
         },
         serviceHourRecords: {
+          where: {
+            opportunity: {
+              visibility: "PUBLIC_DIRECTORY",
+              organization: {
+                isSystemPlaceholder: false,
+              },
+            },
+            partnerOrganization: {
+              isSystemPlaceholder: false,
+            },
+          },
           orderBy: {
             updatedAt: "desc",
           },
@@ -276,8 +305,12 @@ export default async function PartnerApplicantsPage({
     prisma.application.count({
       where: {
         opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
           organizationId: {
             in: organizationIds,
+          },
+          organization: {
+            isSystemPlaceholder: false,
           },
         },
       },
@@ -288,8 +321,12 @@ export default async function PartnerApplicantsPage({
           in: ["SUBMITTED", "UNDER_REVIEW"],
         },
         opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
           organizationId: {
             in: organizationIds,
+          },
+          organization: {
+            isSystemPlaceholder: false,
           },
         },
       },
@@ -298,8 +335,12 @@ export default async function PartnerApplicantsPage({
       where: {
         status: "INTERVIEW",
         opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
           organizationId: {
             in: organizationIds,
+          },
+          organization: {
+            isSystemPlaceholder: false,
           },
         },
       },
@@ -308,8 +349,12 @@ export default async function PartnerApplicantsPage({
       where: {
         status: "ACCEPTED",
         opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
           organizationId: {
             in: organizationIds,
+          },
+          organization: {
+            isSystemPlaceholder: false,
           },
         },
       },

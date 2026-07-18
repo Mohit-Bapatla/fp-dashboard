@@ -27,10 +27,14 @@ vi.mock("@/lib/db/prisma", () => ({
   prisma: {
     opportunity: {
       create: mocks.create,
+      findFirst: mocks.findUnique,
       findUnique: mocks.findUnique,
       update: mocks.update,
     },
-    partnerOrganization: { findUnique: mocks.findOrganization },
+    partnerOrganization: {
+      findFirst: mocks.findOrganization,
+      findUnique: mocks.findOrganization,
+    },
   },
 }));
 vi.mock("@/lib/notifications/notifications", () => ({

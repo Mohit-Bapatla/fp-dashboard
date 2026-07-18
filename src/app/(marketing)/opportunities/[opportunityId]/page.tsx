@@ -43,6 +43,7 @@ import {
   getPublicOpportunity,
   type PublicOpportunity,
 } from "@/lib/public/opportunities";
+import { isOpportunitySubmittable } from "@/lib/opportunities/student-visibility";
 import { createPublicMetadata } from "@/lib/public-metadata";
 import { siteConfig } from "@/lib/site-config";
 
@@ -113,7 +114,12 @@ function getGradeLevels(opportunity: PublicOpportunity) {
     : "Not specified";
 }
 
-function getApplicationActionLabel(opportunity: PublicOpportunity) {
+function getApplicationActionLabel(
+  opportunity: PublicOpportunity,
+  submissionAllowed: boolean,
+) {
+  if (!submissionAllowed) return "Prepare in Future Physicians";
+
   const method = getPublicApplicationMethod(opportunity);
   return method === "FP_INTERNAL"
     ? "Apply through Future Physicians"
@@ -193,8 +199,12 @@ export default async function PublicOpportunityPage({
     .slice(0, 3);
   const applyPath = `/dashboard/student/opportunities/${opportunity.id}/apply`;
   const dashboardDetailPath = `/dashboard/student/opportunities/${opportunity.id}`;
-  const signInHref = `/sign-in?redirect_url=${encodeURIComponent(applyPath)}`;
-  const signUpHref = `/sign-up?redirect_url=${encodeURIComponent(applyPath)}`;
+  const submissionAllowed = isOpportunitySubmittable(opportunity);
+  const dashboardActionPath = submissionAllowed
+    ? applyPath
+    : dashboardDetailPath;
+  const signInHref = `/sign-in?redirect_url=${encodeURIComponent(dashboardActionPath)}`;
+  const signUpHref = `/sign-up?redirect_url=${encodeURIComponent(dashboardActionPath)}`;
 
   return (
     <>
@@ -243,7 +253,9 @@ export default async function PublicOpportunityPage({
                 Application path
               </p>
               <h2 className="mt-2 text-xl font-semibold text-brand-navy">
-                {getApplicationMethodLabel(opportunity)}
+                {submissionAllowed
+                  ? getApplicationMethodLabel(opportunity)
+                  : "Prepare before applications open"}
               </h2>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
                 {getPublicApplicationMethod(opportunity) === "EXTERNAL_PORTAL"
@@ -255,8 +267,14 @@ export default async function PublicOpportunityPage({
               <div className="mt-5 grid gap-3">
                 {isSignedInStudent ? (
                   <>
-                    <Link className={primaryButtonClass} href={applyPath}>
-                      {getApplicationActionLabel(opportunity)}
+                    <Link
+                      className={primaryButtonClass}
+                      href={dashboardActionPath}
+                    >
+                      {getApplicationActionLabel(
+                        opportunity,
+                        submissionAllowed,
+                      )}
                       <ArrowRight aria-hidden="true" className="size-4" />
                     </Link>
                     <Link
@@ -274,7 +292,10 @@ export default async function PublicOpportunityPage({
                       {getPublicApplicationMethod(opportunity) ===
                       "EXTERNAL_PORTAL"
                         ? "Create profile to continue"
-                        : getApplicationActionLabel(opportunity)}
+                        : getApplicationActionLabel(
+                            opportunity,
+                            submissionAllowed,
+                          )}
                       <ArrowRight aria-hidden="true" className="size-4" />
                     </Link>
                     <Link className={secondaryButtonClass} href={signInHref}>
@@ -312,6 +333,14 @@ export default async function PublicOpportunityPage({
             icon={<GraduationCap />}
             label="Grade / education level"
             value={getGradeLevels(opportunity)}
+          />
+          <DetailFact
+            icon={<CalendarDays />}
+            label="Applications open"
+            value={
+              formatOpportunityDate(opportunity.opensAt) ||
+              (submissionAllowed ? "Open now" : "Date not specified")
+            }
           />
           <DetailFact
             icon={<CalendarDays />}

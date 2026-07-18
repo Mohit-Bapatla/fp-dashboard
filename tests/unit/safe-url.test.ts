@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   isSafeExternalUrl,
+  isSafeInternalActionUrl,
   isSafeInternalPath,
   safeInternalPath,
   safeRequestOrigin,
@@ -49,6 +50,17 @@ describe("safe internal redirects", () => {
     expect(safeInternalPath(target, "/dashboard")).toBe("/dashboard");
   });
 
+  it("allows only well-formed dashboard action paths", () => {
+    expect(isSafeInternalActionUrl("/dashboard/student/tasks?view=week")).toBe(
+      true,
+    );
+    expect(isSafeInternalActionUrl("/opportunities/opp-1")).toBe(false);
+    expect(isSafeInternalActionUrl("//evil.example/dashboard/student")).toBe(
+      false,
+    );
+    expect(isSafeInternalActionUrl("/dashboard/student\nredirect")).toBe(false);
+  });
+
   it("derives only well-formed HTTP request origins", () => {
     expect(safeRequestOrigin("localhost:3000", null)).toBe(
       "http://localhost:3000",
@@ -73,6 +85,10 @@ describe("safe external URLs", () => {
     "https://student:secret@example.org/apply",
     "javascript:alert(1)",
     "ftp://example.org/file",
+    "http://localhost/internal",
+    "http://127.0.0.1/internal",
+    "http://192.168.1.2/internal",
+    "http://[::1]/internal",
   ])("rejects unsafe external URL %s", (target) => {
     expect(isSafeExternalUrl(target)).toBe(false);
   });

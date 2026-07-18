@@ -28,6 +28,13 @@ export default async function AdminServiceHoursPage() {
 
   const [records, pendingCertificates, verifiedHours] = await Promise.all([
     prisma.serviceHourRecord.findMany({
+      where: {
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
+        },
+        partnerOrganization: { isSystemPlaceholder: false },
+      },
       orderBy: {
         updatedAt: "desc",
       },
@@ -68,11 +75,21 @@ export default async function AdminServiceHoursPage() {
     prisma.serviceHourRecord.count({
       where: {
         certificateStatus: "PENDING_APPROVAL",
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
+        },
+        partnerOrganization: { isSystemPlaceholder: false },
       },
     }),
     prisma.serviceHourRecord.aggregate({
       where: {
         verificationStatus: "VERIFIED",
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
+        },
+        partnerOrganization: { isSystemPlaceholder: false },
       },
       _sum: {
         hours: true,

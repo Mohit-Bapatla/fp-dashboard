@@ -95,6 +95,7 @@ export default async function AdminApplicationsPage({
   const pagination = getPagination(page);
   const [organizations, opportunities] = await Promise.all([
     prisma.partnerOrganization.findMany({
+      where: { isSystemPlaceholder: false },
       orderBy: {
         name: "asc",
       },
@@ -104,6 +105,10 @@ export default async function AdminApplicationsPage({
       },
     }),
     prisma.opportunity.findMany({
+      where: {
+        organization: { isSystemPlaceholder: false },
+        visibility: "PUBLIC_DIRECTORY",
+      },
       orderBy: {
         title: "asc",
       },
@@ -133,7 +138,12 @@ export default async function AdminApplicationsPage({
     params.opportunityId && opportunityIds.has(params.opportunityId)
       ? params.opportunityId
       : "";
-  const where: Prisma.ApplicationWhereInput = {};
+  const where: Prisma.ApplicationWhereInput = {
+    opportunity: {
+      organization: { isSystemPlaceholder: false },
+      visibility: "PUBLIC_DIRECTORY",
+    },
+  };
 
   if (query) {
     where.OR = [
@@ -189,6 +199,8 @@ export default async function AdminApplicationsPage({
 
   if (organizationId || opportunityId) {
     where.opportunity = {
+      organization: { isSystemPlaceholder: false },
+      visibility: "PUBLIC_DIRECTORY",
       ...(organizationId ? { organizationId } : {}),
       ...(opportunityId ? { id: opportunityId } : {}),
     };
@@ -292,12 +304,23 @@ export default async function AdminApplicationsPage({
         },
       },
     }),
-    prisma.application.count(),
+    prisma.application.count({
+      where: {
+        opportunity: {
+          organization: { isSystemPlaceholder: false },
+          visibility: "PUBLIC_DIRECTORY",
+        },
+      },
+    }),
     prisma.application.count({
       where,
     }),
     prisma.application.count({
       where: {
+        opportunity: {
+          organization: { isSystemPlaceholder: false },
+          visibility: "PUBLIC_DIRECTORY",
+        },
         status: {
           in: ["SUBMITTED", "UNDER_REVIEW"],
         },
@@ -305,6 +328,10 @@ export default async function AdminApplicationsPage({
     }),
     prisma.application.count({
       where: {
+        opportunity: {
+          organization: { isSystemPlaceholder: false },
+          visibility: "PUBLIC_DIRECTORY",
+        },
         status: "INTERVIEW",
       },
     }),

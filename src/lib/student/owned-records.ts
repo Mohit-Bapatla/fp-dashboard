@@ -11,3 +11,15 @@ export function applicationOwnership(
 ) {
   return { id: applicationId, studentProfileId } as const;
 }
+
+export function applicationTaskOwnership(
+  studentProfileId: string,
+  taskId: string,
+) {
+  return {
+    id: taskId,
+    application: {
+      studentProfileId,
+    },
+  } as const;
+}

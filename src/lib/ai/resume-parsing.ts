@@ -1,20 +1,37 @@
 import "server-only";
 
 import { createStructuredJsonResponse } from "@/lib/ai/openai";
+import {
+  createResumeParsingError,
+  logResumeParseFailure,
+  type ResumeParseLogContext,
+} from "@/lib/ai/resume-parsing-errors";
 import { prisma } from "@/lib/db/prisma";
 import {
   createSupabaseAdminClient,
   resumeBucketName,
 } from "@/lib/storage/supabase-admin";
+import {
+  extractStructuredResumeSections,
+  normalizeResumeSourceText,
+  resumeSectionKeys,
+  stripResumeContactDetails,
+  type StructuredResumeSections,
+} from "@/lib/student/resume-structure";
 
 export type ParsedResumeData = {
   certifications: string[];
   education: string[];
   experience: string[];
   projects: string[];
+  sections: StructuredResumeSections;
   skills: string[];
   summary: string | null;
   text: string;
+};
+
+export type ParsedResumeResult = ParsedResumeData & {
+  usedEnrichment: boolean;
 };
 
 type AiResumeParseResult = {
@@ -99,6 +116,11 @@ const commonSkillTerms = [
 ];
 
 const sectionHeadings = {
+  activities: [
+    "activities",
+    "extracurricular activities",
+    "community activities",
+  ],
   certifications: [
     "certification",
     "certifications",
@@ -115,13 +137,30 @@ const sectionHeadings = {
     "professional experience",
     "work experience",
     "clinical experience",
-    "volunteer experience",
-    "research experience",
     "employment",
+  ],
+  honors: [
+    "honors",
+    "awards",
+    "honors and awards",
+    "awards and honors",
+    "scholarships",
+  ],
+  leadership: [
+    "leadership",
     "leadership experience",
-    "activities",
+    "leadership and service",
+    "leadership and activities",
   ],
   projects: ["projects", "selected projects", "technical projects"],
+  research: ["research", "research experience", "publications"],
+  school: [
+    "school",
+    "school involvement",
+    "campus involvement",
+    "school and campus involvement",
+    "student organizations",
+  ],
   skills: [
     "skills",
     "core competencies",
@@ -129,6 +168,12 @@ const sectionHeadings = {
     "technical skills",
     "clinical skills",
     "relevant skills",
+  ],
+  volunteering: [
+    "volunteering",
+    "volunteer experience",
+    "community service",
+    "service",
   ],
 } as const;
 
@@ -145,25 +190,7 @@ function cleanText(value: string) {
 }
 
 function normalizeResumeText(value: string) {
-  const withNormalizedBreaks = value
-    .replace(/\u00a0/g, " ")
-    .replace(/\r/g, "\n")
-    .replace(/[|\u00b7]/g, " ")
-    .replace(/[\u2022\u25cf\u25aa\u25e6]/g, "\n")
-    .replace(/\t+/g, " ")
-    .replace(/[ \f\v]+/g, " ")
-    .replace(
-      /([a-z0-9)])\s+(Technical Skills|Education|Experience|Certifications|Certificates|Licenses|Projects|Summary|Objective)\s*:?/gi,
-      "$1\n$2\n",
-    )
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-
-  return withNormalizedBreaks
-    .split(/\n/)
-    .map((line) => line.replace(/\s{2,}/g, " ").trim())
-    .join("\n")
-    .trim();
+  return normalizeResumeSourceText(value);
 }
 
 function uniqueStrings(values: string[]) {
@@ -212,6 +239,33 @@ function uniqueSkills(values: string[]) {
     .slice(0, 24);
 }
 
+function groundedAiValues(values: string[], sourceText: string) {
+  const sourceTokens = new Set(
+    sourceText.toLowerCase().match(/[a-z0-9+#.]{3,}/g) ?? [],
+  );
+
+  return values.filter((value) => {
+    const valueTokens = value.toLowerCase().match(/[a-z0-9+#.]{3,}/g) ?? [];
+    const meaningfulTokens = valueTokens.filter(
+      (token) => !["and", "for", "the", "with"].includes(token),
+    );
+
+    if (meaningfulTokens.length === 0) {
+      return false;
+    }
+
+    const supported = meaningfulTokens.filter((token) =>
+      sourceTokens.has(token),
+    ).length;
+    const numbers = value.match(/\d+(?:[.,]\d+)?/g) ?? [];
+
+    return (
+      supported / meaningfulTokens.length >= 0.8 &&
+      numbers.every((number) => sourceText.includes(number))
+    );
+  });
+}
+
 function getLines(text: string) {
   return text
     .split(/\r?\n/)
@@ -248,7 +302,7 @@ function parseHeadingLine(line: string) {
       }
 
       const inlinePattern = new RegExp(
-        `^${escapeRegExp(heading)}\\s*[:\\-\\u2013\\u2014]?\\s*(.+)$`,
+        `^${escapeRegExp(heading)}\\s*[:\\-\\u2013\\u2014]\\s*(.+)$`,
         "i",
       );
       const match = compactLine.match(inlinePattern);
@@ -525,59 +579,53 @@ function extractExperienceFallback(lines: string[]) {
 
 function extractCertificationFallback(lines: string[]) {
   const certificationPattern =
-    /\b(certified|certification|certificate|license|licensed|bls|cpr|first aid|hipaa|training)\b/i;
+    /\b(?:certified|licensed)\s+(?:in|as)\b|\b(?:BLS|CPR|CNA|EMT|first aid)\s+(?:certified|certification)\b|\b(?:holds?|earned)\b.{0,60}\b(?:certification|certificate|license)\b/i;
+  const accomplishmentPattern =
+    /\b(hosted|facilitated|taught|organized|led|coordinated|provided)\b/i;
 
   return uniqueStrings(
     lines.filter((line) => {
-      return certificationPattern.test(line) && line.length <= 180;
+      return (
+        certificationPattern.test(line) &&
+        !accomplishmentPattern.test(line) &&
+        line.length <= 180
+      );
     }),
   );
-}
-
-function extractContactSummary(lines: string[]) {
-  const joined = lines.join(" ");
-  const email = joined.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.at(0);
-  const phone = joined
-    .match(/(?:\+?1[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}/)
-    ?.at(0);
-  const name = lines.slice(0, 4).find((line) => {
-    const words = line.split(/\s+/);
-
-    return words.length >= 2 && words.length <= 4 && !line.includes("@");
-  });
-
-  return { email, name, phone };
 }
 
 function deterministicParse(text: string): ParsedResumeData {
   const normalizedText = normalizeResumeText(text);
   const cleaned = cleanText(normalizedText);
   const lines = getLines(normalizedText);
+  const sections = extractStructuredResumeSections(normalizedText);
   const skillSection = extractSection(lines, "skills");
   const skills = uniqueSkills([
+    ...sections.skills,
     ...splitPotentialSkills(skillSection),
     ...skillsFromKnownTerms(cleaned),
   ]);
-  const education = extractEducationSection(lines);
-  const experience = extractSection(lines, "experience");
-  const inferredExperience = extractRoleFirstExperience(lines);
-  const projects = extractProjectNames(lines);
-  const certifications = extractSection(lines, "certifications");
-  const contact = extractContactSummary(lines);
-  const explicitSummary = extractSummarySection(lines);
-  const summaryLead = (explicitSummary || cleaned)
-    .split(/(?<=[.!?])\s+/)
-    .slice(0, 2)
-    .join(" ")
-    .slice(0, 500);
-  const contactParts = [
-    contact.name ? `Name: ${contact.name}` : null,
-    contact.email ? `Email: ${contact.email}` : null,
-    contact.phone ? `Phone: ${contact.phone}` : null,
-  ].filter(Boolean);
-  const summary = cleaned
-    ? [...contactParts, summaryLead].filter(Boolean).join("\n")
-    : null;
+  const education = sections.education.length
+    ? sections.education
+    : extractEducationSection(lines);
+  const explicitExperience = sections.experience;
+  const hasSeparateActivitySection = [
+    ...sections.activities,
+    ...sections.honors,
+    ...sections.leadership,
+    ...sections.school,
+  ].length;
+  const inferredExperience = hasSeparateActivitySection
+    ? []
+    : extractRoleFirstExperience(lines);
+  const projects = sections.projects.length
+    ? sections.projects.filter((entry) => !isAchievementLine(entry))
+    : extractProjectNames(lines);
+  const certifications = sections.certifications;
+  const explicitSummary =
+    sections.summary.join(" ") || extractSummarySection(lines);
+  const summary =
+    stripResumeContactDetails(explicitSummary).slice(0, 1_200) || null;
 
   return {
     certifications: certifications.length
@@ -585,13 +633,16 @@ function deterministicParse(text: string): ParsedResumeData {
       : extractCertificationFallback(lines),
     education: education.length ? education : extractEducationFallback(lines),
     experience: uniqueStrings([
-      ...(experience.length ? experience : inferredExperience),
-      ...(experience.length || inferredExperience.length
+      ...(explicitExperience.length ? explicitExperience : inferredExperience),
+      ...sections.volunteering,
+      ...sections.research,
+      ...(explicitExperience.length || inferredExperience.length
         ? []
         : extractExperienceFallback(lines)),
       ...projects.map((project) => `Project: ${project}`),
     ]),
     projects,
+    sections,
     skills,
     summary,
     text: normalizedText,
@@ -602,18 +653,111 @@ export function parseResumeTextDeterministically(text: string) {
   return deterministicParse(text);
 }
 
-async function extractPdfText(bytes: Buffer): Promise<string> {
+type ResumeEnricher = (text: string) => Promise<AiResumeParseResult | null>;
+
+type ParseResumeBytesOptions = {
+  bytes: Buffer;
+  enrichResume?: ResumeEnricher;
+  fileName: string;
+  mimeType: string | null;
+  onDeterministicResult?: (
+    result: ParsedResumeData,
+    context: ResumeParseLogContext,
+  ) => Promise<void>;
+  resumeId: string;
+};
+
+const genericBinaryMimeTypes = new Set(["", "application/octet-stream"]);
+const pdfMimeTypes = new Set(["application/pdf"]);
+const docxMimeTypes = new Set([
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]);
+
+function getFileExtension(fileName: string) {
+  const extensionIndex = fileName.lastIndexOf(".");
+
+  return extensionIndex >= 0
+    ? fileName.slice(extensionIndex).toLowerCase()
+    : "";
+}
+
+function isMimeTypeCompatible(extension: string, mimeType: string | null) {
+  const normalizedMimeType = mimeType?.toLowerCase().trim() ?? "";
+
+  if (genericBinaryMimeTypes.has(normalizedMimeType)) {
+    return true;
+  }
+
+  if (extension === ".pdf") {
+    return pdfMimeTypes.has(normalizedMimeType);
+  }
+
+  if (extension === ".docx") {
+    return docxMimeTypes.has(normalizedMimeType);
+  }
+
+  return false;
+}
+
+function getPdfParseErrorCode(error: unknown) {
+  const errorName = error instanceof Error ? error.name.toLowerCase() : "";
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+
+  if (
+    message.includes("fake worker") ||
+    message.includes("cannot find module") ||
+    message.includes("parser is unavailable") ||
+    message.includes("parsing is unavailable") ||
+    message.includes("worker")
+  ) {
+    return "PARSER_UNAVAILABLE" as const;
+  }
+
+  if (
+    errorName.includes("invalidpdf") ||
+    errorName.includes("password") ||
+    errorName.includes("format") ||
+    message.includes("invalid pdf") ||
+    message.includes("password") ||
+    message.includes("corrupt")
+  ) {
+    return "UNREADABLE_DOCUMENT" as const;
+  }
+
+  return "TEMPORARY_FAILURE" as const;
+}
+
+async function extractPdfText(
+  bytes: Buffer,
+  context: ResumeParseLogContext,
+): Promise<string> {
   type PdfParser = {
     destroy?: () => Promise<void> | void;
     getText: () => Promise<{ text?: string }>;
   };
   type PdfParseConstructor = new (options: { data: Buffer }) => PdfParser;
-  const { PDFParse } = (await import("pdf-parse")) as unknown as {
-    PDFParse?: PdfParseConstructor;
-  };
+  let PDFParse: PdfParseConstructor | undefined;
+
+  try {
+    ({ PDFParse } = (await import("pdf-parse")) as unknown as {
+      PDFParse?: PdfParseConstructor;
+    });
+  } catch (error) {
+    throw createResumeParsingError({
+      code: "PARSER_UNAVAILABLE",
+      context,
+      error,
+      stage: "pdf_import",
+    });
+  }
 
   if (!PDFParse) {
-    throw new Error("PDF parsing is unavailable in this environment.");
+    throw createResumeParsingError({
+      code: "PARSER_UNAVAILABLE",
+      context,
+      error: new Error("PDFParse export is unavailable in this runtime."),
+      stage: "pdf_import",
+    });
   }
 
   let parser: PdfParser | null = null;
@@ -622,116 +766,345 @@ async function extractPdfText(bytes: Buffer): Promise<string> {
     parser = new PDFParse({
       data: bytes,
     });
+  } catch (error) {
+    throw createResumeParsingError({
+      code: "PARSER_UNAVAILABLE",
+      context,
+      error,
+      stage: "pdf_constructor",
+    });
+  }
+
+  try {
     const result = await parser.getText();
 
     return result.text ?? "";
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown PDF parsing error.";
-
-    throw new Error(
-      `PDF text could not be extracted reliably. ${message}`.trim(),
-    );
+    throw createResumeParsingError({
+      code: getPdfParseErrorCode(error),
+      context,
+      error,
+      stage: "pdf_get_text",
+    });
   } finally {
-    await parser?.destroy?.();
+    try {
+      await parser.destroy?.();
+    } catch (error) {
+      logResumeParseFailure({
+        context,
+        error,
+        level: "warning",
+        stage: "pdf_cleanup",
+      });
+    }
   }
 }
 
-async function extractDocxText(bytes: Buffer) {
-  const mammoth = await import("mammoth");
-  const result = await mammoth.extractRawText({
-    buffer: bytes,
-  });
+async function extractDocxText(bytes: Buffer, context: ResumeParseLogContext) {
+  let mammoth: typeof import("mammoth");
 
-  return result.value;
+  try {
+    mammoth = await import("mammoth");
+  } catch (error) {
+    throw createResumeParsingError({
+      code: "PARSER_UNAVAILABLE",
+      context,
+      error,
+      stage: "docx_import",
+    });
+  }
+
+  try {
+    const result = await mammoth.extractRawText({
+      buffer: bytes,
+    });
+
+    return result.value;
+  } catch (error) {
+    throw createResumeParsingError({
+      code: "UNREADABLE_DOCUMENT",
+      context,
+      error,
+      stage: "docx_get_text",
+    });
+  }
 }
 
-async function extractResumeText(fileName: string, bytes: Buffer) {
-  const lowerFileName = fileName.toLowerCase();
+async function extractResumeText(
+  fileName: string,
+  bytes: Buffer,
+  context: ResumeParseLogContext,
+) {
+  const extension = getFileExtension(fileName);
 
-  if (lowerFileName.endsWith(".pdf")) {
-    return extractPdfText(bytes);
+  if (
+    ![".pdf", ".docx"].includes(extension) ||
+    !isMimeTypeCompatible(extension, context.mimeType)
+  ) {
+    throw createResumeParsingError({
+      code: "UNSUPPORTED_FILE_TYPE",
+      context,
+      error: new Error("Resume extension and MIME type are not supported."),
+      stage: "deterministic_extraction",
+    });
   }
 
-  if (lowerFileName.endsWith(".docx")) {
-    return extractDocxText(bytes);
+  if (extension === ".pdf") {
+    if (bytes.subarray(0, 5).toString("ascii") !== "%PDF-") {
+      throw createResumeParsingError({
+        code: "UNSUPPORTED_FILE_TYPE",
+        context,
+        error: new Error("PDF magic bytes are missing."),
+        stage: "deterministic_extraction",
+      });
+    }
+
+    return extractPdfText(bytes, context);
   }
 
-  throw new Error("Unsupported resume file type.");
+  if (bytes.subarray(0, 2).toString("ascii") !== "PK") {
+    throw createResumeParsingError({
+      code: "UNSUPPORTED_FILE_TYPE",
+      context,
+      error: new Error("DOCX archive magic bytes are missing."),
+      stage: "deterministic_extraction",
+    });
+  }
+
+  return extractDocxText(bytes, context);
 }
 
 async function enrichResumeWithOpenAi(text: string) {
+  const privateSections = extractStructuredResumeSections(text);
+  const privateText = resumeSectionKeys
+    .filter((key) => privateSections[key].length > 0)
+    .map((key) => `${key}:\n${privateSections[key].join("\n")}`)
+    .join("\n\n")
+    .slice(0, 12000);
+
   return createStructuredJsonResponse<AiResumeParseResult>({
     input: [
       "Extract resume information for a healthcare opportunity dashboard.",
       "Do not infer protected or sensitive attributes.",
-      "Return concise, factual fields only.",
-      `Resume text:\n${text.slice(0, 16000)}`,
+      "Return concise, factual fields supported verbatim by the resume only.",
+      "Do not invent credentials, skills, impact, hours, or experiences.",
+      "Contact details have been removed because they are not needed.",
+      `Resume text:\n${privateText}`,
     ].join("\n\n"),
     schema: resumeSchema,
     schemaName: "resume_parse",
   });
 }
 
-export async function parseResume(resumeId: string, studentProfileId: string) {
-  const resume = await prisma.resume.findFirst({
-    where: {
-      id: resumeId,
-      studentProfileId,
-    },
-    select: {
-      fileName: true,
-      fileUrl: true,
-      id: true,
-    },
-  });
-
-  if (!resume?.fileUrl) {
-    throw new Error("Resume file was not found.");
-  }
-
-  const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase.storage
-    .from(resumeBucketName)
-    .download(resume.fileUrl);
-
-  if (error || !data) {
-    throw new Error("Resume file could not be downloaded.");
-  }
-
-  const bytes = Buffer.from(await data.arrayBuffer());
-  const text = await extractResumeText(resume.fileName, bytes);
+export async function parseResumeBytes({
+  bytes,
+  enrichResume = enrichResumeWithOpenAi,
+  fileName,
+  mimeType,
+  onDeterministicResult,
+  resumeId,
+}: ParseResumeBytesOptions) {
+  const context: ResumeParseLogContext = {
+    byteLength: bytes.length,
+    extension: getFileExtension(fileName) || null,
+    mimeType,
+    resumeId,
+  };
+  const text = await extractResumeText(fileName, bytes, context);
   const cleanedText = normalizeResumeText(text);
 
   if (cleanedText.length < 30) {
-    throw new Error("Resume text could not be extracted reliably.");
+    throw createResumeParsingError({
+      code: "UNREADABLE_DOCUMENT",
+      context,
+      error: new Error("Extracted resume text is below the minimum length."),
+      stage: "deterministic_extraction",
+    });
   }
 
-  const fallback = deterministicParse(cleanedText);
-  const aiResult = await enrichResumeWithOpenAi(cleanedText);
+  let fallback: ParsedResumeData;
 
-  return {
-    certifications: uniqueStrings(
-      aiResult?.certifications.length
-        ? aiResult.certifications
-        : fallback.certifications,
-    ),
-    education: uniqueStrings(
-      aiResult?.education.length ? aiResult.education : fallback.education,
-    ),
-    experience: uniqueStrings(
-      aiResult?.experience.length
-        ? [
-            ...aiResult.experience,
-            ...fallback.projects.map((project) => `Project: ${project}`),
-          ]
-        : fallback.experience,
-    ),
-    projects: fallback.projects,
-    skills: uniqueSkills(
-      aiResult?.skills.length ? aiResult.skills : fallback.skills,
-    ),
-    summary: aiResult?.summary?.trim() || fallback.summary,
-    text: cleanedText,
-  } satisfies ParsedResumeData;
+  try {
+    fallback = deterministicParse(cleanedText);
+  } catch (error) {
+    throw createResumeParsingError({
+      code: "TEMPORARY_FAILURE",
+      context,
+      error,
+      stage: "deterministic_extraction",
+    });
+  }
+
+  await onDeterministicResult?.(fallback, context);
+
+  let aiResult: AiResumeParseResult | null = null;
+
+  try {
+    aiResult = await enrichResume(cleanedText);
+  } catch (error) {
+    logResumeParseFailure({
+      context,
+      error,
+      level: "warning",
+      stage: "openai_enrichment",
+    });
+  }
+
+  if (!aiResult) {
+    return {
+      ...fallback,
+      usedEnrichment: false,
+    } satisfies ParsedResumeResult;
+  }
+
+  try {
+    const groundedCertifications = groundedAiValues(
+      aiResult.certifications,
+      cleanedText,
+    );
+    const groundedEducation = groundedAiValues(aiResult.education, cleanedText);
+    const groundedExperience = groundedAiValues(
+      aiResult.experience,
+      cleanedText,
+    );
+    const groundedSkills = groundedAiValues(aiResult.skills, cleanedText);
+
+    return {
+      certifications: uniqueStrings(
+        groundedCertifications.length
+          ? groundedCertifications
+          : fallback.certifications,
+      ),
+      education: uniqueStrings(
+        groundedEducation.length ? groundedEducation : fallback.education,
+      ),
+      experience: uniqueStrings(
+        groundedExperience.length
+          ? [
+              ...groundedExperience,
+              ...fallback.projects.map((project) => `Project: ${project}`),
+            ]
+          : fallback.experience,
+      ),
+      projects: fallback.projects,
+      sections: fallback.sections,
+      skills: uniqueSkills(
+        groundedSkills.length ? groundedSkills : fallback.skills,
+      ),
+      summary: fallback.summary,
+      text: cleanedText,
+      usedEnrichment: true,
+    } satisfies ParsedResumeResult;
+  } catch (error) {
+    logResumeParseFailure({
+      context,
+      error,
+      level: "warning",
+      stage: "openai_enrichment",
+    });
+
+    return {
+      ...fallback,
+      usedEnrichment: false,
+    } satisfies ParsedResumeResult;
+  }
+}
+
+export async function parseResume(
+  resumeId: string,
+  studentProfileId: string,
+  onDeterministicResult?: ParseResumeBytesOptions["onDeterministicResult"],
+) {
+  let resume: {
+    fileName: string;
+    fileUrl: string | null;
+    id: string;
+  } | null;
+  const initialContext: ResumeParseLogContext = {
+    byteLength: null,
+    extension: null,
+    mimeType: null,
+    resumeId,
+  };
+
+  try {
+    resume = await prisma.resume.findFirst({
+      where: {
+        id: resumeId,
+        studentProfileId,
+      },
+      select: {
+        fileName: true,
+        fileUrl: true,
+        id: true,
+      },
+    });
+  } catch (error) {
+    throw createResumeParsingError({
+      code: "TEMPORARY_FAILURE",
+      context: initialContext,
+      error,
+      stage: "ownership_lookup",
+    });
+  }
+
+  if (!resume?.fileUrl) {
+    throw createResumeParsingError({
+      code: "OWNERSHIP_DENIED",
+      context: initialContext,
+      error: new Error("Owned resume record or storage path was not found."),
+      stage: "ownership_lookup",
+    });
+  }
+
+  const context: ResumeParseLogContext = {
+    ...initialContext,
+    extension: getFileExtension(resume.fileName) || null,
+  };
+  let data: Blob | null = null;
+
+  try {
+    const supabase = createSupabaseAdminClient();
+    const result = await supabase.storage
+      .from(resumeBucketName)
+      .download(resume.fileUrl);
+
+    if (result.error || !result.data) {
+      throw new Error(
+        result.error?.message || "Storage returned no file data.",
+      );
+    }
+
+    data = result.data;
+    context.mimeType = data.type || null;
+  } catch (error) {
+    throw createResumeParsingError({
+      code: "DOWNLOAD_FAILED",
+      context,
+      error,
+      stage: "supabase_download",
+    });
+  }
+
+  let bytes: Buffer;
+
+  try {
+    bytes = Buffer.from(await data.arrayBuffer());
+    context.byteLength = bytes.length;
+  } catch (error) {
+    throw createResumeParsingError({
+      code: "TEMPORARY_FAILURE",
+      context,
+      error,
+      stage: "blob_to_buffer",
+    });
+  }
+
+  return parseResumeBytes({
+    bytes,
+    fileName: resume.fileName,
+    mimeType: context.mimeType,
+    onDeterministicResult,
+    resumeId,
+  });
 }

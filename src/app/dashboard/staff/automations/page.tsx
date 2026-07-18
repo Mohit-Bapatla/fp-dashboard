@@ -84,6 +84,8 @@ export default async function StaffAutomationsPage() {
   ] = await Promise.all([
     prisma.opportunity.count({
       where: {
+        visibility: "PUBLIC_DIRECTORY",
+        organization: { isSystemPlaceholder: false },
         deadline: {
           lt: now,
         },
@@ -104,6 +106,7 @@ export default async function StaffAutomationsPage() {
     }),
     prisma.partnerOrganization.count({
       where: {
+        isSystemPlaceholder: false,
         nextFollowUpAt: {
           lte: now,
         },
@@ -132,6 +135,10 @@ export default async function StaffAutomationsPage() {
           },
         ],
         status: "UNDER_REVIEW",
+        opportunity: {
+          visibility: "PUBLIC_DIRECTORY",
+          organization: { isSystemPlaceholder: false },
+        },
       },
     }),
     prisma.outreachTask.count({

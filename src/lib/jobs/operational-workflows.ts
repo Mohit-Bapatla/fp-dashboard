@@ -199,6 +199,8 @@ async function closeExpiredOpportunities(now: Date) {
   const result = emptyRuleResult("expiredOpportunities");
   const opportunities = await prisma.opportunity.findMany({
     where: {
+      visibility: "PUBLIC_DIRECTORY",
+      organization: { isSystemPlaceholder: false },
       deadline: {
         lt: now,
       },
@@ -308,6 +310,7 @@ async function notifyDueFollowUps(now: Date, staffRecipientIds: string[]) {
   const [organizations, contacts] = await Promise.all([
     prisma.partnerOrganization.findMany({
       where: {
+        isSystemPlaceholder: false,
         nextFollowUpAt: {
           lte: now,
         },
@@ -324,6 +327,7 @@ async function notifyDueFollowUps(now: Date, staffRecipientIds: string[]) {
         nextFollowUpAt: {
           lte: now,
         },
+        organization: { isSystemPlaceholder: false },
       },
       select: {
         firstName: true,
@@ -415,6 +419,10 @@ async function notifyApplicationsUnderReview(
         },
       ],
       status: "UNDER_REVIEW",
+      opportunity: {
+        visibility: "PUBLIC_DIRECTORY",
+        organization: { isSystemPlaceholder: false },
+      },
     },
     select: {
       id: true,

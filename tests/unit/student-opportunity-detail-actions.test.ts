@@ -49,13 +49,14 @@ describe("student opportunity profile-required actions", () => {
     const markup = renderToStaticMarkup(
       createElement(StudentOpportunityPrimaryActions, {
         applyState: { kind: "needsProfile" },
+        canSave: true,
         isSaved: false,
         opportunityId: "opp-1",
       }),
     );
 
     expect(markup).not.toContain("<form");
-    expect(markup).toContain("Complete profile to apply");
+    expect(markup).toContain("Complete profile to prepare");
     expect(markup).toContain("Complete profile to save");
     expect(markup).toContain(
       "/dashboard/student/onboarding?returnTo=%2Fdashboard%2Fstudent%2Fopportunities%2Fopp-1%2Fapply",
@@ -63,5 +64,19 @@ describe("student opportunity profile-required actions", () => {
     expect(markup).toContain(
       "/dashboard/student/onboarding?returnTo=%2Fdashboard%2Fstudent%2Fopportunities%2Fopp-1",
     );
+  });
+
+  it("does not render save controls for a private student opportunity", () => {
+    const markup = renderToStaticMarkup(
+      createElement(StudentOpportunityPrimaryActions, {
+        applyState: { kind: "canPrepare", submissionAllowed: true },
+        canSave: false,
+        isSaved: false,
+        opportunityId: "opp-private",
+      }),
+    );
+
+    expect(markup).not.toContain("Save");
+    expect(markup).toContain("Start application");
   });
 });
