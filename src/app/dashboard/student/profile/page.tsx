@@ -11,6 +11,8 @@ import { getStudentNavItems } from "@/lib/student/navigation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
 import { assertStudentAccess } from "@/lib/student/authorization";
 
+export const runtime = "nodejs";
+
 function listToText(value: string[]) {
   return value.join(", ");
 }
@@ -124,6 +126,7 @@ export default async function StudentProfilePage() {
                   extractedSkills: resume.extractedSkills,
                   id: resume.id,
                   fileName: resume.fileName,
+                  parseFailureReason: resume.parseFailureReason,
                   parsedSummary: resume.parsedSummary,
                   parseStatus: resume.parseStatus,
                   updatedAt: resume.updatedAt,

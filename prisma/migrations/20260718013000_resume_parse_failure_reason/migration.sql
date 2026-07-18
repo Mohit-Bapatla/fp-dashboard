@@ -1,0 +1,10 @@
+CREATE TYPE "ResumeParseFailureReason" AS ENUM (
+  'DOWNLOAD_FAILED',
+  'UNSUPPORTED_FILE_TYPE',
+  'UNREADABLE_DOCUMENT',
+  'PARSER_UNAVAILABLE',
+  'TEMPORARY_FAILURE'
+);
+
+ALTER TABLE "Resume"
+ADD COLUMN "parseFailureReason" "ResumeParseFailureReason";

@@ -4,6 +4,14 @@ import { revalidatePath } from "next/cache";
 
 import { createAuditLog } from "@/lib/audit/audit-log";
 import { parseResume } from "@/lib/ai/resume-parsing";
+import {
+  createResumeParsingError,
+  getPersistedResumeParseFailureReason,
+  getResumeParseUserMessage,
+  logResumeParseFailure,
+  ResumeParsingError,
+  type ResumeParseLogContext,
+} from "@/lib/ai/resume-parsing-errors";
 import { prisma } from "@/lib/db/prisma";
 import {
   enforceRateLimit,
@@ -13,6 +21,7 @@ import {
   createResumeSignedUrl,
   getCurrentStudentResumeContext,
 } from "@/lib/student/resume";
+import { RESUME_PARSE_STALE_AFTER_MS } from "@/lib/student/resume-parse-state";
 import { validateResumeFile } from "@/lib/student/resume-validation";
 import {
   createSupabaseAdminClient,
@@ -31,6 +40,49 @@ export type ResumeDownloadActionState = {
 
 function buildResumePath(profileId: string, extension: string) {
   return `students/${profileId}/resume-${Date.now()}.${extension}`;
+}
+
+function getResumeParseLogContext(
+  resumeId: string,
+  fileName: string,
+): ResumeParseLogContext {
+  const extensionIndex = fileName.lastIndexOf(".");
+
+  return {
+    byteLength: null,
+    extension:
+      extensionIndex >= 0 ? fileName.slice(extensionIndex).toLowerCase() : null,
+    mimeType: null,
+    resumeId,
+  };
+}
+
+async function markResumeParseFailed({
+  context,
+  error,
+  resumeId,
+}: {
+  context: ResumeParseLogContext;
+  error: unknown;
+  resumeId: string;
+}) {
+  try {
+    await prisma.resume.update({
+      where: {
+        id: resumeId,
+      },
+      data: {
+        parseFailureReason: getPersistedResumeParseFailureReason(error),
+        parseStatus: "FAILED",
+      },
+    });
+  } catch (statusError) {
+    logResumeParseFailure({
+      context,
+      error: statusError,
+      stage: "status_update",
+    });
+  }
 }
 
 export async function uploadStudentResume(
@@ -119,6 +171,7 @@ export async function uploadStudentResume(
           extractedExperience: [],
           extractedSkills: [],
           fileUrl: newPath,
+          parseFailureReason: null,
           parseStatus: "NOT_STARTED",
           parsedSummary: null,
           parsedText: null,
@@ -138,6 +191,7 @@ export async function uploadStudentResume(
           studentProfileId: context.profileId,
           fileName: resumeFile.name,
           fileUrl: newPath,
+          parseFailureReason: null,
           parseStatus: "NOT_STARTED",
           parsedSummary: null,
           parsedText: null,
@@ -276,53 +330,170 @@ export async function parseStudentResume(
     };
   }
 
-  await prisma.resume.update({
-    where: {
-      id: context.resume.id,
-    },
-    data: {
-      parseStatus: "PROCESSING",
-    },
-  });
+  const parseLogContext = getResumeParseLogContext(
+    context.resume.id,
+    context.resume.fileName,
+  );
+  const staleBefore = new Date(Date.now() - RESUME_PARSE_STALE_AFTER_MS);
 
   try {
-    const parsedResume = await parseResume(
-      context.resume.id,
-      context.profileId,
-    );
-
-    await prisma.resume.update({
+    const claimed = await prisma.resume.updateMany({
       where: {
         id: context.resume.id,
+        studentProfileId: context.profileId,
+        OR: [
+          { parseStatus: { not: "PROCESSING" } },
+          { updatedAt: { lte: staleBefore } },
+        ],
       },
       data: {
-        extractedCertifications: parsedResume.certifications,
-        extractedEducation: parsedResume.education,
-        extractedExperience: parsedResume.experience,
-        extractedSkills: parsedResume.skills,
-        parsedSummary: parsedResume.summary,
-        parsedText: parsedResume.text,
-        parseStatus: "COMPLETED",
+        parseFailureReason: null,
+        parseStatus: "PROCESSING",
       },
     });
+
+    if (claimed.count !== 1) {
+      return {
+        error: "This resume is already being parsed. Please wait a moment.",
+        success: null,
+      };
+    }
   } catch (error) {
-    await prisma.resume.update({
-      where: {
-        id: context.resume.id,
+    logResumeParseFailure({
+      context: parseLogContext,
+      error,
+      stage: "status_update",
+    });
+
+    return {
+      error: getResumeParseUserMessage(error),
+      success: null,
+    };
+  }
+
+  let deterministicPersisted = false;
+  let parsedResume: Awaited<ReturnType<typeof parseResume>>;
+
+  try {
+    parsedResume = await parseResume(
+      context.resume.id,
+      context.profileId,
+      async (deterministicResume, sourceContext) => {
+        Object.assign(parseLogContext, sourceContext);
+
+        try {
+          await prisma.resume.update({
+            where: {
+              id: resumeId,
+            },
+            data: {
+              extractedCertifications: deterministicResume.certifications,
+              extractedEducation: deterministicResume.education,
+              extractedExperience: deterministicResume.experience,
+              extractedSkills: deterministicResume.skills,
+              parseFailureReason: null,
+              parsedSummary: deterministicResume.summary,
+              parsedText: deterministicResume.text,
+              parseStatus: "COMPLETED",
+            },
+          });
+          deterministicPersisted = true;
+        } catch (error) {
+          throw createResumeParsingError({
+            code: "TEMPORARY_FAILURE",
+            context: sourceContext,
+            error,
+            stage: "prisma_result_update",
+          });
+        }
       },
-      data: {
-        parseStatus: "FAILED",
-      },
+    );
+  } catch (error) {
+    if (deterministicPersisted) {
+      logResumeParseFailure({
+        context: parseLogContext,
+        error,
+        level: "warning",
+        stage: "openai_enrichment",
+      });
+
+      revalidatePath("/dashboard/student");
+      revalidatePath("/dashboard/student/profile");
+
+      return {
+        error: null,
+        success: "Resume parsed without optional enrichment.",
+      };
+    }
+
+    if (!(error instanceof ResumeParsingError)) {
+      logResumeParseFailure({
+        context: parseLogContext,
+        error,
+        stage: "deterministic_extraction",
+      });
+    }
+
+    await markResumeParseFailed({
+      context: parseLogContext,
+      error,
+      resumeId: context.resume.id,
     });
 
     revalidatePath("/dashboard/student");
     revalidatePath("/dashboard/student/profile");
 
     return {
-      error:
-        error instanceof Error
-          ? error.message
-          : "Resume parsing failed. Please retry, or upload a clearer PDF/DOCX resume.",
+      error: getResumeParseUserMessage(error),
+      success: null,
+    };
+  }
+
+  if (parsedResume.usedEnrichment) {
+    try {
+      await prisma.resume.update({
+        where: {
+          id: context.resume.id,
+        },
+        data: {
+          extractedCertifications: parsedResume.certifications,
+          extractedEducation: parsedResume.education,
+          extractedExperience: parsedResume.experience,
+          extractedSkills: parsedResume.skills,
+          parsedSummary: parsedResume.summary,
+          parsedText: parsedResume.text,
+        },
+      });
+    } catch (error) {
+      logResumeParseFailure({
+        context: parseLogContext,
+        error,
+        level: "warning",
+        stage: "prisma_result_update",
+      });
+    }
+  }
+
+  if (!deterministicPersisted) {
+    const error = new Error(
+      "Deterministic resume result was not persisted before enrichment.",
+    );
+    logResumeParseFailure({
+      context: parseLogContext,
+      error,
+      stage: "prisma_result_update",
+    });
+    await markResumeParseFailed({
+      context: parseLogContext,
+      error,
+      resumeId: context.resume.id,
+    });
+
+    revalidatePath("/dashboard/student");
+    revalidatePath("/dashboard/student/profile");
+
+    return {
+      error: getResumeParseUserMessage(error),
       success: null,
     };
   }

@@ -18,6 +18,11 @@ import {
   type ResumeActionState,
   type ResumeDownloadActionState,
 } from "@/app/dashboard/student/resume/actions";
+import {
+  getResumeParseFailureMessage,
+  isResumeProcessingStale,
+  type PersistedResumeParseFailureReason,
+} from "@/lib/student/resume-parse-state";
 import { cn } from "@/lib/utils";
 
 type StudentResumeManagerProps = {
@@ -29,6 +34,7 @@ type StudentResumeManagerProps = {
     extractedSkills: string[];
     id: string;
     fileName: string;
+    parseFailureReason: PersistedResumeParseFailureReason | null;
     parsedSummary: string | null;
     parseStatus: string;
     updatedAt: Date;
@@ -50,6 +56,13 @@ export function StudentResumeManager({
   resume,
 }: StudentResumeManagerProps) {
   const needsReview = resume ? getNeedsReview(resume) : false;
+  const processingIsStale = Boolean(
+    resume?.parseStatus === "PROCESSING" &&
+    isResumeProcessingStale(resume.updatedAt),
+  );
+  const activelyProcessing = Boolean(
+    resume?.parseStatus === "PROCESSING" && !processingIsStale,
+  );
   const [uploadState, uploadAction, uploadPending] = useActionState(
     uploadStudentResume,
     initialResumeActionState,
@@ -122,10 +135,14 @@ export function StudentResumeManager({
                 <span
                   className={cn(
                     "inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-medium",
-                    getParseStatusClassName(resume.parseStatus),
+                    getParseStatusClassName(
+                      processingIsStale ? "FAILED" : resume.parseStatus,
+                    ),
                   )}
                 >
-                  {formatParseStatus(resume.parseStatus)}
+                  {processingIsStale
+                    ? "Retry available"
+                    : formatParseStatus(resume.parseStatus)}
                 </span>
               </div>
               {needsReview ? (
@@ -167,15 +184,13 @@ export function StudentResumeManager({
                   <input name="resumeId" type="hidden" value={resume.id} />
                   <button
                     className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={
-                      parsePending || resume.parseStatus === "PROCESSING"
-                    }
+                    disabled={parsePending || activelyProcessing}
                     type="submit"
                   >
                     <RefreshCw aria-hidden="true" className="h-4 w-4" />
-                    {parsePending || resume.parseStatus === "PROCESSING"
+                    {parsePending || activelyProcessing
                       ? "Parsing"
-                      : resume.parseStatus === "FAILED"
+                      : resume.parseStatus === "FAILED" || processingIsStale
                         ? "Retry parse"
                         : resume.parseStatus === "COMPLETED"
                           ? "Re-parse"
@@ -184,10 +199,11 @@ export function StudentResumeManager({
                 </form>
               </div>
 
-              {resume.parseStatus === "FAILED" ? (
+              {resume.parseStatus === "FAILED" || processingIsStale ? (
                 <p className="mt-4 text-sm leading-6 text-red-600">
-                  Parsing failed. Retry with the current file or upload a
-                  clearer PDF/DOCX resume.
+                  {processingIsStale
+                    ? "The previous parse did not finish. Retry with the current file."
+                    : getResumeParseFailureMessage(resume.parseFailureReason)}
                 </p>
               ) : null}
 

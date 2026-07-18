@@ -1,6 +1,11 @@
 import "server-only";
 
 import { createStructuredJsonResponse } from "@/lib/ai/openai";
+import {
+  createResumeParsingError,
+  logResumeParseFailure,
+  type ResumeParseLogContext,
+} from "@/lib/ai/resume-parsing-errors";
 import { prisma } from "@/lib/db/prisma";
 import {
   createSupabaseAdminClient,
@@ -15,6 +20,10 @@ export type ParsedResumeData = {
   skills: string[];
   summary: string | null;
   text: string;
+};
+
+export type ParsedResumeResult = ParsedResumeData & {
+  usedEnrichment: boolean;
 };
 
 type AiResumeParseResult = {
@@ -602,18 +611,111 @@ export function parseResumeTextDeterministically(text: string) {
   return deterministicParse(text);
 }
 
-async function extractPdfText(bytes: Buffer): Promise<string> {
+type ResumeEnricher = (text: string) => Promise<AiResumeParseResult | null>;
+
+type ParseResumeBytesOptions = {
+  bytes: Buffer;
+  enrichResume?: ResumeEnricher;
+  fileName: string;
+  mimeType: string | null;
+  onDeterministicResult?: (
+    result: ParsedResumeData,
+    context: ResumeParseLogContext,
+  ) => Promise<void>;
+  resumeId: string;
+};
+
+const genericBinaryMimeTypes = new Set(["", "application/octet-stream"]);
+const pdfMimeTypes = new Set(["application/pdf"]);
+const docxMimeTypes = new Set([
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]);
+
+function getFileExtension(fileName: string) {
+  const extensionIndex = fileName.lastIndexOf(".");
+
+  return extensionIndex >= 0
+    ? fileName.slice(extensionIndex).toLowerCase()
+    : "";
+}
+
+function isMimeTypeCompatible(extension: string, mimeType: string | null) {
+  const normalizedMimeType = mimeType?.toLowerCase().trim() ?? "";
+
+  if (genericBinaryMimeTypes.has(normalizedMimeType)) {
+    return true;
+  }
+
+  if (extension === ".pdf") {
+    return pdfMimeTypes.has(normalizedMimeType);
+  }
+
+  if (extension === ".docx") {
+    return docxMimeTypes.has(normalizedMimeType);
+  }
+
+  return false;
+}
+
+function getPdfParseErrorCode(error: unknown) {
+  const errorName = error instanceof Error ? error.name.toLowerCase() : "";
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+
+  if (
+    message.includes("fake worker") ||
+    message.includes("cannot find module") ||
+    message.includes("parser is unavailable") ||
+    message.includes("parsing is unavailable") ||
+    message.includes("worker")
+  ) {
+    return "PARSER_UNAVAILABLE" as const;
+  }
+
+  if (
+    errorName.includes("invalidpdf") ||
+    errorName.includes("password") ||
+    errorName.includes("format") ||
+    message.includes("invalid pdf") ||
+    message.includes("password") ||
+    message.includes("corrupt")
+  ) {
+    return "UNREADABLE_DOCUMENT" as const;
+  }
+
+  return "TEMPORARY_FAILURE" as const;
+}
+
+async function extractPdfText(
+  bytes: Buffer,
+  context: ResumeParseLogContext,
+): Promise<string> {
   type PdfParser = {
     destroy?: () => Promise<void> | void;
     getText: () => Promise<{ text?: string }>;
   };
   type PdfParseConstructor = new (options: { data: Buffer }) => PdfParser;
-  const { PDFParse } = (await import("pdf-parse")) as unknown as {
-    PDFParse?: PdfParseConstructor;
-  };
+  let PDFParse: PdfParseConstructor | undefined;
+
+  try {
+    ({ PDFParse } = (await import("pdf-parse")) as unknown as {
+      PDFParse?: PdfParseConstructor;
+    });
+  } catch (error) {
+    throw createResumeParsingError({
+      code: "PARSER_UNAVAILABLE",
+      context,
+      error,
+      stage: "pdf_import",
+    });
+  }
 
   if (!PDFParse) {
-    throw new Error("PDF parsing is unavailable in this environment.");
+    throw createResumeParsingError({
+      code: "PARSER_UNAVAILABLE",
+      context,
+      error: new Error("PDFParse export is unavailable in this runtime."),
+      stage: "pdf_import",
+    });
   }
 
   let parser: PdfParser | null = null;
@@ -622,42 +724,112 @@ async function extractPdfText(bytes: Buffer): Promise<string> {
     parser = new PDFParse({
       data: bytes,
     });
+  } catch (error) {
+    throw createResumeParsingError({
+      code: "PARSER_UNAVAILABLE",
+      context,
+      error,
+      stage: "pdf_constructor",
+    });
+  }
+
+  try {
     const result = await parser.getText();
 
     return result.text ?? "";
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown PDF parsing error.";
-
-    throw new Error(
-      `PDF text could not be extracted reliably. ${message}`.trim(),
-    );
+    throw createResumeParsingError({
+      code: getPdfParseErrorCode(error),
+      context,
+      error,
+      stage: "pdf_get_text",
+    });
   } finally {
-    await parser?.destroy?.();
+    try {
+      await parser.destroy?.();
+    } catch (error) {
+      logResumeParseFailure({
+        context,
+        error,
+        level: "warning",
+        stage: "pdf_cleanup",
+      });
+    }
   }
 }
 
-async function extractDocxText(bytes: Buffer) {
-  const mammoth = await import("mammoth");
-  const result = await mammoth.extractRawText({
-    buffer: bytes,
-  });
+async function extractDocxText(bytes: Buffer, context: ResumeParseLogContext) {
+  let mammoth: typeof import("mammoth");
 
-  return result.value;
+  try {
+    mammoth = await import("mammoth");
+  } catch (error) {
+    throw createResumeParsingError({
+      code: "PARSER_UNAVAILABLE",
+      context,
+      error,
+      stage: "docx_import",
+    });
+  }
+
+  try {
+    const result = await mammoth.extractRawText({
+      buffer: bytes,
+    });
+
+    return result.value;
+  } catch (error) {
+    throw createResumeParsingError({
+      code: "UNREADABLE_DOCUMENT",
+      context,
+      error,
+      stage: "docx_get_text",
+    });
+  }
 }
 
-async function extractResumeText(fileName: string, bytes: Buffer) {
-  const lowerFileName = fileName.toLowerCase();
+async function extractResumeText(
+  fileName: string,
+  bytes: Buffer,
+  context: ResumeParseLogContext,
+) {
+  const extension = getFileExtension(fileName);
 
-  if (lowerFileName.endsWith(".pdf")) {
-    return extractPdfText(bytes);
+  if (
+    ![".pdf", ".docx"].includes(extension) ||
+    !isMimeTypeCompatible(extension, context.mimeType)
+  ) {
+    throw createResumeParsingError({
+      code: "UNSUPPORTED_FILE_TYPE",
+      context,
+      error: new Error("Resume extension and MIME type are not supported."),
+      stage: "deterministic_extraction",
+    });
   }
 
-  if (lowerFileName.endsWith(".docx")) {
-    return extractDocxText(bytes);
+  if (extension === ".pdf") {
+    if (bytes.subarray(0, 5).toString("ascii") !== "%PDF-") {
+      throw createResumeParsingError({
+        code: "UNSUPPORTED_FILE_TYPE",
+        context,
+        error: new Error("PDF magic bytes are missing."),
+        stage: "deterministic_extraction",
+      });
+    }
+
+    return extractPdfText(bytes, context);
   }
 
-  throw new Error("Unsupported resume file type.");
+  if (bytes.subarray(0, 2).toString("ascii") !== "PK") {
+    throw createResumeParsingError({
+      code: "UNSUPPORTED_FILE_TYPE",
+      context,
+      error: new Error("DOCX archive magic bytes are missing."),
+      stage: "deterministic_extraction",
+    });
+  }
+
+  return extractDocxText(bytes, context);
 }
 
 async function enrichResumeWithOpenAi(text: string) {
@@ -673,65 +845,203 @@ async function enrichResumeWithOpenAi(text: string) {
   });
 }
 
-export async function parseResume(resumeId: string, studentProfileId: string) {
-  const resume = await prisma.resume.findFirst({
-    where: {
-      id: resumeId,
-      studentProfileId,
-    },
-    select: {
-      fileName: true,
-      fileUrl: true,
-      id: true,
-    },
-  });
-
-  if (!resume?.fileUrl) {
-    throw new Error("Resume file was not found.");
-  }
-
-  const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase.storage
-    .from(resumeBucketName)
-    .download(resume.fileUrl);
-
-  if (error || !data) {
-    throw new Error("Resume file could not be downloaded.");
-  }
-
-  const bytes = Buffer.from(await data.arrayBuffer());
-  const text = await extractResumeText(resume.fileName, bytes);
+export async function parseResumeBytes({
+  bytes,
+  enrichResume = enrichResumeWithOpenAi,
+  fileName,
+  mimeType,
+  onDeterministicResult,
+  resumeId,
+}: ParseResumeBytesOptions) {
+  const context: ResumeParseLogContext = {
+    byteLength: bytes.length,
+    extension: getFileExtension(fileName) || null,
+    mimeType,
+    resumeId,
+  };
+  const text = await extractResumeText(fileName, bytes, context);
   const cleanedText = normalizeResumeText(text);
 
   if (cleanedText.length < 30) {
-    throw new Error("Resume text could not be extracted reliably.");
+    throw createResumeParsingError({
+      code: "UNREADABLE_DOCUMENT",
+      context,
+      error: new Error("Extracted resume text is below the minimum length."),
+      stage: "deterministic_extraction",
+    });
   }
 
-  const fallback = deterministicParse(cleanedText);
-  const aiResult = await enrichResumeWithOpenAi(cleanedText);
+  let fallback: ParsedResumeData;
 
-  return {
-    certifications: uniqueStrings(
-      aiResult?.certifications.length
-        ? aiResult.certifications
-        : fallback.certifications,
-    ),
-    education: uniqueStrings(
-      aiResult?.education.length ? aiResult.education : fallback.education,
-    ),
-    experience: uniqueStrings(
-      aiResult?.experience.length
-        ? [
-            ...aiResult.experience,
-            ...fallback.projects.map((project) => `Project: ${project}`),
-          ]
-        : fallback.experience,
-    ),
-    projects: fallback.projects,
-    skills: uniqueSkills(
-      aiResult?.skills.length ? aiResult.skills : fallback.skills,
-    ),
-    summary: aiResult?.summary?.trim() || fallback.summary,
-    text: cleanedText,
-  } satisfies ParsedResumeData;
+  try {
+    fallback = deterministicParse(cleanedText);
+  } catch (error) {
+    throw createResumeParsingError({
+      code: "TEMPORARY_FAILURE",
+      context,
+      error,
+      stage: "deterministic_extraction",
+    });
+  }
+
+  await onDeterministicResult?.(fallback, context);
+
+  let aiResult: AiResumeParseResult | null = null;
+
+  try {
+    aiResult = await enrichResume(cleanedText);
+  } catch (error) {
+    logResumeParseFailure({
+      context,
+      error,
+      level: "warning",
+      stage: "openai_enrichment",
+    });
+  }
+
+  if (!aiResult) {
+    return {
+      ...fallback,
+      usedEnrichment: false,
+    } satisfies ParsedResumeResult;
+  }
+
+  try {
+    return {
+      certifications: uniqueStrings(
+        aiResult.certifications.length
+          ? aiResult.certifications
+          : fallback.certifications,
+      ),
+      education: uniqueStrings(
+        aiResult.education.length ? aiResult.education : fallback.education,
+      ),
+      experience: uniqueStrings(
+        aiResult.experience.length
+          ? [
+              ...aiResult.experience,
+              ...fallback.projects.map((project) => `Project: ${project}`),
+            ]
+          : fallback.experience,
+      ),
+      projects: fallback.projects,
+      skills: uniqueSkills(
+        aiResult.skills.length ? aiResult.skills : fallback.skills,
+      ),
+      summary: aiResult.summary?.trim() || fallback.summary,
+      text: cleanedText,
+      usedEnrichment: true,
+    } satisfies ParsedResumeResult;
+  } catch (error) {
+    logResumeParseFailure({
+      context,
+      error,
+      level: "warning",
+      stage: "openai_enrichment",
+    });
+
+    return {
+      ...fallback,
+      usedEnrichment: false,
+    } satisfies ParsedResumeResult;
+  }
+}
+
+export async function parseResume(
+  resumeId: string,
+  studentProfileId: string,
+  onDeterministicResult?: ParseResumeBytesOptions["onDeterministicResult"],
+) {
+  let resume: {
+    fileName: string;
+    fileUrl: string | null;
+    id: string;
+  } | null;
+  const initialContext: ResumeParseLogContext = {
+    byteLength: null,
+    extension: null,
+    mimeType: null,
+    resumeId,
+  };
+
+  try {
+    resume = await prisma.resume.findFirst({
+      where: {
+        id: resumeId,
+        studentProfileId,
+      },
+      select: {
+        fileName: true,
+        fileUrl: true,
+        id: true,
+      },
+    });
+  } catch (error) {
+    throw createResumeParsingError({
+      code: "TEMPORARY_FAILURE",
+      context: initialContext,
+      error,
+      stage: "ownership_lookup",
+    });
+  }
+
+  if (!resume?.fileUrl) {
+    throw createResumeParsingError({
+      code: "OWNERSHIP_DENIED",
+      context: initialContext,
+      error: new Error("Owned resume record or storage path was not found."),
+      stage: "ownership_lookup",
+    });
+  }
+
+  const context: ResumeParseLogContext = {
+    ...initialContext,
+    extension: getFileExtension(resume.fileName) || null,
+  };
+  let data: Blob | null = null;
+
+  try {
+    const supabase = createSupabaseAdminClient();
+    const result = await supabase.storage
+      .from(resumeBucketName)
+      .download(resume.fileUrl);
+
+    if (result.error || !result.data) {
+      throw new Error(
+        result.error?.message || "Storage returned no file data.",
+      );
+    }
+
+    data = result.data;
+    context.mimeType = data.type || null;
+  } catch (error) {
+    throw createResumeParsingError({
+      code: "DOWNLOAD_FAILED",
+      context,
+      error,
+      stage: "supabase_download",
+    });
+  }
+
+  let bytes: Buffer;
+
+  try {
+    bytes = Buffer.from(await data.arrayBuffer());
+    context.byteLength = bytes.length;
+  } catch (error) {
+    throw createResumeParsingError({
+      code: "TEMPORARY_FAILURE",
+      context,
+      error,
+      stage: "blob_to_buffer",
+    });
+  }
+
+  return parseResumeBytes({
+    bytes,
+    fileName: resume.fileName,
+    mimeType: context.mimeType,
+    onDeterministicResult,
+    resumeId,
+  });
 }
