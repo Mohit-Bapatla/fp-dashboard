@@ -30,6 +30,18 @@ describe("public site configuration", () => {
     expect(siteConfig.mailto.fundraising).toBe(
       "mailto:fundraising@futurephysicians.org?subject=Funding%20Future%20Physicians",
     );
+    expect(siteConfig.contact.generalSupport).toEqual({
+      id: "general-support",
+      href: "/contact#general-support",
+    });
+    expect(siteConfig.contact.partnerships).toEqual({
+      id: "partnerships",
+      href: "/contact#partnerships",
+    });
+    expect(siteConfig.contact.fundraising).toEqual({
+      id: "fundraising",
+      href: "/contact#fundraising",
+    });
     expect(siteConfig.links.seminarRecording).toBe(
       "https://www.youtube.com/watch?v=6U2EA3O12YY",
     );
@@ -154,20 +166,27 @@ describe("public site configuration", () => {
     const answers = new Map(
       homepageFaqItems.map((item) => [item.question, item.answer]),
     );
-    expect(answers.get("Is Future Physicians free for students?")).toMatch(
-      /is free/i,
+    expect(answers.get("Is Future Physicians free for students?")).toBe(
+      "Yes. Creating a student profile and using the FP Dashboard is free.",
+    );
+    expect(answers.get("Who can create a student profile?")).toBe(
+      "Anyone interested in exploring a healthcare career or gaining healthcare experience can create a student profile.",
     );
     expect(answers.get("How are opportunities verified?")).toMatch(
       /official source/i,
     );
-    expect(
-      answers.get("Does Future Physicians guarantee a placement?"),
-    ).toMatch(/does not guarantee/i);
+    expect(answers.get("Does Future Physicians guarantee a placement?")).toBe(
+      "No. Future Physicians helps students find relevant opportunities and stay organized throughout the application process, but each host organization makes its own acceptance and placement decisions.",
+    );
     expect(answers.get("How do applications work?")).toMatch(
       /FP Dashboard.*official application path/i,
     );
     expect(
       answers.get("How can an organization work with Future Physicians?"),
     ).toContain("outreach@futurephysicians.org");
+
+    expect(allFaqItems.map((item) => item.answer).join(" ")).not.toMatch(
+      /way more likely|guaranteed acceptance|guaranteed interviews|guaranteed responses/i,
+    );
   });
 });

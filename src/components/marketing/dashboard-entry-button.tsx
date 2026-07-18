@@ -14,7 +14,7 @@ type DashboardEntryIntent = "student" | "partner";
 type DashboardEntryAction = {
   href: string;
   label: string;
-  linkType: "internal" | "mailto";
+  linkType: "internal";
 };
 
 export function getDashboardEntryAction({
@@ -45,9 +45,9 @@ export function getDashboardEntryAction({
 
   if (intent === "partner") {
     return {
-      href: siteConfig.mailto.partnerships,
+      href: siteConfig.contact.partnerships.href,
       label: "Contact Our Outreach Team",
-      linkType: "mailto",
+      linkType: "internal",
     };
   }
 
@@ -90,11 +90,7 @@ export async function DashboardEntryButton({
     </>
   );
 
-  return action.linkType === "mailto" ? (
-    <a className={buttonClassName} href={action.href}>
-      {content}
-    </a>
-  ) : (
+  return (
     <Link className={buttonClassName} href={action.href}>
       {content}
     </Link>

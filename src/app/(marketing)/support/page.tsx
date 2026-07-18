@@ -12,6 +12,7 @@ import {
   PackageOpen,
   Users,
 } from "lucide-react";
+import Link from "next/link";
 
 import {
   emailLinkClass,
@@ -22,7 +23,6 @@ import {
 } from "@/components/marketing/page-shell";
 import {
   FeatureCard,
-  LimitationNote,
   MarketingSection,
   PageCta,
 } from "@/components/marketing/supporting-page-sections";
@@ -94,13 +94,13 @@ export default function SupportPage() {
               Donate
               <ArrowRight aria-hidden="true" className="size-4" />
             </a>
-            <a
+            <Link
               className={secondaryButtonClass}
-              href={siteConfig.mailto.fundraising}
+              href={siteConfig.contact.fundraising.href}
             >
               Discuss funding
               <Mail aria-hidden="true" className="size-4" />
-            </a>
+            </Link>
           </>
         }
         description="Grants, sponsorships, donations, institutional support, and in-kind contributions help Future Physicians create and maintain student programs and opportunity infrastructure."
@@ -135,11 +135,6 @@ export default function SupportPage() {
               eyebrow="What support enables"
               title="Practical capacity across programs and infrastructure."
             />
-            <p className="mt-6 text-sm leading-6 text-muted-foreground">
-              These are neutral operating categories, not a promise that every
-              gift will be divided among all of them or used for a specific
-              restricted purpose.
-            </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {enabledWork.map((item, index) => (
@@ -167,9 +162,8 @@ export default function SupportPage() {
 
       <MarketingSection id="grants">
         <SectionHeading
-          description="The awards below are the grant-funder relationships and amounts included in Future Physicians’ approved public content. Award dates are omitted because no dated, approved source is currently available for publication."
-          eyebrow="Published grant records"
-          title="Published awards, without invented details."
+          description="Future Physicians has received the grants and awards listed below."
+          title="Grants and awards"
         />
         <div className="mt-10 grid gap-5 md:grid-cols-3">
           {grants.map((grant) => (
@@ -186,69 +180,12 @@ export default function SupportPage() {
               <h2 className="mt-3 text-xl font-semibold tracking-[-0.025em] text-brand-navy">
                 {grant.funder}
               </h2>
-              <p className="mt-4 border-t border-border pt-4 text-sm leading-6 text-muted-foreground">
-                Grant received by Future Physicians. No award year, restricted
-                use, quotation, or approved logo is currently published.
-              </p>
             </article>
           ))}
         </div>
       </MarketingSection>
 
-      <MarketingSection tone="blue">
-        <div className="grid gap-8 lg:grid-cols-[1fr_0.9fr] lg:items-start">
-          <div>
-            <SectionHeading
-              description="Clear labels protect the credibility of every organization involved."
-              eyebrow="Funding transparency"
-              title="A contribution is described by the relationship it actually creates."
-            />
-            <dl className="mt-8 grid gap-4 sm:grid-cols-2">
-              {[
-                [
-                  "Grant funder",
-                  "An organization that made a documented grant award.",
-                ],
-                [
-                  "Sponsor",
-                  "An organization providing support under a sponsorship relationship.",
-                ],
-                [
-                  "Formal partner",
-                  "An organization collaborating through a defined program or opportunity relationship.",
-                ],
-                [
-                  "Institutional recognition",
-                  "Recognition connected with a specific activity; not automatically a partnership or endorsement.",
-                ],
-                [
-                  "Event promoter",
-                  "An organization that shared or promoted an event; not automatically a partner or sponsor.",
-                ],
-              ].map(([term, meaning]) => (
-                <div
-                  className="rounded-2xl border border-border bg-white p-5"
-                  key={term}
-                >
-                  <dt className="font-semibold text-brand-navy">{term}</dt>
-                  <dd className="mt-2 text-sm leading-6 text-muted-foreground">
-                    {meaning}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-          <LimitationNote title="Financial transparency boundaries">
-            The linked HCB page is the current donation route. Any public claim
-            about fiscal sponsorship, tax treatment, or deductibility requires
-            authorized human and legal review. This site does not publish grant
-            years, restricted uses, a sponsorship total, or audited financial
-            reporting.
-          </LimitationNote>
-        </div>
-      </MarketingSection>
-
-      <MarketingSection id="donate">
+      <MarketingSection id="donate" tone="blue">
         <div className="grid gap-5 md:grid-cols-2">
           <div className="rounded-3xl border border-border bg-white p-5 shadow-sm sm:p-8">
             <HandHeart aria-hidden="true" className="size-7 text-primary" />
@@ -299,14 +236,12 @@ export default function SupportPage() {
               Open the donation page
               <ArrowRight aria-hidden="true" className="size-4" />
             </a>
-            <a
+            <Link
               className={`${secondaryButtonClass} px-2 sm:px-5`}
-              href={siteConfig.mailto.fundraising}
+              href={siteConfig.contact.fundraising.href}
             >
-              <span className={emailLinkClass}>
-                {siteConfig.emails.fundraising}
-              </span>
-            </a>
+              Discuss funding
+            </Link>
           </>
         }
         description="Use the approved donation route, or contact the fundraising team to discuss a grant, sponsorship, or other form of support."

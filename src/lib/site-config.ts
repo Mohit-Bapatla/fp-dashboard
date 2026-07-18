@@ -16,6 +16,20 @@ export const siteConfig = {
     fundraising:
       "mailto:fundraising@futurephysicians.org?subject=Funding%20Future%20Physicians",
   },
+  contact: {
+    generalSupport: {
+      id: "general-support",
+      href: "/contact#general-support",
+    },
+    partnerships: {
+      id: "partnerships",
+      href: "/contact#partnerships",
+    },
+    fundraising: {
+      id: "fundraising",
+      href: "/contact#fundraising",
+    },
+  },
   links: {
     chapterApplication:
       "https://docs.google.com/forms/d/e/1FAIpQLSeT-FOoYXGwLMgDIqr-kTCPGceFSnkgn_FAyp3C_9M9eo6y3g/viewform",
@@ -112,13 +126,13 @@ export const faqGroups = [
         id: "student-profile-eligibility",
         question: "Who can create a student profile?",
         answer:
-          "High school, college, graduate, and medical students exploring healthcare careers can create a profile. Each opportunity still has its own age, location, education, and experience requirements.",
+          "Anyone interested in exploring a healthcare career or gaining healthcare experience can create a student profile.",
       },
       {
         id: "student-dashboard-free",
         question: "Is Future Physicians free for students?",
         answer:
-          "Creating a student profile and using the FP Dashboard is free. Individual programs may disclose separate costs, travel needs, or unpaid participation on their listings.",
+          "Yes. Creating a student profile and using the FP Dashboard is free.",
       },
       {
         id: "student-profile-information",
@@ -184,7 +198,7 @@ export const faqGroups = [
         id: "placement-guarantee",
         question: "Does Future Physicians guarantee a placement?",
         answer:
-          "No. An application does not guarantee acceptance, an introduction does not guarantee a response, and Future Physicians does not guarantee interviews or placement.",
+          "No. Future Physicians helps students find relevant opportunities and stay organized throughout the application process, but each host organization makes its own acceptance and placement decisions.",
       },
       {
         id: "application-waitlist",

@@ -12,9 +12,9 @@ describe("role-aware marketing actions", () => {
     });
 
     expect(action).toEqual({
-      href: "mailto:outreach@futurephysicians.org?subject=Future%20Physicians%20Partnership%20Inquiry",
+      href: "/contact#partnerships",
       label: "Contact Our Outreach Team",
-      linkType: "mailto",
+      linkType: "internal",
     });
   });
 

@@ -14,7 +14,6 @@ import {
   secondaryButtonClass,
 } from "@/components/marketing/page-shell";
 import {
-  LimitationNote,
   MarketingSection,
   MetricCard,
   PageCta,
@@ -199,34 +198,26 @@ export default function GlobalHealthcareSeminarPage() {
       </MarketingSection>
 
       <MarketingSection>
-        <div className="grid gap-8 lg:grid-cols-[1fr_0.9fr] lg:items-start">
-          <div>
-            <SectionHeading
-              description="FP reports institutional recognition connected with the seminar from the organizations listed below."
-              eyebrow="Institutional recognition"
-              title="Recognition, labeled with care."
-            />
-            <div className="mt-7 grid gap-4 sm:grid-cols-2">
-              {seminar.recognition.map((organization) => (
-                <div
-                  className="rounded-2xl border border-border bg-white p-5 shadow-sm"
-                  key={organization}
-                >
-                  <p className="text-sm font-semibold text-brand-navy">
-                    {organization}
-                  </p>
-                  <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                    Institutional recognition reported for this event
-                  </p>
-                </div>
-              ))}
-            </div>
+        <div className="mx-auto max-w-4xl">
+          <SectionHeading
+            description="Future Physicians reports institutional recognition connected with this seminar from the organizations listed below."
+            title="Institutional recognition"
+          />
+          <div className="mt-7 grid gap-4 sm:grid-cols-2">
+            {seminar.recognition.map((organization) => (
+              <div
+                className="rounded-2xl border border-border bg-white p-5 shadow-sm"
+                key={organization}
+              >
+                <p className="text-sm font-semibold text-brand-navy">
+                  {organization}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                  Institutional recognition reported for this event
+                </p>
+              </div>
+            ))}
           </div>
-          <LimitationNote title="Recognition is not the same as partnership">
-            These names are not presented as sponsors, formal program partners,
-            funders, or endorsements. No logos or quotations are shown because
-            none are included in the approved public content.
-          </LimitationNote>
         </div>
       </MarketingSection>
 

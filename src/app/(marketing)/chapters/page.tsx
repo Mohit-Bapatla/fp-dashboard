@@ -18,7 +18,6 @@ import {
 } from "@/components/marketing/page-shell";
 import {
   FeatureCard,
-  LimitationNote,
   MarketingSection,
   NumberedStep,
   PageCta,
@@ -61,30 +60,18 @@ export default function ChaptersPage() {
       />
 
       <MarketingSection>
-        <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
-          <div className="rounded-3xl border border-primary/15 bg-blue-surface/55 p-7 sm:p-9">
-            <School aria-hidden="true" className="size-8 text-primary" />
-            <h2 className="mt-5 text-3xl font-semibold tracking-[-0.035em] text-brand-navy">
-              What a chapter is
-            </h2>
-            <p className="mt-4 text-base leading-7 text-muted-foreground">
-              A Future Physicians chapter is a student-led school community that
-              organizes accurate, responsible healthcare-career learning and
-              stays connected with the national organization. It gives student
-              leaders a structure for local activity—not ownership of the
-              national platform or its relationships.
-            </p>
-          </div>
-          <LimitationNote title="What a chapter is not">
-            <ul className="space-y-2">
-              <li>• Automatic approval</li>
-              <li>• Guaranteed funding or chapter-specific grants</li>
-              <li>• Guaranteed hospital access or exclusive opportunities</li>
-              <li>
-                • Guaranteed participation in every national event or program
-              </li>
-            </ul>
-          </LimitationNote>
+        <div className="mx-auto max-w-4xl rounded-3xl border border-primary/15 bg-blue-surface/55 p-7 sm:p-9">
+          <School aria-hidden="true" className="size-8 text-primary" />
+          <h2 className="mt-5 text-3xl font-semibold tracking-[-0.035em] text-brand-navy">
+            What a chapter is
+          </h2>
+          <p className="mt-4 text-base leading-7 text-muted-foreground">
+            A Future Physicians chapter is a student-led school community that
+            organizes accurate, responsible healthcare-career learning and stays
+            connected with the national organization. It gives student leaders a
+            structure for local activity—not ownership of the national platform
+            or its relationships.
+          </p>
         </div>
       </MarketingSection>
 

@@ -47,7 +47,10 @@ export default function FaqPage() {
       <PageHero
         actions={
           <>
-            <Link className={primaryButtonClass} href="/contact">
+            <Link
+              className={primaryButtonClass}
+              href={siteConfig.contact.generalSupport.href}
+            >
               Contact support
               <ArrowRight aria-hidden="true" className="size-4" />
             </Link>
@@ -122,7 +125,7 @@ export default function FaqPage() {
             [
               "General support",
               `Email ${siteConfig.emails.support} for account, application, opportunity, or general questions.`,
-              "/contact",
+              siteConfig.contact.generalSupport.href,
             ],
           ].map(([title, copy, href]) => (
             <article

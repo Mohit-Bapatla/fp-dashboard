@@ -33,6 +33,7 @@ export const metadata = createPublicMetadata({
 
 const contactRoutes = [
   {
+    id: siteConfig.contact.generalSupport.id,
     title: "General Support",
     email: siteConfig.emails.support,
     href: siteConfig.mailto.support,
@@ -40,6 +41,7 @@ const contactRoutes = [
     icon: MessageCircleQuestion,
   },
   {
+    id: siteConfig.contact.partnerships.id,
     title: "Partnerships",
     email: siteConfig.emails.partnerships,
     href: siteConfig.mailto.partnerships,
@@ -48,6 +50,7 @@ const contactRoutes = [
     icon: Building2,
   },
   {
+    id: siteConfig.contact.fundraising.id,
     title: "Fundraising",
     email: siteConfig.emails.fundraising,
     href: siteConfig.mailto.fundraising,
@@ -62,7 +65,10 @@ export default function ContactPage() {
       <PageHero
         actions={
           <>
-            <a className={primaryButtonClass} href={siteConfig.mailto.support}>
+            <a
+              className={primaryButtonClass}
+              href={`#${siteConfig.contact.generalSupport.id}`}
+            >
               Email general support
               <Mail aria-hidden="true" className="size-4" />
             </a>
@@ -88,11 +94,13 @@ export default function ContactPage() {
               description: routeDescription,
               email,
               href,
+              id,
               icon: Icon,
               title,
             }) => (
               <article
-                className="flex h-full flex-col rounded-3xl border border-border bg-white p-5 shadow-[0_14px_40px_rgba(16,33,58,0.07)] sm:p-7"
+                className="flex h-full scroll-mt-28 flex-col rounded-3xl border border-border bg-white p-5 shadow-[0_14px_40px_rgba(16,33,58,0.07)] transition-[border-color,box-shadow,background-color] target:border-primary/50 target:bg-blue-surface/20 target:ring-4 target:ring-primary/10 sm:p-7"
+                id={id}
                 key={title}
               >
                 <div className="flex size-12 items-center justify-center rounded-2xl bg-blue-surface text-primary">
