@@ -44,6 +44,8 @@ import { getStudentNavItems } from "@/lib/student/navigation";
 import { getStudentNotificationPreference } from "@/lib/student/notification-preferences";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
 
+export const runtime = "nodejs";
+
 const workspaceStatuses = new Set([
   "DRAFT",
   "SAVED",
@@ -693,6 +695,7 @@ export default async function StudentDashboardPage() {
                           extractedSkills: resume.extractedSkills,
                           fileName: resume.fileName,
                           id: resume.id,
+                          parseFailureReason: resume.parseFailureReason,
                           parsedSummary: resume.parsedSummary,
                           parseStatus: resume.parseStatus,
                           updatedAt: resume.updatedAt,

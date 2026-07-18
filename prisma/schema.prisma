@@ -211,6 +211,14 @@ enum ResumeParseStatus {
   FAILED
 }
 
+enum ResumeParseFailureReason {
+  DOWNLOAD_FAILED
+  UNSUPPORTED_FILE_TYPE
+  UNREADABLE_DOCUMENT
+  PARSER_UNAVAILABLE
+  TEMPORARY_FAILURE
+}
+
 enum ApplicationOnboardingItemStatus {
   NOT_STARTED
   SUBMITTED
@@ -490,21 +498,22 @@ model StudentImportRecord {
 }
 
 model Resume {
-  id                      String            @id @default(cuid())
+  id                      String                    @id @default(cuid())
   studentProfileId        String
-  studentProfile          StudentProfile    @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  studentProfile          StudentProfile            @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
   fileName                String
   fileUrl                 String?
-  parseStatus             ResumeParseStatus @default(NOT_STARTED)
+  parseStatus             ResumeParseStatus         @default(NOT_STARTED)
+  parseFailureReason      ResumeParseFailureReason?
   parsedText              String?
   parsedSummary           String?
-  extractedSkills         String[]          @default([])
-  extractedEducation      String[]          @default([])
-  extractedExperience     String[]          @default([])
-  extractedCertifications String[]          @default([])
+  extractedSkills         String[]                  @default([])
+  extractedEducation      String[]                  @default([])
+  extractedExperience     String[]                  @default([])
+  extractedCertifications String[]                  @default([])
   applications            Application[]
-  createdAt               DateTime          @default(now())
-  updatedAt               DateTime          @updatedAt
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
 
   @@index([studentProfileId])
   @@index([parseStatus])
