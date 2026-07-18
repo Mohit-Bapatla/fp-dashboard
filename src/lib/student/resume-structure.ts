@@ -163,7 +163,10 @@ export function normalizeResumeSourceText(value: string) {
     .replace(/[\u2022\u25cf\u25aa\u25e6]/g, "\n- ")
     .replace(/\t+/g, " ")
     .replace(/[ \f\v]+/g, " ")
-    .replace(/^\s*-?\s*\d+\s+of\s+\d+\s*$/gim, "")
+    .replace(
+      /^\s*(?:[-\u2013\u2014]\s*)*(?:page\s+)?\d+\s*(?:of|\/)\s*\d+(?:\s*[-\u2013\u2014])*\s*$/gim,
+      "",
+    )
     .replace(/\n[ ]+/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .split("\n")

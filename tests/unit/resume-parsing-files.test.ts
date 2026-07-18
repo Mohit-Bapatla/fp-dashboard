@@ -38,6 +38,14 @@ describe("resume file extraction", () => {
       "Hosted CPR training for 45 students and coordinated volunteer instructors.",
     );
     expect(parsed.certifications).toEqual([]);
+    expect(
+      JSON.stringify({
+        education: parsed.education,
+        experience: parsed.experience,
+        sections: parsed.sections,
+        skills: parsed.skills,
+      }),
+    ).not.toMatch(/\d+\s+of\s+\d+/i);
   });
 
   it("rejects an image-only-like PDF with insufficient selectable text", async () => {

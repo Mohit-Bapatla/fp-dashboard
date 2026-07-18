@@ -20,6 +20,7 @@ Experience
 - Coordinated a health-literacy program serving 75 local
 students every year.
 - Analyzed survey results with SQL for program leaders.
+-- 1 of 2 --
 
 School
 Student Council Wellness Lead
@@ -28,6 +29,7 @@ volunteer instructors.
 
 Skills
 SQL, CPR education, GPA data analysis, FP outreach
+-- 2 of 2 --
 `;
 
 describe("structured resume extraction", () => {
@@ -66,6 +68,7 @@ describe("structured resume extraction", () => {
     );
     expect(sections.experience).not.toContain("students every year.");
     expect(sections.school).not.toContain("volunteer instructors.");
+    expect(JSON.stringify(sections)).not.toMatch(/\d+\s+of\s+\d+/i);
   });
 
   it("preserves acronyms, proper nouns, and numbers", () => {
