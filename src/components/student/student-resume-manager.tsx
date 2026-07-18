@@ -28,6 +28,7 @@ import type {
   ResumeOpportunityAlignment,
   ResumeReview,
 } from "@/lib/student/resume-review";
+import { formatResumeDate } from "@/lib/student/resume-date";
 import type { StructuredResumeSections } from "@/lib/student/resume-structure";
 import { cn } from "@/lib/utils";
 
@@ -137,7 +138,7 @@ export function StudentResumeManager({
                     {resume.fileName}
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Uploaded {resume.uploadedAt.toLocaleDateString()}
+                    Uploaded {formatResumeDate(resume.uploadedAt)}
                   </p>
                 </div>
                 <span

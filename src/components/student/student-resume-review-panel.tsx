@@ -9,6 +9,7 @@ import {
   type ResumeReview,
   type ResumeReviewCategoryStatus,
 } from "@/lib/student/resume-review";
+import { formatResumeAnalyzedDateTime } from "@/lib/student/resume-date";
 import type { StructuredResumeSections } from "@/lib/student/resume-structure";
 import { cn } from "@/lib/utils";
 
@@ -44,8 +45,8 @@ export function StudentResumeReviewPanel({
           and this analysis does not predict acceptance.
         </p>
         <p className="mt-3 text-xs leading-5 text-muted-foreground">
-          Last analyzed {formatDateTime(review.generatedAt)} · Review version{" "}
-          {review.version}
+          Last analyzed {formatResumeAnalyzedDateTime(review.generatedAt)} ·
+          Review version {review.version}
         </p>
         <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
           Automated and AI-assisted feedback may be imperfect. Review every
@@ -369,13 +370,6 @@ function formatLabel(value: string) {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
 }
 
 function categoryStatusClass(status: ResumeReviewCategoryStatus) {
