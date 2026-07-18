@@ -13,6 +13,7 @@ import {
 
 import { DashboardEntryButton } from "@/components/marketing/dashboard-entry-button";
 import { FaqList } from "@/components/marketing/faq-list";
+import { InteractiveStudentPreview } from "@/components/marketing/interactive-student-preview";
 import {
   FeatureCard,
   MarketingSection,
@@ -62,90 +63,9 @@ export default function StudentsPage() {
               eyebrow="One working home"
               title="Move from discovery to next step without losing context."
             />
-            <p className="mt-6 text-sm leading-6 text-muted-foreground">
-              This interface preview uses illustrative labels only. It does not
-              show a real student, organization, acceptance, or placement.
-            </p>
           </div>
 
-          <figure className="overflow-hidden rounded-3xl border border-border bg-brand-navy p-2 shadow-[0_24px_60px_rgba(16,33,58,0.18)]">
-            <figcaption className="sr-only">
-              Illustrative student dashboard preview
-            </figcaption>
-            <div className="rounded-[1.25rem] bg-slate-50 p-4 sm:p-6">
-              <div className="flex flex-col gap-3 border-b border-border pb-5 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
-                    Dashboard preview
-                  </p>
-                  <p className="mt-1 text-xl font-semibold text-brand-navy">
-                    Your next steps
-                  </p>
-                </div>
-                <span className="w-fit rounded-full border border-primary/20 bg-blue-surface px-3 py-1 text-xs font-semibold text-primary">
-                  Illustrative interface
-                </span>
-              </div>
-              <div className="mt-5 grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-border bg-white p-5 md:row-span-2">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-brand-navy">
-                    <Compass
-                      aria-hidden="true"
-                      className="size-4 text-primary"
-                    />
-                    Recommended for you
-                  </div>
-                  <div className="mt-4 space-y-3">
-                    {[
-                      ["Research experience", "Review eligibility"],
-                      ["Community health service", "Rolling timeline"],
-                      ["Clinical career event", "Recording available"],
-                    ].map(([title, status]) => (
-                      <div
-                        className="rounded-xl border border-border p-3"
-                        key={title}
-                      >
-                        <p className="text-sm font-semibold text-brand-navy">
-                          {title}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {status}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-border bg-white p-5">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-brand-navy">
-                    <Bookmark
-                      aria-hidden="true"
-                      className="size-4 text-primary"
-                    />
-                    Saved opportunities
-                  </div>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    Keep promising listings together while you compare
-                    requirements and dates.
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-border bg-white p-5">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-brand-navy">
-                    <ClipboardList
-                      aria-hidden="true"
-                      className="size-4 text-primary"
-                    />
-                    Application workspace
-                  </div>
-                  <div className="mt-4 h-2 rounded-full bg-slate-100">
-                    <div className="h-2 w-2/3 rounded-full bg-teal-500" />
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Example progress state
-                  </p>
-                </div>
-              </div>
-            </div>
-          </figure>
+          <InteractiveStudentPreview />
         </div>
       </MarketingSection>
 

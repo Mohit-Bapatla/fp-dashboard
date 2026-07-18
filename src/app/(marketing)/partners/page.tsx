@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { FaqList } from "@/components/marketing/faq-list";
+import { InteractivePartnerPreview } from "@/components/marketing/interactive-partner-preview";
 import {
   emailLinkClass,
   PageHero,
@@ -58,13 +59,13 @@ export default function PartnersPage() {
       <PageHero
         actions={
           <>
-            <a
+            <Link
               className={primaryButtonClass}
-              href={siteConfig.mailto.partnerships}
+              href={siteConfig.contact.partnerships.href}
             >
               Contact Our Outreach Team
               <Mail aria-hidden="true" className="size-4" />
-            </a>
+            </Link>
             <Link
               className={secondaryButtonClass}
               href="/sign-in?redirect_url=%2Fdashboard%2Fpartner"
@@ -86,77 +87,8 @@ export default function PartnersPage() {
               eyebrow="Partner workspace"
               title="A clearer operating view for student programs."
             />
-            <p className="mt-6 text-sm leading-6 text-muted-foreground">
-              The preview is illustrative and contains no real organization,
-              applicant, placement, or performance data.
-            </p>
           </div>
-          <figure className="overflow-hidden rounded-3xl border border-border bg-brand-navy p-2 shadow-[0_24px_60px_rgba(16,33,58,0.18)]">
-            <figcaption className="sr-only">
-              Illustrative partner dashboard preview
-            </figcaption>
-            <div className="rounded-[1.25rem] bg-slate-50 p-4 sm:p-6">
-              <div className="flex flex-col gap-3 border-b border-border pb-5 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
-                    Partner dashboard preview
-                  </p>
-                  <p className="mt-1 text-xl font-semibold text-brand-navy">
-                    Program workspace
-                  </p>
-                </div>
-                <span className="w-fit rounded-full border border-primary/20 bg-blue-surface px-3 py-1 text-xs font-semibold text-primary">
-                  Illustrative interface
-                </span>
-              </div>
-              <div className="mt-5 grid gap-4 sm:grid-cols-3">
-                {[
-                  ["Opportunity", "Published"],
-                  ["Applicant review", "In progress"],
-                  ["Outcome report", "Not started"],
-                ].map(([label, value]) => (
-                  <div
-                    className="rounded-2xl border border-border bg-white p-4"
-                    key={label}
-                  >
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                      {label}
-                    </p>
-                    <p className="mt-3 text-sm font-semibold text-brand-navy">
-                      {value}
-                    </p>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 rounded-2xl border border-border bg-white p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-sm font-semibold text-brand-navy">
-                    Applicant pipeline
-                  </p>
-                  <span className="text-xs text-muted-foreground">
-                    Example stages
-                  </span>
-                </div>
-                <div className="mt-4 grid gap-3 sm:grid-cols-4">
-                  {["Submitted", "In review", "Decision", "Placed"].map(
-                    (stage, index) => (
-                      <div
-                        className="rounded-xl bg-blue-surface/70 p-3"
-                        key={stage}
-                      >
-                        <span className="text-xs font-semibold text-primary">
-                          0{index + 1}
-                        </span>
-                        <p className="mt-1 text-xs font-medium text-brand-navy">
-                          {stage}
-                        </p>
-                      </div>
-                    ),
-                  )}
-                </div>
-              </div>
-            </div>
-          </figure>
+          <InteractivePartnerPreview />
         </div>
       </MarketingSection>
 
@@ -339,13 +271,13 @@ export default function PartnersPage() {
       <PageCta
         actions={
           <>
-            <a
+            <Link
               className={secondaryButtonClass}
-              href={siteConfig.mailto.partnerships}
+              href={siteConfig.contact.partnerships.href}
             >
               Contact Our Outreach Team
               <Mail aria-hidden="true" className="size-4" />
-            </a>
+            </Link>
             <Link
               className="inline-flex min-h-11 items-center rounded-md px-2 text-sm font-semibold text-blue-100 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-navy"
               href="/sign-in?redirect_url=%2Fdashboard%2Fpartner"
