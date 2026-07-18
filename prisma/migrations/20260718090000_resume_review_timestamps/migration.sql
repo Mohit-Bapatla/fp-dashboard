@@ -5,10 +5,7 @@ ADD COLUMN "analyzedAt" TIMESTAMP(3);
 UPDATE "Resume"
 SET
   "uploadedAt" = "updatedAt",
-  "analyzedAt" = CASE
-    WHEN "parseStatus" = 'COMPLETED' THEN "updatedAt"
-    ELSE NULL
-  END;
+  "analyzedAt" = NULL;
 
 ALTER TABLE "Resume"
 ALTER COLUMN "uploadedAt" SET NOT NULL,

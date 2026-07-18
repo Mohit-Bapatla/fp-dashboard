@@ -44,6 +44,7 @@ describe("deterministic resume review", () => {
     expect(review.categories.every((item) => item.action.length > 0)).toBe(
       true,
     );
+    expect(review.strengths.length).toBeGreaterThanOrEqual(3);
     expect(review.improvements.length).toBeGreaterThanOrEqual(3);
     expect(review).not.toHaveProperty("score");
   });

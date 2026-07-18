@@ -349,9 +349,29 @@ export function buildResumeReview(input: ResumeReviewInput): ResumeReview {
       "Education details are present and separated from honors and activities.",
     );
   }
+  if (strengths.length < 3 && experienceEntries.length > 0) {
+    strengths.push(
+      "Experience, project, leadership, or activity content is available for a reviewer to evaluate.",
+    );
+  }
+  if (strengths.length < 3 && visibleSummary) {
+    strengths.push(
+      "A dedicated summary gives readers context before they review the detailed sections.",
+    );
+  }
   if (strengths.length === 0) {
     strengths.push(
       "The uploaded file contains enough selectable text to support a structured review.",
+    );
+  }
+  if (strengths.length < 3) {
+    strengths.push(
+      "The uploaded text is readable enough to support section-by-section feedback.",
+    );
+  }
+  if (strengths.length < 3) {
+    strengths.push(
+      "The review can identify concrete next steps without changing the original resume.",
     );
   }
 
@@ -457,6 +477,13 @@ export function buildResumeReview(input: ResumeReviewInput): ResumeReview {
       "Opportunity-specific emphasis is not yet reflected in this general review.",
       "Different opportunities may value different parts of the same truthful experience.",
       "Choose an opportunity below and tailor emphasis without adding facts that are not in your resume.",
+    );
+  }
+  if (improvements.length < 3) {
+    addImprovement(
+      "The automated review cannot evaluate the original page layout completely.",
+      "Spacing, alignment, and visual hierarchy affect readability but may not survive text extraction.",
+      "Inspect the original PDF or DOCX at desktop and mobile widths before using any suggested change.",
     );
   }
   if (improvements.length < 3) {

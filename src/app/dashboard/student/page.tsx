@@ -203,7 +203,6 @@ export default async function StudentDashboardPage() {
     ? buildResumePresentation({
         alignmentOpportunities,
         analyzedAt: resume.analyzedAt,
-        parsedSummary: resume.parsedSummary,
         parsedText: resume.parsedText,
         parseStatus: resume.parseStatus,
         uploadedAt: resume.uploadedAt,

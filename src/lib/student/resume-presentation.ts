@@ -8,14 +8,12 @@ import { extractStructuredResumeSections } from "@/lib/student/resume-structure"
 export function buildResumePresentation({
   alignmentOpportunities,
   analyzedAt,
-  parsedSummary,
   parsedText,
   parseStatus,
   uploadedAt,
 }: {
   alignmentOpportunities: ResumeAlignmentOpportunity[];
   analyzedAt: Date | null;
-  parsedSummary: string | null;
   parsedText: string | null;
   parseStatus: string;
   uploadedAt: Date;
@@ -27,7 +25,7 @@ export function buildResumePresentation({
     parseStatus === "COMPLETED" && extractedSections && analyzedAt
       ? buildResumeReview({
           analyzedAt,
-          parsedSummary,
+          parsedSummary: extractedSections.summary.at(0) ?? null,
           sections: extractedSections,
           sourceResumeUpdatedAt: uploadedAt,
         })
