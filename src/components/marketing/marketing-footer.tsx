@@ -5,6 +5,7 @@ import { BrandMark } from "@/components/shared/brand-mark";
 import { siteConfig } from "@/lib/site-config";
 
 import { MarketingContainer, primaryButtonClass } from "./page-shell";
+import { SocialIcon } from "./social-icons";
 
 const footerGroups = [
   {
@@ -43,6 +44,24 @@ const footerGroups = [
   },
 ] as const;
 
+const socialLinks = [
+  {
+    ariaLabel: "Follow Future Physicians on Instagram",
+    href: siteConfig.links.instagram,
+    platform: "instagram",
+  },
+  {
+    ariaLabel: "Follow Future Physicians on TikTok",
+    href: siteConfig.links.tiktok,
+    platform: "tiktok",
+  },
+  {
+    ariaLabel: "Follow Future Physicians on LinkedIn",
+    href: siteConfig.links.linkedin,
+    platform: "linkedin",
+  },
+] as const;
+
 export function MarketingFooter() {
   return (
     <footer className="border-t border-border bg-white">
@@ -78,19 +97,27 @@ export function MarketingFooter() {
               Helping students discover, apply to, and manage verified
               healthcare opportunities from one profile.
             </p>
-            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-3 text-sm font-semibold">
-              <ExternalFooterLink
-                href={siteConfig.links.instagram}
-                label="Instagram"
-              />
-              <ExternalFooterLink
-                href={siteConfig.links.tiktok}
-                label="TikTok"
-              />
-              <ExternalFooterLink
-                href={siteConfig.links.linkedin}
-                label="LinkedIn"
-              />
+            <div
+              aria-label="Future Physicians social channels"
+              className="mt-5 flex flex-wrap gap-3"
+              role="group"
+            >
+              {socialLinks.map((socialLink) => (
+                <a
+                  aria-label={socialLink.ariaLabel}
+                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-border bg-white text-brand-navy shadow-sm transition hover:-translate-y-0.5 hover:border-primary/35 hover:bg-blue-surface hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  data-social-link={socialLink.platform}
+                  href={socialLink.href}
+                  key={socialLink.platform}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <SocialIcon
+                    className="size-[22px]"
+                    platform={socialLink.platform}
+                  />
+                </a>
+              ))}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
@@ -127,20 +154,5 @@ export function MarketingFooter() {
         </div>
       </MarketingContainer>
     </footer>
-  );
-}
-
-function ExternalFooterLink({ href, label }: { href: string; label: string }) {
-  return (
-    <a
-      aria-label={`${label} (opens in a new tab)`}
-      className="inline-flex items-center gap-1 rounded text-brand-navy hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      href={href}
-      rel="noopener noreferrer"
-      target="_blank"
-    >
-      {label}
-      <ArrowUpRight aria-hidden="true" className="size-3.5" />
-    </a>
   );
 }

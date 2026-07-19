@@ -19,11 +19,30 @@ import {
   MarketingSection,
   PageCta,
 } from "@/components/marketing/supporting-page-sections";
+import { SocialIcon } from "@/components/marketing/social-icons";
 import { createPublicMetadata } from "@/lib/public-metadata";
 import { siteConfig } from "@/lib/site-config";
 
 const description =
   "Contact Future Physicians for account and opportunity support, healthcare or education partnerships, grants, sponsorships, donations, and funding questions.";
+
+const socialChannels = [
+  {
+    ariaLabel: "Follow Future Physicians on Instagram",
+    href: siteConfig.links.instagram,
+    platform: "instagram",
+  },
+  {
+    ariaLabel: "Follow Future Physicians on TikTok",
+    href: siteConfig.links.tiktok,
+    platform: "tiktok",
+  },
+  {
+    ariaLabel: "Follow Future Physicians on LinkedIn",
+    href: siteConfig.links.linkedin,
+    platform: "linkedin",
+  },
+] as const;
 
 export const metadata = createPublicMetadata({
   description,
@@ -174,7 +193,7 @@ export default function ContactPage() {
           eyebrow="Stay connected"
           title="News, events, and public social channels."
         />
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
             <h2 className="font-semibold text-brand-navy">Newsletter</h2>
             <div className="mt-3 text-sm">
@@ -184,27 +203,30 @@ export default function ContactPage() {
             </div>
           </div>
           <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
-            <h2 className="font-semibold text-brand-navy">Instagram</h2>
-            <div className="mt-3 text-sm">
-              <ExternalTextLink href={siteConfig.links.instagram}>
-                Open Instagram
-              </ExternalTextLink>
-            </div>
-          </div>
-          <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
-            <h2 className="font-semibold text-brand-navy">TikTok</h2>
-            <div className="mt-3 text-sm">
-              <ExternalTextLink href={siteConfig.links.tiktok}>
-                Open TikTok
-              </ExternalTextLink>
-            </div>
-          </div>
-          <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
-            <h2 className="font-semibold text-brand-navy">LinkedIn</h2>
-            <div className="mt-3 text-sm">
-              <ExternalTextLink href={siteConfig.links.linkedin}>
-                Open LinkedIn
-              </ExternalTextLink>
+            <h2 className="font-semibold text-brand-navy">
+              Public social channels
+            </h2>
+            <div
+              aria-label="Future Physicians public social channels"
+              className="mt-3 flex flex-wrap gap-3"
+              role="group"
+            >
+              {socialChannels.map((channel) => (
+                <a
+                  aria-label={channel.ariaLabel}
+                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-border bg-white text-brand-navy shadow-sm transition hover:-translate-y-0.5 hover:border-primary/35 hover:bg-blue-surface hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  data-social-link={channel.platform}
+                  href={channel.href}
+                  key={channel.platform}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <SocialIcon
+                    className="size-[22px]"
+                    platform={channel.platform}
+                  />
+                </a>
+              ))}
             </div>
           </div>
         </div>
