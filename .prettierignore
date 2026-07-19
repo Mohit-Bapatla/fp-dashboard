@@ -7,3 +7,6 @@ out
 build
 package-lock.json
 .claude
+.agents
+skills-lock.json
+artifacts/opportunity-import

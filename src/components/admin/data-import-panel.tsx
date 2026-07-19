@@ -12,6 +12,7 @@ import type { ImportPreviewRow } from "@/lib/imports/data-imports";
 const initialState: CsvImportActionState = {
   error: null,
   preview: null,
+  previewSignature: null,
   summary: null,
 };
 
@@ -156,6 +157,15 @@ export function DataImportPanel() {
                 name="previewPayload"
                 type="hidden"
                 value={JSON.stringify(preview)}
+              />
+              <input
+                name="previewSignature"
+                type="hidden"
+                value={
+                  previewState.previewSignature ??
+                  importState.previewSignature ??
+                  ""
+                }
               />
               <button
                 className="inline-flex min-h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"

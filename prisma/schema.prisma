@@ -111,6 +111,56 @@ enum ExternalOpportunityVerificationStatus {
   WITHDRAWN
 }
 
+enum OpportunityAdminReviewStatus {
+  PENDING
+  APPROVED
+  CHANGES_REQUESTED
+  REJECTED
+}
+
+enum OpportunityImportEnvironment {
+  DEVELOPMENT
+  PREVIEW
+  PRODUCTION
+}
+
+enum OpportunityImportRunStatus {
+  DRY_RUN
+  AWAITING_APPROVAL
+  APPROVED
+  RUNNING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+enum OpportunityImportRowAction {
+  CREATE
+  UPDATE
+  UNCHANGED
+  REJECT
+  DUPLICATE
+  NEEDS_REVIEW
+  ARCHIVE
+  RESTORE
+}
+
+enum OpportunityVerificationCheckResult {
+  HEALTHY
+  REDIRECTED
+  BROKEN
+  TIMEOUT
+  BLOCKED
+  CONTENT_CHANGED
+  UNKNOWN
+}
+
+enum OpportunityVerificationReviewStatus {
+  PENDING
+  ACCEPTED
+  DISMISSED
+}
+
 enum ApplicationTaskType {
   REVIEW_ELIGIBILITY
   REVIEW_OFFICIAL_REQUIREMENTS
@@ -558,6 +608,7 @@ model PartnerOrganization {
   @@index([isSystemPlaceholder])
   @@index([status, createdAt])
   @@index([verificationStatus])
+  @@index([verifiedById])
   @@index([nextFollowUpAt])
   @@index([createdAt])
 }
@@ -579,6 +630,8 @@ model PartnerMember {
 
 model Opportunity {
   id                           String                                   @id @default(cuid())
+  slug                         String?                                  @unique
+  sourceKey                    String?                                  @unique
   organizationId               String
   organization                 PartnerOrganization                      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   title                        String
@@ -592,6 +645,14 @@ model Opportunity {
   applicationMethod            ApplicationMethod                        @default(EXTERNAL_PORTAL)
   officialSourceUrl            String?
   officialApplicationUrl       String?
+  secondarySourceUrl           String?
+  sourceTitle                  String?
+  sourceOrganization           String?
+  sourceRetrievedAt            DateTime?
+  verificationMethod           String?
+  sourceNotes                  String?
+  sourceChangeFingerprint      String?
+  originalImportedValues       Json?
   relationshipNotes            String?
   verificationStatus           OpportunityVerificationStatus            @default(NEEDS_REVIEW)
   lastVerifiedAt               DateTime?
@@ -601,6 +662,17 @@ model Opportunity {
   verificationNotes            String?
   brokenLinkDetectedAt         DateTime?
   archivalReason               String?
+  duplicateGroup               String?
+  dataQualityScore             Int?
+  completenessScore            Int?
+  featured                     Boolean                                  @default(false)
+  adminReviewStatus            OpportunityAdminReviewStatus             @default(PENDING)
+  adminReviewedAt              DateTime?
+  adminReviewedById            String?
+  partnerSubmitted             Boolean                                  @default(false)
+  adminApprovedAt              DateTime?
+  internalNotes                String?
+  publicNotes                  String?
   visibility                   OpportunityVisibility                    @default(PUBLIC_DIRECTORY)
   sourceType                   OpportunitySourceType                    @default(FP_CATALOG)
   studentOwnerProfileId        String?
@@ -622,9 +694,24 @@ model Opportunity {
   transportationNotes          String?
   maximumTravelMiles           Int?
   paidStatus                   String?
+  compensationType             String?
+  compensationAmount           String?
+  stipendInformation           String?
+  feesOrCosts                  String?
+  travelRequirements           String?
+  housingInformation           String?
+  schoolCreditAvailability     String?
   deadline                     DateTime?
+  priorityDeadline             DateTime?
   capacity                     Int?
   eligibilityRequirements      String?
+  educationRequirement         String?
+  geographicRequirement        String?
+  prerequisiteCourses          String[]                                 @default([])
+  backgroundCheckRequirement   String?
+  healthClearanceRequirement   String?
+  additionalRestrictions       String?
+  eligibilityNotes             String?
   minimumAge                   Int?
   maximumAge                   Int?
   acceptedGradeLevels          GradeLevelCode[]                         @default([])
@@ -638,10 +725,16 @@ model Opportunity {
   eligibilityUnknowns          String[]                                 @default([])
   requiredDocuments            String[]                                 @default([])
   applicationInstructions      String?
+  applicationContactEmail      String?
+  interviewProcess             String?
+  selectionTimeline            String?
   estimatedApplicationMinutes  Int?
   essayQuestionCount           Int?
   scheduleRequirements         String?
   estimatedWeeklyHours         Float?
+  duration                     String?
+  responsibilities             String?
+  skillsOffered                String[]                                 @default([])
   startsAt                     DateTime?
   endsAt                       DateTime?
   publishedAt                  DateTime?
@@ -659,6 +752,10 @@ model Opportunity {
   serviceHourRecords           ServiceHourRecord[]
   notifications                Notification[]
   externalVerificationRequests ExternalOpportunityVerificationRequest[]
+  importRows                   OpportunityImportRow[]
+  fieldOverrides               OpportunityFieldOverride[]
+  changeEvents                 OpportunityChangeEvent[]
+  verificationChecks           OpportunityVerificationCheck[]
   createdAt                    DateTime                                 @default(now())
   updatedAt                    DateTime                                 @updatedAt
 
@@ -680,8 +777,141 @@ model Opportunity {
   @@index([nextVerificationAt])
   @@index([deadline])
   @@index([officialSourceUrl])
+  @@index([officialApplicationUrl])
+  @@index([duplicateGroup])
+  @@index([adminReviewStatus])
+  @@index([featured, publishedAt])
+  @@index([sourceRetrievedAt])
   @@index([organizationId, title])
   @@index([createdAt])
+}
+
+model OpportunityImportRun {
+  id                 String                       @id @default(cuid())
+  sourceFileName     String
+  sourceFileHash     String
+  environment        OpportunityImportEnvironment
+  targetProjectRef   String
+  targetDatabase     String                       @default("postgres")
+  targetSchema       String                       @default("public")
+  dryRun             Boolean                      @default(true)
+  status             OpportunityImportRunStatus   @default(DRY_RUN)
+  submittedById      String?
+  approvedById       String?
+  approvedAt         DateTime?
+  totalRows          Int                          @default(0)
+  createdCount       Int                          @default(0)
+  updatedCount       Int                          @default(0)
+  unchangedCount     Int                          @default(0)
+  rejectedCount      Int                          @default(0)
+  duplicateCount     Int                          @default(0)
+  needsReviewCount   Int                          @default(0)
+  publishedCount     Int                          @default(0)
+  archivedCount      Int                          @default(0)
+  restoredCount      Int                          @default(0)
+  errorSummary       String?
+  report             Json?
+  reversalOfImportId String?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  reversedAt         DateTime?
+  rows               OpportunityImportRow[]
+  changeEvents       OpportunityChangeEvent[]
+  createdAt          DateTime                     @default(now())
+  updatedAt          DateTime                     @updatedAt
+
+  @@index([status, createdAt])
+  @@index([environment, createdAt])
+  @@index([sourceFileHash])
+  @@index([submittedById])
+  @@index([approvedById])
+  @@index([reversalOfImportId])
+}
+
+model OpportunityImportRow {
+  id                     String                     @id @default(cuid())
+  importRunId            String
+  importRun              OpportunityImportRun       @relation(fields: [importRunId], references: [id], onDelete: Cascade)
+  rowNumber              Int
+  sourceKey              String?
+  slug                   String?
+  action                 OpportunityImportRowAction
+  opportunityId          String?
+  opportunity            Opportunity?               @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  duplicateOpportunityId String?
+  officialSourceUrl      String?
+  officialApplicationUrl String?
+  originalData           Json
+  normalizedData         Json?
+  proposedChanges        Json?
+  validationErrors       String[]                   @default([])
+  warnings               String[]                   @default([])
+  createdAt              DateTime                   @default(now())
+
+  @@unique([importRunId, rowNumber])
+  @@index([importRunId, action])
+  @@index([sourceKey])
+  @@index([opportunityId])
+  @@index([duplicateOpportunityId])
+}
+
+model OpportunityFieldOverride {
+  id            String      @id @default(cuid())
+  opportunityId String
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  fieldName     String
+  value         Json?
+  reason        String
+  active        Boolean     @default(true)
+  createdById   String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([opportunityId, fieldName])
+  @@index([active, updatedAt])
+  @@index([createdById])
+}
+
+model OpportunityChangeEvent {
+  id            String                @id @default(cuid())
+  opportunityId String
+  opportunity   Opportunity           @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  importRunId   String?
+  importRun     OpportunityImportRun? @relation(fields: [importRunId], references: [id], onDelete: SetNull)
+  action        String
+  actorId       String?
+  previousData  Json?
+  nextData      Json?
+  metadata      Json?
+  createdAt     DateTime              @default(now())
+
+  @@index([opportunityId, createdAt])
+  @@index([importRunId])
+  @@index([actorId, createdAt])
+}
+
+model OpportunityVerificationCheck {
+  id                  String                              @id @default(cuid())
+  opportunityId       String
+  opportunity         Opportunity                         @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  checkedUrl          String
+  checkedAt           DateTime                            @default(now())
+  result              OpportunityVerificationCheckResult
+  httpStatus          Int?
+  redirectUrl         String?
+  contentFingerprint  String?
+  previousFingerprint String?
+  contentChanged      Boolean                             @default(false)
+  errorCode           String?
+  suggestedAction     String?
+  reviewStatus        OpportunityVerificationReviewStatus @default(PENDING)
+  reviewedById        String?
+  reviewedAt          DateTime?
+  createdAt           DateTime                            @default(now())
+
+  @@index([opportunityId, checkedAt])
+  @@index([reviewStatus, checkedAt])
+  @@index([result, checkedAt])
 }
 
 model Application {

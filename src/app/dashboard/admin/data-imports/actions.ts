@@ -15,10 +15,15 @@ import {
   enforceRateLimit,
   formatRateLimitMessage,
 } from "@/lib/security/rate-limit";
+import {
+  signImportPreview,
+  verifyImportPreviewSignature,
+} from "@/lib/imports/preview-signature";
 
 export type CsvImportActionState = {
   error: string | null;
   preview: ImportPreview | null;
+  previewSignature: string | null;
   summary: ImportSummary | null;
 };
 
@@ -74,6 +79,7 @@ export async function previewCsvImport(
     return {
       error: formatRateLimitMessage(rateLimit),
       preview: null,
+      previewSignature: null,
       summary: null,
     };
   }
@@ -85,6 +91,7 @@ export async function previewCsvImport(
     return {
       error: "Choose an import type.",
       preview: null,
+      previewSignature: null,
       summary: null,
     };
   }
@@ -93,6 +100,7 @@ export async function previewCsvImport(
     return {
       error: "Paste CSV content or upload a CSV file.",
       preview: null,
+      previewSignature: null,
       summary: null,
     };
   }
@@ -106,6 +114,7 @@ export async function previewCsvImport(
   return {
     error: preview.errors.length > 0 ? preview.errors.join(" ") : null,
     preview,
+    previewSignature: signImportPreview(JSON.stringify(preview)),
     summary: null,
   };
 }
@@ -126,16 +135,29 @@ export async function importCsvPreview(
     return {
       error: formatRateLimitMessage(rateLimit),
       preview: null,
+      previewSignature: null,
       summary: null,
     };
   }
 
   const payload = getString(formData, "previewPayload");
+  const signature = getString(formData, "previewSignature");
 
-  if (!payload) {
+  if (!payload || !signature) {
     return {
       error: "Preview the CSV before importing.",
       preview: null,
+      previewSignature: null,
+      summary: null,
+    };
+  }
+
+  if (!verifyImportPreviewSignature(payload, signature)) {
+    return {
+      error:
+        "The import preview was changed or is no longer trusted. Preview the CSV again.",
+      preview: null,
+      previewSignature: null,
       summary: null,
     };
   }
@@ -148,6 +170,7 @@ export async function importCsvPreview(
     return {
       error: "Import preview could not be read.",
       preview: null,
+      previewSignature: null,
       summary: null,
     };
   }
@@ -167,6 +190,7 @@ export async function importCsvPreview(
     error:
       summary.errors.length > 0 ? "Some rows could not be imported." : null,
     preview,
+    previewSignature: signature,
     summary: summary ?? initialSummary,
   };
 }

@@ -24,7 +24,9 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:validate": "node scripts/validate-migrations.mjs",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "opportunities:import": "tsx scripts/opportunities/import-opportunities.ts",
+    "opportunities:verify": "tsx scripts/opportunities/verify-opportunity-dataset.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
