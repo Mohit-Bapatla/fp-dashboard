@@ -1,6 +1,7 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { siteConfig } from "@/lib/site-config";
 
@@ -79,6 +80,7 @@ export default function RootLayout({
       </head>
       <body className="flex min-h-full flex-col">
         <ClerkProvider>{children}</ClerkProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
