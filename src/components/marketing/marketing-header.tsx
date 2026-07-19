@@ -24,7 +24,7 @@ export async function MarketingHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/90 bg-white/95 backdrop-blur-xl supports-[backdrop-filter]:bg-white/85">
-      <div className="mx-auto flex min-h-[72px] w-full max-w-[1280px] items-center justify-between gap-4 px-5 sm:px-8">
+      <div className="mx-auto flex min-h-[calc(64px+env(safe-area-inset-top))] w-full max-w-[1280px] items-center justify-between gap-3 pt-[env(safe-area-inset-top)] pr-[max(1.25rem,env(safe-area-inset-right))] pl-[max(1.25rem,env(safe-area-inset-left))] sm:min-h-[calc(72px+env(safe-area-inset-top))] sm:gap-4 sm:pr-[max(2rem,env(safe-area-inset-right))] sm:pl-[max(2rem,env(safe-area-inset-left))]">
         <BrandMark />
 
         <nav

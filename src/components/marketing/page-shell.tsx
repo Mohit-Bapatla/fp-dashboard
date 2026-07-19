@@ -11,7 +11,10 @@ export function MarketingContainer({
 }) {
   return (
     <div
-      className={cn("mx-auto w-full max-w-[1240px] px-5 sm:px-8", className)}
+      className={cn(
+        "mx-auto w-full max-w-[1240px] pr-[max(1.25rem,env(safe-area-inset-right))] pl-[max(1.25rem,env(safe-area-inset-left))] sm:pr-[max(2rem,env(safe-area-inset-right))] sm:pl-[max(2rem,env(safe-area-inset-left))]",
+        className,
+      )}
     >
       {children}
     </div>
@@ -31,7 +34,10 @@ export function SectionHeading({
 }) {
   return (
     <div
-      className={cn("max-w-2xl", align === "center" && "mx-auto text-center")}
+      className={cn(
+        "min-w-0 max-w-2xl",
+        align === "center" && "mx-auto text-center",
+      )}
     >
       {eyebrow ? (
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
@@ -67,24 +73,26 @@ export function PageHero({
   title: ReactNode;
 }) {
   return (
-    <section className="relative overflow-hidden border-b border-border bg-[linear-gradient(180deg,#ffffff_0%,#f2f7ff_100%)] py-20 sm:py-24 lg:py-28">
+    <section className="relative overflow-hidden border-b border-border bg-[linear-gradient(180deg,#ffffff_0%,#f2f7ff_100%)] py-14 sm:py-20 lg:py-28">
       <div
         aria-hidden="true"
         className="pathway-grid absolute inset-0 opacity-45"
       />
       <MarketingContainer className="relative">
-        <div className="max-w-3xl">
+        <div className="min-w-0 max-w-3xl">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
             {eyebrow}
           </p>
-          <h1 className="mt-4 text-balance text-4xl font-semibold tracking-[-0.045em] text-brand-navy sm:text-6xl">
+          <h1 className="mt-4 text-balance text-[clamp(2.25rem,10vw,3rem)] leading-[1.05] font-semibold tracking-[-0.045em] text-brand-navy sm:text-6xl">
             {title}
           </h1>
-          <div className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">
+          <div className="mt-5 max-w-2xl text-pretty text-base leading-7 text-muted-foreground sm:mt-6 sm:text-lg sm:leading-8">
             {description}
           </div>
           {actions ? (
-            <div className="mt-8 flex flex-wrap gap-3">{actions}</div>
+            <div className="mt-7 grid w-full gap-3 sm:mt-8 sm:flex sm:flex-wrap">
+              {actions}
+            </div>
           ) : null}
         </div>
       </MarketingContainer>
