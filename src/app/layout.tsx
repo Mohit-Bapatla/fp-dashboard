@@ -1,5 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { siteConfig } from "@/lib/site-config";
@@ -15,6 +15,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-geist-mono",
 });
+
+const marketingMotionBootScript = `
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.documentElement.dataset.marketingMotion = 'enabled';
+  }
+`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -47,6 +53,12 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  initialScale: 1,
+  viewportFit: "cover",
+  width: "device-width",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -54,10 +66,17 @@ export default function RootLayout({
 }>) {
   return (
     <html
+      suppressHydrationWarning
       data-scroll-behavior="smooth"
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{ __html: marketingMotionBootScript }}
+          id="marketing-motion-boot"
+        />
+      </head>
       <body className="flex min-h-full flex-col">
         <ClerkProvider>{children}</ClerkProvider>
       </body>

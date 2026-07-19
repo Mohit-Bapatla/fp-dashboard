@@ -45,9 +45,9 @@ export function MobileNavigation({
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 z-50 bg-brand-navy/35 backdrop-blur-sm transition-opacity duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
-        <Dialog.Viewport className="fixed inset-0 z-50 flex justify-end p-2 sm:p-4">
-          <Dialog.Popup className="flex h-full w-full max-w-sm flex-col rounded-2xl border border-white/70 bg-white p-5 text-brand-navy shadow-2xl transition duration-200 data-[ending-style]:translate-x-5 data-[ending-style]:opacity-0 data-[starting-style]:translate-x-5 data-[starting-style]:opacity-0">
-            <div className="flex items-center justify-between gap-4 border-b border-border pb-4">
+        <Dialog.Viewport className="fixed inset-0 z-50 flex min-h-0 justify-end pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.5rem,env(safe-area-inset-left))] sm:pt-[max(1rem,env(safe-area-inset-top))] sm:pr-[max(1rem,env(safe-area-inset-right))] sm:pb-[max(1rem,env(safe-area-inset-bottom))] sm:pl-[max(1rem,env(safe-area-inset-left))]">
+          <Dialog.Popup className="flex h-full min-h-0 max-h-[100dvh] w-full max-w-sm flex-col rounded-2xl border border-white/70 bg-white p-4 text-brand-navy shadow-2xl transition duration-200 data-[ending-style]:translate-x-2 data-[ending-style]:opacity-0 data-[starting-style]:translate-x-2 data-[starting-style]:opacity-0 sm:p-5">
+            <div className="flex items-center justify-between gap-4 border-b border-border pb-3 sm:pb-4">
               <div>
                 <Dialog.Title className="text-base font-semibold">
                   Future Physicians
@@ -66,7 +66,7 @@ export function MobileNavigation({
 
             <nav
               aria-label="Mobile navigation"
-              className="mt-5 flex-1 overflow-y-auto"
+              className="mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain sm:mt-5"
               onClick={handleNavigationClick}
             >
               <details className="group rounded-xl border border-border bg-background">
@@ -116,7 +116,7 @@ export function MobileNavigation({
               </div>
             </nav>
 
-            <div className="mt-5 grid gap-3 border-t border-border pt-5">
+            <div className="mt-4 grid gap-3 border-t border-border pt-4 sm:mt-5 sm:pt-5">
               {!signedIn ? (
                 <Link
                   className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border px-4 text-sm font-semibold hover:bg-blue-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
