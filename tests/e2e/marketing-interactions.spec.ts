@@ -18,16 +18,20 @@ const homepageViewports = [
   { width: 320, height: 700 },
 ] as const;
 
+function isClerkBootstrapRequest(url: URL) {
+  return (
+    url.hostname.endsWith(".clerk.accounts.dev") &&
+    ["/v1/dev_browser", "/v1/environment"].includes(url.pathname)
+  );
+}
+
 function trackUnexpectedMutationRequests(page: Page) {
   const mutationRequests: string[] = [];
 
   page.on("request", (request) => {
     const url = new URL(request.url());
-    const isClerkEnvironmentRefresh =
-      url.hostname.endsWith(".clerk.accounts.dev") &&
-      url.pathname === "/v1/environment";
 
-    if (request.method() !== "GET" && !isClerkEnvironmentRefresh) {
+    if (request.method() !== "GET" && !isClerkBootstrapRequest(url)) {
       mutationRequests.push(`${request.method()} ${request.url()}`);
     }
   });
@@ -106,9 +110,9 @@ test("FAQ content is immediately readable with reduced motion", async ({
 test("homepage opportunity explorer searches, filters, opens details, and saves only in local state", async ({
   page,
 }) => {
-  const mutationRequests = trackUnexpectedMutationRequests(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
+  const mutationRequests = trackUnexpectedMutationRequests(page);
 
   const explorer = page.getByRole("region", {
     name: "Interactive opportunity explorer demo",
@@ -481,10 +485,7 @@ test("partner preview uses keyboard controls and local applicant state", async (
   const mutationRequests: string[] = [];
   page.on("request", (request) => {
     const url = new URL(request.url());
-    const isClerkEnvironmentRefresh =
-      url.hostname.endsWith(".clerk.accounts.dev") &&
-      url.pathname === "/v1/environment";
-    if (request.method() !== "GET" && !isClerkEnvironmentRefresh) {
+    if (request.method() !== "GET" && !isClerkBootstrapRequest(url)) {
       mutationRequests.push(`${request.method()} ${request.url()}`);
     }
   });
@@ -545,10 +546,7 @@ test("student preview saves an opportunity and reflects an application locally",
   const mutationRequests: string[] = [];
   page.on("request", (request) => {
     const url = new URL(request.url());
-    const isClerkEnvironmentRefresh =
-      url.hostname.endsWith(".clerk.accounts.dev") &&
-      url.pathname === "/v1/environment";
-    if (request.method() !== "GET" && !isClerkEnvironmentRefresh) {
+    if (request.method() !== "GET" && !isClerkBootstrapRequest(url)) {
       mutationRequests.push(`${request.method()} ${request.url()}`);
     }
   });

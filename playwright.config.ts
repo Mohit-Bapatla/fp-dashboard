@@ -1,21 +1,27 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const localBaseURL = "http://127.0.0.1:3000";
+const remoteBaseURL = process.env.PLAYWRIGHT_BASE_URL?.trim();
+const baseURL = remoteBaseURL || localBaseURL;
 const webServerCommand =
-  process.env.PLAYWRIGHT_WEB_SERVER_COMMAND ?? "npm.cmd run dev";
+  process.env.PLAYWRIGHT_WEB_SERVER_COMMAND ?? "npm run dev";
 
 export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 30_000,
   use: {
-    baseURL: "http://127.0.0.1:3000",
-    trace: "on-first-retry",
+    baseURL,
+    screenshot: "only-on-failure",
+    trace: "retain-on-failure",
   },
-  webServer: {
-    command: webServerCommand,
-    reuseExistingServer: true,
-    timeout: 120_000,
-    url: "http://127.0.0.1:3000",
-  },
+  webServer: remoteBaseURL
+    ? undefined
+    : {
+        command: webServerCommand,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+        url: localBaseURL,
+      },
   projects: [
     {
       name: "chromium",
