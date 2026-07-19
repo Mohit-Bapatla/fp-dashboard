@@ -1,261 +1,105 @@
 # Future Physicians Platform
 
-A unified healthcare-opportunity platform for Future Physicians.
+A unified healthcare opportunity platform for Future Physicians.
 
-The platform combines a public website, verified opportunity directory, student dashboard, partner workspace, staff operations tools, and administrative controls in one Next.js application.
+The application combines a public website, verified opportunity directory,
+student dashboard, partner workspace, staff operations tools, and
+administrative controls in one Next.js project.
 
 **Production:** [futurephysicians.org](https://futurephysicians.org)
 
----
-
 ## Overview
 
-Future Physicians helps students discover and manage healthcare opportunities while giving organizations structured tools to publish programs, review applicants, and track participation.
+Future Physicians helps students discover and manage healthcare opportunities
+while giving approved organizations tools to publish programs, review
+applicants, and track participation.
 
-The platform replaces disconnected forms, spreadsheets, email threads, and manual tracking with role-based workflows for:
+The public website and authenticated dashboards share the same application,
+design system, authentication layer, opportunity records, and deployment
+pipeline.
 
-- Students
-- Healthcare and community partners
-- Future Physicians staff
-- Administrators
+## Highlights
 
-The public website and authenticated dashboards share the same application, design system, authentication layer, opportunity records, and deployment pipeline.
+- Public directory for verified healthcare opportunities
+- Role-based dashboards for students, partners, staff, and administrators
+- Student profiles, resume parsing, saved opportunities, and applications
+- Partner opportunity management, applicant review, and placement tracking
+- Admin verification, moderation, analytics, imports, and audit logs
+- Clerk authentication with server-side authorization
+- Prisma and PostgreSQL relational data model
+- Responsive public product demonstrations and accessible interactions
+- Vitest, Playwright, Axe, Sentry, and Vercel deployment support
 
----
+## Product Areas
 
-## Project Status
+### Students
 
-The Future Physicians Platform is deployed in production and remains under active development.
+Students can create profiles, upload and parse resumes, discover opportunities,
+review eligibility, save listings, submit applications, track external
+applications, join waitlists, and monitor deadlines.
 
-Current priorities include:
+Recommendations assist discovery but do not guarantee acceptance or placement.
+Host organizations retain control over selection decisions.
 
-- Expanding the verified opportunity directory
-- Improving student application workflows
-- Strengthening partner onboarding and applicant management
-- Hardening authorization, rate limiting, and upload security
-- Expanding authenticated end-to-end coverage
-- Improving operational reporting and placement workflows
+### Partners
 
-Local development and automated tests must use synthetic or disposable data.
+Approved organizations can manage opportunities, configure eligibility,
+review authorized applicants, update statuses, track onboarding and placements,
+and export approved program data.
 
-Do not commit:
+### Staff and administrators
 
-- Real student records
-- Real resumes
-- Private partner information
-- Clerk users or session data
-- Database exports
-- API keys
-- Production environment variables
-- OAuth client secrets
-- Service-role credentials
+Staff and administrators can coordinate placements, verify opportunities,
+manage users and organizations, review data quality, run imports and exports,
+monitor analytics, and inspect audit logs.
 
----
+## Opportunity Workflows
 
-## Core Product Areas
+The platform supports internships, research, shadowing, volunteering, events,
+and other healthcare-access programs.
 
-### Public website
+Application paths include:
 
-The public website introduces Future Physicians and provides access to:
+- Future Physicians-managed applications
+- External applications tracked inside the dashboard
+- Introduction requests when available
+- Interest forms and waitlists
 
-- Healthcare opportunity discovery
-- Student and partner information
-- Events
-- Chapters
-- Impact information
-- Grants and supporters
-- Frequently asked questions
-- Contact channels
-- Privacy and terms pages
-
-The landing page includes interactive, local-only product demonstrations. These previews do not modify live records or represent real student accounts.
-
-### Public opportunity directory
-
-Visitors can browse publicly available healthcare opportunities without creating an account.
-
-Public listings are filtered through publication and visibility rules, including:
-
-- Published status
-- Verification status
-- Organization verification
-- Availability state
-- Opening and closing dates
-- Application deadlines
-- Public visibility requirements
-
-Unpublished, private, expired, or otherwise restricted opportunities must not be exposed through public pages, metadata, APIs, or the sitemap.
-
-### Student dashboard
-
-Students can:
-
-- Create and update a reusable profile
-- Record education, experience, interests, and preferences
-- Upload and parse resumes
-- Discover healthcare opportunities
-- Review eligibility and fit information
-- Save, follow, and dismiss opportunities
-- Apply through Future Physicians
-- Track external applications
-- Join waitlists
-- Monitor deadlines and next steps
-- Track application statuses
-- View events and resources
-- Manage documents and profile completion
-
-Recommendations and eligibility indicators assist discovery but do not guarantee acceptance or placement. Host organizations retain control over admissions and selection decisions.
-
-### Partner workspace
-
-Approved partner organizations can:
-
-- Manage organization information
-- Create and update opportunities
-- Configure eligibility criteria
-- Set deadlines, capacity, and application methods
-- Review authorized applicants
-- Manage applicant statuses
-- Track interviews, onboarding, and placements
-- Communicate status updates
-- Export authorized program data
-- Review organization-level activity
-
-Public visitors cannot create a partner workspace automatically. Partnership inquiries are routed through the Future Physicians outreach team.
-
-### Staff operations
-
-Staff tools support operational workflows such as:
-
-- Placement coordination
-- Opportunity review
-- Partner outreach
-- Student support
-- Events
-- Program operations
-- Sponsorship and fundraising tracking
-- Application and placement queues
-
-Access is restricted by server-side role checks.
-
-### Administration
-
-Administrative tools support:
-
-- User and role management
-- Partner and organization management
-- Opportunity verification
-- Publication moderation
-- Application oversight
-- Placement operations
-- Data-quality review
-- Imports and exports
-- Correction reports
-- Analytics
-- Audit logs
-- Recommendation evaluation
-- Operational monitoring
-
-Administrative access must never rely solely on hidden navigation or client-side role checks.
-
----
-
-## Opportunity Model
-
-The platform supports multiple opportunity categories, including:
-
-- Internships
-- Research
-- Shadowing
-- Volunteering
-- Events
-- Other healthcare-access programs
-
-An opportunity may use one of several application paths:
-
-### Future Physicians-managed application
-
-The student submits application information through the FP Dashboard.
-
-### External application
-
-The student applies through a partner or external website and may track progress inside FP.
-
-### Introduction request
-
-Future Physicians may facilitate an introduction when that option is available.
-
-### Interest form or waitlist
-
-Students may join an interest list or waitlist for programs that are not accepting standard applications.
-
-Application availability, deadlines, verification status, and eligibility are evaluated independently.
-
----
+Public listings must satisfy publication, verification, organization,
+availability, and deadline rules before they are exposed.
 
 ## Roles and Access Control
 
-The application supports role-based access for:
+| Role        | Primary access                                             |
+| ----------- | ---------------------------------------------------------- |
+| Student     | Profile, opportunities, applications, documents, events   |
+| Partner     | Organization opportunities, applicants, placements        |
+| Staff       | Operational queues and approved internal workflows        |
+| Admin       | Moderation, verification, analytics, users, and audit logs |
+| Super Admin | Highest-level administrative access                        |
 
-| Role | Primary access |
-|---|---|
-| Student | Profile, opportunities, applications, documents, events |
-| Partner | Organization opportunities, applicants, placements, reports |
-| Staff | Operational queues and approved internal workflows |
-| Admin | Moderation, verification, analytics, users, audit tools |
-| Super Admin | Highest-level administrative access |
-
-Authorization is enforced on the server.
-
-Every sensitive Server Action, route handler, and data mutation should independently verify:
-
-1. Authentication
-2. Database user identity
-3. Required role
-4. Resource ownership or organization membership
-5. Resource visibility and current state
-6. Input validity
-7. Relevant rate limits
-8. Audit requirements
-
-Client-side role checks are for interface behavior only and are not security boundaries.
-
----
+Authorization is enforced on the server. Sensitive actions should independently
+verify authentication, role, ownership or organization membership, resource
+state, input validity, and audit requirements.
 
 ## Authentication
 
-Authentication is provided by [Clerk](https://clerk.com).
+Authentication is provided by [Clerk](https://clerk.com), including:
 
-The production application uses a separate Clerk production instance from development and preview environments.
-
-Authentication features include:
-
-- Email-based authentication
+- Email authentication
 - Google OAuth
-- Role-aware dashboard routing
+- Role-aware routing
 - Protected dashboard routes
-- Production custom Clerk domains
+- Production custom domains
 - Server-side user synchronization
 
-### User reconciliation
+Development and production Clerk instances issue different user IDs. User
+reconciliation must preserve existing roles, profiles, applications, and
+relationships when a verified email already exists.
 
-Clerk development and production instances issue different user IDs.
+## Resume Parsing
 
-User synchronization must safely reconcile an existing database user when:
-
-- The current Clerk user ID is new
-- The same verified email already exists in the database
-- Existing roles, profiles, applications, and relationships must be preserved
-
-Automatic linking must only use verified Clerk email addresses and must not allow a user to claim another account through an unverified or browser-supplied email.
-
----
-
-## Resume Upload and Parsing
-
-Students can upload resume files and extract structured profile information.
-
-The resume pipeline supports fields such as:
+Students can upload resumes and extract structured fields such as:
 
 - Summary
 - Skills
@@ -263,83 +107,9 @@ The resume pipeline supports fields such as:
 - Experience
 - Certifications
 
-Resume parsing uses server-side PDF tooling and includes Vercel-specific output tracing for required PDF.js worker and native canvas dependencies.
-
-Important safeguards include or should include:
-
-- File-size limits
-- PDF MIME and signature validation
-- Safe storage keys
-- Private file access
-- Bounded parsing work
-- Generic user-facing failures
-- No raw parser or native-module errors exposed to users
-- Duplicate parse prevention
-- Rate limiting for expensive parsing operations
-
-Uploaded resume content must never be committed to the repository.
-
----
-
-## AI-Assisted Features
-
-AI features are optional and server-side.
-
-The application should remain functional without an `OPENAI_API_KEY`.
-
-Potential AI-assisted workflows include:
-
-- Resume enrichment
-- Applicant summaries
-- Opportunity enrichment
-- Outreach drafts
-- Embedding-based recommendation boosts
-
-Design principles:
-
-- Deterministic logic runs first
-- AI output is treated as assistive, not authoritative
-- Human reviewers make final decisions
-- AI must not silently change eligibility or placement outcomes
-- Private student information must not be exposed unnecessarily
-- Sensitive AI failures must fall back to deterministic behavior
-
-See:
-
-- `docs/ai-systems.md`
-- `docs/matching-algorithm.md`
-
-when available.
-
----
-
-## Recommendation and Eligibility System
-
-Opportunity recommendations are eligibility-aware and may consider:
-
-- Education level
-- Grade level
-- Location
-- Remote preference
-- Interests
-- Experience
-- Availability
-- Opportunity requirements
-- Opening and deadline status
-- Verification and publication state
-
-The recommendation engine should:
-
-- Rank eligible opportunities ahead of ineligible ones
-- Explain important eligibility findings
-- Avoid falsely labeling a user as eligible
-- Preserve access to relevant public listings where policy permits
-- Support saving, following, and dismissing recommendations
-- Avoid leaking private or unpublished opportunities
-
-Recommendations do not guarantee acceptance.
-
----
+Resume parsing runs server-side and includes Vercel output tracing for PDF.js
+worker and native canvas dependencies. Uploaded files remain private and must
+never be committed to the repository.
 
 ## Tech Stack
 
@@ -349,38 +119,23 @@ Recommendations do not guarantee acceptance.
 - React
 - TypeScript
 - Tailwind CSS
-- Server Components
-- Server Actions
-- Accessible component primitives
+- Server Components and Server Actions
 
-### Data
+### Data and authentication
 
 - Prisma ORM
 - PostgreSQL
-- Supabase-hosted PostgreSQL
-- Supabase Storage for private files
+- Supabase-hosted PostgreSQL and Storage
+- Clerk authentication and RBAC
 
-### Authentication
-
-- Clerk
-- Google OAuth
-- Role-based access control
-- Server-side authorization
-
-### Infrastructure
+### Infrastructure and integrations
 
 - Vercel
-- Vercel Preview Deployments
 - Vercel Cron
-- Custom production domain
-- Output-file tracing for server dependencies
-
-### Integrations
-
-- Resend for optional email delivery
+- Resend
 - OpenAI for optional enrichment
-- Sentry for monitoring
-- Supabase Storage for private uploads
+- Sentry
+- Vercel Speed Insights
 
 ### Testing and quality
 
@@ -392,53 +147,164 @@ Recommendations do not guarantee acceptance.
 - Prisma validation
 - Production builds in CI
 
----
-
 ## Repository Structure
 
 ```text
 .
 ├── prisma/
-│   ├── migrations/              # Ordered database migrations
-│   ├── schema.prisma            # Prisma data model
-│   └── seed files               # Synthetic development data
-│
-├── public/                      # Public static assets
-│
+│   ├── migrations/
+│   └── schema.prisma
+├── public/
 ├── src/
 │   ├── app/
-│   │   ├── (marketing)/         # Public website routes
-│   │   ├── api/                 # Route handlers
-│   │   ├── dashboard/           # Authenticated role-based dashboards
-│   │   ├── sign-in/             # Authentication pages
-│   │   └── sign-up/
-│   │
+│   │   ├── (marketing)/
+│   │   ├── api/
+│   │   └── dashboard/
 │   ├── components/
-│   │   ├── dashboard/           # Authenticated dashboard components
-│   │   ├── marketing/           # Public-site components and demos
-│   │   ├── opportunities/       # Shared opportunity UI
-│   │   ├── public/              # Public opportunity components
-│   │   ├── student/             # Student-specific components
-│   │   └── ui/                  # Shared interface primitives
-│   │
-│   ├── lib/
-│   │   ├── admin/               # Admin authorization and services
-│   │   ├── auth/                # Clerk synchronization and role logic
-│   │   ├── opportunities/       # Eligibility and visibility logic
-│   │   ├── public/              # Public data access
-│   │   ├── security/            # Redirect and security helpers
-│   │   └── site-config.ts       # Public links and organization content
-│   │
-│   └── proxy.ts                 # Route protection and role routing
-│
+│   └── lib/
 ├── tests/
-│   ├── unit/                    # Vitest tests
-│   └── e2e/                     # Playwright tests
-│
-├── artifacts/
-│   └── screenshots/             # Intentional visual-review evidence
-│
-├── docs/                        # Technical and operational documentation
+│   ├── unit/
+│   └── e2e/
+├── artifacts/screenshots/
+├── docs/
 ├── next.config.ts
 ├── package.json
 └── README.md
+```
+
+## Local Development
+
+### Prerequisites
+
+- Node.js compatible with CI and Vercel
+- npm
+- PostgreSQL or access to a disposable development database
+- Clerk development credentials
+
+### Setup
+
+```bash
+git clone https://github.com/Mohit-Bapatla/fp-dashboard.git
+cd fp-dashboard
+npm install
+cp .env.example .env.local
+npx prisma generate
+npx prisma validate
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+Use synthetic or disposable data for local development and automated testing.
+Never connect ordinary local development to the production database.
+
+## Common Commands
+
+```bash
+npm run dev
+npm run format
+npm run format:check
+npm run lint
+npm run test
+npm run build
+npm run test:e2e
+npx prisma generate
+npx prisma validate
+npx prisma migrate status
+```
+
+The scripts in `package.json` are the source of truth.
+
+## Database Migrations
+
+Use `prisma migrate dev` only with an isolated development database.
+
+Before applying production migrations, confirm the database identity, target
+schema, backup status, pending SQL, and rollback procedure. Apply approved
+migrations with:
+
+```bash
+npx prisma migrate deploy
+```
+
+Never run `prisma migrate reset` or `prisma db push` against production.
+
+## Testing
+
+Run unit tests with:
+
+```bash
+npm run test
+```
+
+Run Playwright end-to-end tests with:
+
+```bash
+npm run test:e2e
+```
+
+Some authenticated suites require disposable Clerk test identities or storage
+states. Credential-gated skipped tests are not successful coverage.
+
+Test responsive behavior at 1440, 1024, 768, 430, 390, 375, 360, and 320
+pixels. Important mobile flows should also be reviewed on a real iPhone.
+
+## Deployment
+
+Production deployments are created through Vercel from the configured
+production branch, normally `main`.
+
+Preview deployments should use development or staging authentication,
+disposable data, non-production storage, and protected access where
+appropriate.
+
+Changing an environment variable requires a new deployment before the change
+takes effect.
+
+## Security and Privacy
+
+Security controls include server-side authorization, ownership checks,
+verified opportunity visibility, input and upload validation, private file
+storage, audit logging, rate limiting, duplicate-submission protection, error
+redaction, security headers, and database access controls.
+
+Never rely on hidden buttons, client-side roles, browser-supplied ownership IDs,
+or unverified email addresses as security boundaries.
+
+Report suspected vulnerabilities privately rather than opening a public issue
+with exploit details or sensitive information.
+
+## Contribution Workflow
+
+1. Create a branch from the latest `main`.
+2. Make focused changes.
+3. Add or update tests.
+4. Run the validation suite.
+5. Push the branch and open a draft pull request.
+6. Review the Vercel Preview deployment.
+7. Merge only after required checks and approvals pass.
+
+Before requesting review, run:
+
+```bash
+npm ci
+npx prisma generate
+npx prisma validate
+npm run format
+npm run format:check
+npm run lint
+npm run test
+npm run build
+npm run test:e2e
+git diff --check
+```
+
+## Contact
+
+- General support: [support@futurephysicians.org](mailto:support@futurephysicians.org)
+- Partnerships: [outreach@futurephysicians.org](mailto:outreach@futurephysicians.org)
+- Funding: [fundraising@futurephysicians.org](mailto:fundraising@futurephysicians.org)
+- Instagram: [futurephysiciansmedia](https://www.instagram.com/futurephysiciansmedia/)
+- TikTok: [@futurephysicians.org](https://www.tiktok.com/@futurephysicians.org)
+- LinkedIn: [Future Physicians](https://www.linkedin.com/company/104746121/)
+- Newsletter: [Future Physicians Substack](https://futurephysicians.substack.com/)
