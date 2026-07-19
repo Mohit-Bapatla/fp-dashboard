@@ -72,9 +72,9 @@ availability, and deadline rules before they are exposed.
 
 | Role        | Primary access                                             |
 | ----------- | ---------------------------------------------------------- |
-| Student     | Profile, opportunities, applications, documents, events   |
-| Partner     | Organization opportunities, applicants, placements        |
-| Staff       | Operational queues and approved internal workflows        |
+| Student     | Profile, opportunities, applications, documents, events    |
+| Partner     | Organization opportunities, applicants, placements         |
+| Staff       | Operational queues and approved internal workflows         |
 | Admin       | Moderation, verification, analytics, users, and audit logs |
 | Super Admin | Highest-level administrative access                        |
 
