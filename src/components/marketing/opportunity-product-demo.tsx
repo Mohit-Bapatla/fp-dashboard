@@ -257,12 +257,13 @@ export function OpportunityDiscoveryPreview() {
     <ProductFrame label="Interactive illustrative opportunity preview — not a live listing">
       <div
         aria-label="Interactive opportunity explorer demo"
-        className="grid min-h-[470px] md:grid-cols-[190px_1fr]"
+        className="grid min-w-0 max-w-full md:min-h-[470px] md:grid-cols-[190px_minmax(0,1fr)]"
+        data-mobile-opportunity-explorer="compact"
         data-opportunity-category={selectedCategory.toLowerCase()}
         data-opportunity-result-count={filteredOpportunities.length}
         role="region"
       >
-        <aside className="border-b border-border bg-slate-50/80 p-4 md:border-b-0 md:border-r">
+        <aside className="hidden border-r border-border bg-slate-50/80 p-4 md:block">
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
             Find your fit
           </p>
@@ -298,18 +299,23 @@ export function OpportunityDiscoveryPreview() {
           </div>
         </aside>
 
-        <div className="p-4 sm:p-6">
+        <div className="min-w-0 p-3 min-[360px]:p-4 sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-secondary">
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-secondary sm:text-xs sm:tracking-[0.16em]">
                 Opportunity explorer
               </p>
-              <h3 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-brand-navy">
+              <h3 className="mt-1 text-xl font-semibold leading-7 tracking-[-0.03em] text-brand-navy">
                 {selectedCategory === "All"
                   ? "All opportunities"
                   : `${selectedCategory} opportunities`}
               </h3>
-              <p className="mt-1 text-[11px] leading-5 text-muted-foreground">
+              <p className="mt-1 text-sm leading-5 text-muted-foreground md:hidden">
+                {filteredOpportunities.length}{" "}
+                {filteredOpportunities.length === 1 ? "match" : "matches"} in
+                this illustrative preview
+              </p>
+              <p className="mt-1 hidden text-[11px] leading-5 text-muted-foreground md:block">
                 {categoryCount} illustrative listings represented ·{" "}
                 {filteredOpportunities.length}{" "}
                 {filteredOpportunities.length === 1
@@ -318,7 +324,7 @@ export function OpportunityDiscoveryPreview() {
               </p>
             </div>
 
-            <div className="relative sm:w-64">
+            <div className="relative min-w-0 sm:w-64">
               <label className="sr-only" htmlFor="opportunity-demo-search">
                 Search illustrative opportunities
               </label>
@@ -327,7 +333,7 @@ export function OpportunityDiscoveryPreview() {
                 className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary"
               />
               <input
-                className="min-h-11 w-full rounded-xl border border-border bg-white py-2 pl-9 pr-10 text-xs text-brand-navy shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="min-h-11 w-full min-w-0 rounded-xl border border-border bg-white py-2 pl-9 pr-12 text-base text-brand-navy shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 md:pr-10 md:text-xs"
                 id="opportunity-demo-search"
                 onChange={(event) => {
                   setQuery(event.target.value);
@@ -340,7 +346,7 @@ export function OpportunityDiscoveryPreview() {
               {query ? (
                 <button
                   aria-label="Clear opportunity search"
-                  className="absolute right-1 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition hover:bg-slate-100 hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="absolute right-0 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition hover:bg-slate-100 hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:right-1 md:size-9"
                   onClick={() => {
                     setQuery("");
                     setExpandedOpportunityId(null);
@@ -354,12 +360,37 @@ export function OpportunityDiscoveryPreview() {
             </div>
           </div>
 
+          <div className="mt-4 md:hidden">
+            <label
+              className="text-sm font-semibold text-brand-navy"
+              htmlFor="opportunity-demo-category"
+            >
+              Opportunity type
+            </label>
+            <select
+              className="mt-2 min-h-11 w-full max-w-full rounded-xl border border-border bg-white px-3 text-base font-semibold text-brand-navy shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              id="opportunity-demo-category"
+              onChange={(event) =>
+                selectCategory(event.target.value as OpportunityCategory)
+              }
+              value={selectedCategory}
+            >
+              {opportunityCategories.map((category) => (
+                <option key={category.label} value={category.label}>
+                  {category.label === "All"
+                    ? `All opportunities (${category.count})`
+                    : `${category.label} (${category.count})`}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div
             aria-label="Opportunity preview filters"
             className="mt-5 flex flex-wrap gap-2"
             role="group"
           >
-            <span className="inline-flex min-h-9 items-center rounded-full border border-primary bg-primary px-3 text-[11px] font-semibold text-white">
+            <span className="inline-flex min-h-11 items-center rounded-full border border-primary bg-primary px-3 text-sm font-semibold text-white md:min-h-9 md:text-[11px]">
               {selectedCategory}
             </span>
             <FilterButton
@@ -385,14 +416,14 @@ export function OpportunityDiscoveryPreview() {
             />
           </div>
 
-          <p className="mt-3 text-[11px] leading-5 text-muted-foreground">
+          <p className="mt-3 hidden text-[11px] leading-5 text-muted-foreground md:block">
             This local demo uses illustrative scenarios only. Searching, saving,
             and opening details do not send data or change your account.
           </p>
 
           {currentOpportunity ? (
-            <div className="mt-5 grid gap-4 xl:grid-cols-[1fr_230px]">
-              <article className="rounded-2xl border border-primary/20 bg-white p-5 shadow-[0_16px_45px_rgba(16,33,58,0.1)]">
+            <div className="mt-4 grid min-w-0 gap-4 sm:mt-5 xl:grid-cols-[minmax(0,1fr)_230px]">
+              <article className="min-w-0 rounded-2xl border border-primary/20 bg-white p-4 shadow-[0_16px_45px_rgba(16,33,58,0.1)] sm:p-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <span
                     className={cn(
@@ -411,16 +442,16 @@ export function OpportunityDiscoveryPreview() {
                     {currentOpportunity.category}
                   </span>
                 </div>
-                <p className="mt-5 text-xs font-semibold text-muted-foreground">
+                <p className="mt-4 text-sm font-semibold text-muted-foreground sm:mt-5 sm:text-xs">
                   {currentOpportunity.program}
                 </p>
-                <h4 className="mt-1 text-balance text-2xl font-semibold tracking-[-0.035em] text-brand-navy">
+                <h4 className="mt-1 text-balance text-xl font-semibold leading-7 tracking-[-0.03em] text-brand-navy sm:text-2xl sm:tracking-[-0.035em]">
                   {currentOpportunity.title}
                 </h4>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                <p className="mt-3 text-base leading-6 text-muted-foreground sm:text-sm">
                   {currentOpportunity.description}
                 </p>
-                <div className="mt-5 grid gap-3 border-y border-border py-4 text-xs text-muted-foreground sm:grid-cols-2">
+                <div className="mt-4 grid gap-3 border-y border-border py-4 text-sm text-muted-foreground sm:mt-5 sm:grid-cols-2 sm:text-xs">
                   <span className="flex items-center gap-2">
                     <MapPin
                       aria-hidden="true"
@@ -439,7 +470,7 @@ export function OpportunityDiscoveryPreview() {
 
                 {expandedOpportunityId === currentOpportunity.id ? (
                   <div
-                    className="mt-4 rounded-xl border border-secondary/20 bg-secondary/5 p-4 text-xs leading-5 text-brand-navy"
+                    className="mt-4 rounded-xl border border-secondary/20 bg-secondary/5 p-4 text-sm leading-5 text-brand-navy sm:text-xs"
                     id={`${currentOpportunity.id}-details`}
                   >
                     <p className="font-bold">Illustrative detail view</p>
@@ -451,13 +482,13 @@ export function OpportunityDiscoveryPreview() {
                   </div>
                 ) : null}
 
-                <div className="mt-5 flex flex-wrap gap-3">
+                <div className="mt-5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
                   <button
                     aria-controls={`${currentOpportunity.id}-details`}
                     aria-expanded={
                       expandedOpportunityId === currentOpportunity.id
                     }
-                    className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-xs font-semibold text-white transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl bg-primary px-3 text-center text-sm font-semibold text-white transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-4 sm:text-xs"
                     onClick={() => {
                       const willExpand =
                         expandedOpportunityId !== currentOpportunity.id;
@@ -475,14 +506,17 @@ export function OpportunityDiscoveryPreview() {
                     {expandedOpportunityId === currentOpportunity.id
                       ? "Hide details"
                       : "View details"}
-                    <ArrowUpRight aria-hidden="true" className="size-4" />
+                    <ArrowUpRight
+                      aria-hidden="true"
+                      className="size-4 shrink-0"
+                    />
                   </button>
                   <button
                     aria-pressed={savedOpportunityIds.includes(
                       currentOpportunity.id,
                     )}
                     className={cn(
-                      "inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                      "inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border px-3 text-center text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-4 sm:text-xs",
                       savedOpportunityIds.includes(currentOpportunity.id)
                         ? "border-secondary bg-secondary/5 text-secondary"
                         : "border-border text-brand-navy hover:border-primary/40 hover:bg-blue-surface",
@@ -500,9 +534,31 @@ export function OpportunityDiscoveryPreview() {
                       : "Save"}
                   </button>
                 </div>
+
+                <div
+                  className="mt-4 grid gap-2 md:hidden"
+                  data-mobile-opportunity-details=""
+                >
+                  <div className="rounded-xl border border-border bg-slate-50/80 p-3">
+                    <p className="text-xs font-bold uppercase tracking-[0.1em] text-brand-navy">
+                      Eligibility
+                    </p>
+                    <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                      {currentOpportunity.eligibility.join(" · ")}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-secondary/20 bg-secondary/5 p-3">
+                    <p className="text-xs font-bold uppercase tracking-[0.1em] text-secondary">
+                      Next step
+                    </p>
+                    <p className="mt-1 text-sm leading-5 text-brand-navy">
+                      {currentOpportunity.nextStep}
+                    </p>
+                  </div>
+                </div>
               </article>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+              <div className="hidden gap-3 md:grid md:grid-cols-2 xl:grid-cols-1">
                 <PreviewNote
                   icon={ClipboardCheck}
                   label="Eligibility"
@@ -654,7 +710,7 @@ export function OpportunityWalkthrough() {
     <div
       aria-describedby="walkthrough-status"
       aria-label="Guided opportunity walkthrough"
-      className="relative grid overflow-hidden rounded-[2rem] border border-indigo-200/70 bg-white shadow-[0_28px_80px_rgba(32,54,117,0.14)] lg:grid-cols-[310px_1fr]"
+      className="relative grid min-w-0 max-w-full overflow-hidden rounded-[1.5rem] border border-indigo-200/70 bg-white shadow-[0_24px_65px_rgba(32,54,117,0.13)] sm:rounded-[2rem] sm:shadow-[0_28px_80px_rgba(32,54,117,0.14)] lg:grid-cols-[310px_minmax(0,1fr)]"
       data-walkthrough-status={
         reducedMotion
           ? "reduced-motion"
@@ -670,6 +726,11 @@ export function OpportunityWalkthrough() {
       ref={rootRef}
       role="region"
     >
+      <p className="sr-only" id="walkthrough-status">
+        Step {activeStep + 1} of {walkthroughSteps.length}: {currentStep.label}.{" "}
+        {currentStep.description}
+      </p>
+
       <button
         aria-label={
           reducedMotion
@@ -697,7 +758,57 @@ export function OpportunityWalkthrough() {
         )}
       </button>
 
-      <div className="border-b border-indigo-200/70 bg-[linear-gradient(155deg,#eef2ff_0%,#ecfeff_100%)] p-5 pr-16 sm:p-7 sm:pr-20 lg:border-b-0 lg:border-r lg:pr-7">
+      <div
+        className="border-b border-indigo-200/70 bg-[linear-gradient(155deg,#eef2ff_0%,#ecfeff_100%)] p-4 pr-16 min-[360px]:p-5 min-[360px]:pr-16 lg:hidden"
+        data-mobile-walkthrough-header=""
+      >
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-700">
+          Guided walkthrough
+        </p>
+        <p className="mt-3 text-xs font-bold text-indigo-700">
+          Step {activeStep + 1} of {walkthroughSteps.length}
+        </p>
+        <h3 className="mt-1 text-xl font-semibold leading-7 tracking-[-0.025em] text-indigo-950">
+          {currentStep.label}
+        </h3>
+        <p className="mt-1 text-sm leading-5 text-indigo-950/70">
+          {currentStep.description}
+        </p>
+        <div
+          aria-label={`Walkthrough progress: step ${activeStep + 1} of ${walkthroughSteps.length}`}
+          className="mt-4 flex items-center gap-1.5"
+          role="img"
+        >
+          {walkthroughSteps.map((step, index) => (
+            <span
+              aria-hidden="true"
+              className={cn(
+                "h-2 rounded-full transition-[width,background-color] duration-300 motion-reduce:transition-none",
+                index === activeStep
+                  ? "w-7 bg-indigo-700"
+                  : index < activeStep
+                    ? "w-2 bg-cyan-600"
+                    : "w-2 bg-indigo-200",
+              )}
+              key={step.target}
+            />
+          ))}
+        </div>
+        {reducedMotion ? (
+          <p className="mt-3 text-xs font-semibold text-indigo-700">
+            Reduced motion is on, so this step remains still.
+          </p>
+        ) : manualPaused ? (
+          <p className="mt-3 text-xs font-semibold text-indigo-700">
+            Paused. Use the control above when you are ready to continue.
+          </p>
+        ) : null}
+      </div>
+
+      <div
+        className="hidden border-r border-indigo-200/70 bg-[linear-gradient(155deg,#eef2ff_0%,#ecfeff_100%)] p-7 lg:block"
+        data-desktop-walkthrough-rail=""
+      >
         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-700">
           Guided walkthrough
         </p>
@@ -734,10 +845,7 @@ export function OpportunityWalkthrough() {
             );
           })}
         </ol>
-        <div
-          className="mt-5 rounded-xl border border-indigo-200/80 bg-white/80 p-4"
-          id="walkthrough-status"
-        >
+        <div className="mt-5 rounded-xl border border-indigo-200/80 bg-white/80 p-4">
           <p className="text-xs font-bold text-indigo-950">
             Step {activeStep + 1} of {walkthroughSteps.length}
           </p>
@@ -757,7 +865,17 @@ export function OpportunityWalkthrough() {
       </div>
 
       <div
-        className="relative bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.16),transparent_36%),linear-gradient(180deg,#f8fbff_0%,#eef4ff_100%)] p-4 sm:p-7"
+        className="min-w-0 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.16),transparent_36%),linear-gradient(180deg,#f8fbff_0%,#eef4ff_100%)] p-3 min-[360px]:p-4 lg:hidden"
+        data-mobile-walkthrough-panel=""
+      >
+        <MobileWalkthroughFrame
+          key={currentStep.target}
+          target={currentStep.target}
+        />
+      </div>
+
+      <div
+        className="relative hidden min-w-0 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.16),transparent_36%),linear-gradient(180deg,#f8fbff_0%,#eef4ff_100%)] lg:block lg:p-7"
         id="opportunity-walkthrough-panel"
       >
         <div className="overflow-hidden rounded-2xl border border-white bg-white shadow-[0_20px_55px_rgba(16,33,58,0.14)] ring-1 ring-border">
@@ -895,6 +1013,126 @@ export function OpportunityWalkthrough() {
   );
 }
 
+function MobileWalkthroughFrame({ target }: { target: WalkthroughTarget }) {
+  const stage = walkthroughSteps.find((step) => step.target === target);
+
+  return (
+    <div
+      className="mobile-preview-state min-w-0 overflow-hidden rounded-2xl border border-white bg-white shadow-[0_18px_48px_rgba(16,33,58,0.13)] ring-1 ring-border"
+      data-mobile-walkthrough-state={target}
+    >
+      <div className="flex min-w-0 items-center justify-between gap-2 border-b border-border px-3 py-2.5">
+        <div className="flex shrink-0 items-center gap-1.5" aria-hidden="true">
+          <span className="size-2 rounded-full bg-error/50" />
+          <span className="size-2 rounded-full bg-accent-warm/70" />
+          <span className="size-2 rounded-full bg-success/60" />
+        </div>
+        <span className="truncate rounded-full bg-blue-surface px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.1em] text-primary">
+          Illustrative preview
+        </span>
+      </div>
+
+      <div className="min-h-[330px] p-4">
+        <p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">
+          {stage?.label}
+        </p>
+        <article className="mt-3 rounded-xl border border-primary/15 bg-white p-3.5 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-bold text-success">
+              <BadgeCheck aria-hidden="true" className="size-3.5" />
+              Verified
+            </span>
+            <span className="rounded-full bg-blue-surface px-2.5 py-1 text-[11px] font-bold text-primary">
+              Research
+            </span>
+          </div>
+          <h4 className="mt-3 text-base font-semibold leading-6 text-brand-navy">
+            Guided research experience
+          </h4>
+          <p className="mt-1 text-sm leading-5 text-muted-foreground">
+            One published path, shown one decision at a time.
+          </p>
+        </article>
+
+        {target === "filters" ? (
+          <div className="mt-3 rounded-xl border border-primary/25 bg-primary/5 p-3">
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-semibold text-white">
+                <SlidersHorizontal aria-hidden="true" className="size-4" />
+                Research
+              </span>
+              <span className="inline-flex min-h-10 items-center rounded-lg border border-border bg-white px-3 text-sm font-semibold text-brand-navy">
+                Remote
+              </span>
+            </div>
+            <p className="mt-2 text-sm font-medium text-primary">
+              1 verified opportunity matches
+            </p>
+          </div>
+        ) : null}
+
+        {target === "listing" ? (
+          <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl border border-primary/30 bg-blue-surface/60 p-3 text-sm text-brand-navy">
+            <span className="flex items-center gap-2">
+              <MapPin aria-hidden="true" className="size-4 text-primary" />
+              Remote
+            </span>
+            <span className="flex items-center gap-2">
+              <CalendarClock
+                aria-hidden="true"
+                className="size-4 text-primary"
+              />
+              Aug 18
+            </span>
+          </div>
+        ) : null}
+
+        {target === "eligibility" ? (
+          <div className="mt-3 grid gap-2 rounded-xl border border-secondary/25 bg-secondary/5 p-3 text-sm text-brand-navy">
+            <span className="flex items-center gap-2">
+              <Check aria-hidden="true" className="size-4 text-secondary" />
+              Education level published
+            </span>
+            <span className="flex items-center gap-2">
+              <Check aria-hidden="true" className="size-4 text-secondary" />
+              Remote participation supported
+            </span>
+          </div>
+        ) : null}
+
+        {target === "action" ? (
+          <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl border border-primary/25 bg-primary/5 p-2">
+            <span className="inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-2 text-center text-sm font-semibold text-white">
+              Review route
+              <ExternalLink aria-hidden="true" className="size-4 shrink-0" />
+            </span>
+            <span className="inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-lg border border-border bg-white px-2 text-center text-sm font-semibold text-brand-navy">
+              <Bookmark aria-hidden="true" className="size-4 shrink-0" />
+              Save
+            </span>
+          </div>
+        ) : null}
+
+        {target === "tracking" ? (
+          <div className="mt-3 flex items-center gap-3 rounded-xl border border-accent-warm bg-amber-50 p-3">
+            <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-white text-warning shadow-sm">
+              <FileText aria-hidden="true" className="size-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-[0.1em] text-warning">
+                Next step saved
+              </p>
+              <p className="mt-1 text-sm font-semibold leading-5 text-brand-navy">
+                Review requirements before the deadline
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function FilterButton({
   active,
   label,
@@ -908,7 +1146,7 @@ function FilterButton({
     <button
       aria-pressed={active}
       className={cn(
-        "inline-flex min-h-9 items-center rounded-full border px-3 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "inline-flex min-h-11 items-center rounded-full border px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:min-h-9 md:text-[11px]",
         active
           ? "border-secondary bg-secondary text-white"
           : "border-border bg-white text-brand-navy hover:border-primary/40 hover:bg-blue-surface",
@@ -930,21 +1168,24 @@ function ProductFrame({
   label: string;
 }) {
   return (
-    <figure className="relative mx-auto w-full">
+    <figure className="relative mx-auto w-full min-w-0 max-w-full">
       <figcaption className="sr-only">{label}</figcaption>
       <div
         aria-hidden="true"
-        className="absolute -inset-6 rounded-[3rem] bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.26),transparent_36%),radial-gradient(circle_at_bottom_left,rgba(79,70,229,0.2),transparent_40%)] blur-2xl"
+        className="absolute -inset-3 rounded-[2rem] bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.26),transparent_36%),radial-gradient(circle_at_bottom_left,rgba(79,70,229,0.2),transparent_40%)] blur-2xl sm:-inset-6 sm:rounded-[3rem]"
       />
-      <div className="relative overflow-hidden rounded-[1.75rem] border border-white/80 bg-white p-2 shadow-[0_30px_90px_rgba(16,33,58,0.22)] ring-1 ring-white/80">
-        <div className="overflow-hidden rounded-[1.3rem] border border-border bg-white">
-          <div className="flex items-center justify-between border-b border-border bg-white px-4 py-3 sm:px-5">
-            <div className="flex items-center gap-2" aria-hidden="true">
-              <span className="size-2.5 rounded-full bg-error/55" />
-              <span className="size-2.5 rounded-full bg-accent-warm/70" />
-              <span className="size-2.5 rounded-full bg-success/60" />
+      <div className="relative max-w-full overflow-hidden rounded-[1.35rem] border border-white/80 bg-white p-1.5 shadow-[0_24px_70px_rgba(16,33,58,0.2)] ring-1 ring-white/80 sm:rounded-[1.75rem] sm:p-2 sm:shadow-[0_30px_90px_rgba(16,33,58,0.22)]">
+        <div className="max-w-full overflow-hidden rounded-[1rem] border border-border bg-white sm:rounded-[1.3rem]">
+          <div className="flex min-w-0 items-center justify-between gap-2 border-b border-border bg-white px-3 py-2.5 sm:px-5 sm:py-3">
+            <div
+              className="flex shrink-0 items-center gap-1.5 sm:gap-2"
+              aria-hidden="true"
+            >
+              <span className="size-2 rounded-full bg-error/55 sm:size-2.5" />
+              <span className="size-2 rounded-full bg-accent-warm/70 sm:size-2.5" />
+              <span className="size-2 rounded-full bg-success/60 sm:size-2.5" />
             </div>
-            <span className="rounded-full bg-blue-surface px-3 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-primary sm:text-[10px]">
+            <span className="truncate rounded-full bg-blue-surface px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.1em] text-primary sm:px-3 sm:text-[10px] sm:tracking-[0.12em]">
               Illustrative preview
             </span>
           </div>

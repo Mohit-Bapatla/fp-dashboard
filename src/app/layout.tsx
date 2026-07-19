@@ -1,5 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { siteConfig } from "@/lib/site-config";
@@ -51,6 +51,12 @@ export const metadata: Metadata = {
     description: siteConfig.description,
     images: ["/og.png"],
   },
+};
+
+export const viewport: Viewport = {
+  initialScale: 1,
+  viewportFit: "cover",
+  width: "device-width",
 };
 
 export default function RootLayout({

@@ -77,7 +77,7 @@ export default function HomePage() {
         type="application/ld+json"
       />
 
-      <section className="relative flex min-h-[calc(82svh-4.5rem)] items-center overflow-hidden border-b border-border bg-[linear-gradient(180deg,#ffffff_0%,#eef5ff_100%)] py-16 sm:py-20 lg:py-24">
+      <section className="relative flex min-h-[calc(82svh-4rem)] items-center overflow-hidden border-b border-border bg-[linear-gradient(180deg,#ffffff_0%,#eef5ff_100%)] py-12 sm:min-h-[calc(82svh-4.5rem)] sm:py-20 lg:py-24">
         <div
           aria-hidden="true"
           className="pathway-grid absolute inset-0 opacity-70"
@@ -88,14 +88,14 @@ export default function HomePage() {
         />
         <MarketingContainer className="relative">
           <MarketingReveal
-            className="grid items-center gap-12 lg:grid-cols-[0.88fr_1.12fr] lg:gap-14"
+            className="grid min-w-0 items-center gap-10 sm:gap-12 lg:grid-cols-[0.88fr_1.12fr] lg:gap-14"
             distance={14}
             durationMs={340}
             staggerMs={50}
           >
-            <div className="max-w-2xl">
+            <div className="min-w-0 max-w-2xl">
               <div
-                className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/85 px-3 py-1.5 text-xs font-bold text-primary shadow-sm backdrop-blur"
+                className="inline-flex max-w-full items-center gap-2 rounded-2xl border border-primary/15 bg-white/85 px-3 py-1.5 text-[11px] font-bold leading-5 text-primary shadow-sm backdrop-blur min-[360px]:rounded-full min-[360px]:text-xs"
                 data-marketing-reveal-item=""
                 data-marketing-reveal-step="0"
               >
@@ -103,48 +103,55 @@ export default function HomePage() {
                 Healthcare opportunities, organized around you
               </div>
               <h1
-                className="mt-6 text-balance text-[2.75rem] font-semibold leading-[1.02] tracking-[-0.055em] text-brand-navy sm:text-6xl lg:text-[4.5rem]"
+                className="mt-6 max-w-full text-balance text-[clamp(2.5rem,12.5vw,3rem)] font-semibold leading-[1.02] tracking-[-0.048em] text-brand-navy sm:text-6xl sm:tracking-[-0.055em] lg:text-[4.5rem]"
                 data-marketing-reveal-item=""
                 data-marketing-reveal-step="1"
               >
                 Build your path into healthcare.
               </h1>
               <p
-                className="mt-6 max-w-xl text-pretty text-lg leading-8 text-muted-foreground sm:text-xl"
+                className="mt-5 max-w-xl text-pretty text-[1.0625rem] leading-7 text-muted-foreground sm:mt-6 sm:text-xl sm:leading-8"
                 data-marketing-reveal-item=""
                 data-marketing-reveal-step="2"
               >
                 {description}
               </p>
               <div
-                className="mt-8 flex flex-col gap-3 sm:flex-row"
+                className="mt-7 grid w-full max-w-xl gap-3 sm:mt-8 sm:flex sm:flex-row"
                 data-marketing-reveal-item=""
                 data-marketing-reveal-step="3"
               >
-                <DashboardEntryButton />
-                <Link className={secondaryButtonClass} href="/opportunities">
+                <DashboardEntryButton className="w-full sm:w-auto" />
+                <Link
+                  className={`${secondaryButtonClass} w-full sm:w-auto`}
+                  href="/opportunities"
+                >
                   Explore Opportunities
                   <ArrowRight aria-hidden="true" className="size-4" />
                 </Link>
               </div>
-              <p
-                className="mt-5 text-sm font-medium text-muted-foreground"
+              <ul
+                className="mt-5 grid max-w-xl gap-x-5 gap-y-2 text-sm font-medium text-muted-foreground min-[360px]:grid-cols-2 sm:flex sm:flex-wrap"
                 data-marketing-reveal-item=""
                 data-marketing-reveal-step="4"
               >
-                Free for students
-                <span aria-hidden="true" className="mx-2 text-secondary">
-                  •
-                </span>
-                Verified listings
-                <span aria-hidden="true" className="mx-2 text-secondary">
-                  •
-                </span>
-                One organized profile
-              </p>
+                {[
+                  "Free for students",
+                  "Verified listings",
+                  "One organized profile",
+                ].map((item) => (
+                  <li className="flex min-w-0 items-center gap-2" key={item}>
+                    <span
+                      aria-hidden="true"
+                      className="size-1.5 shrink-0 rounded-full bg-secondary"
+                    />
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </div>
             <div
-              className="lg:scale-[1.03]"
+              className="min-w-0 max-w-full lg:scale-[1.03]"
               data-marketing-reveal-item=""
               data-marketing-reveal-scale=""
               data-marketing-reveal-step="5"
@@ -203,7 +210,7 @@ export default function HomePage() {
         />
         <MarketingContainer className="relative lg:w-[96vw] lg:max-w-[1520px] lg:px-0">
           <MarketingReveal
-            className="grid items-center gap-12 lg:grid-cols-[minmax(240px,0.3fr)_minmax(0,0.7fr)] lg:gap-10 xl:gap-12"
+            className="grid min-w-0 items-center gap-10 sm:gap-12 lg:grid-cols-[minmax(240px,0.3fr)_minmax(0,0.7fr)] lg:gap-10 xl:gap-12"
             distance={14}
             durationMs={360}
             staggerMs={70}
@@ -214,15 +221,15 @@ export default function HomePage() {
               data-marketing-reveal-step="0"
             >
               <Sparkles aria-hidden="true" className="size-8 text-cyan-300" />
-              <h2 className="mt-6 text-balance text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">
+              <h2 className="mt-5 max-w-full text-balance text-[2.25rem] font-semibold leading-[1.08] tracking-[-0.04em] sm:mt-6 sm:text-5xl sm:tracking-[-0.045em]">
                 Find opportunities that actually fit.
               </h2>
-              <p className="mt-5 text-pretty text-lg leading-8 text-blue-100">
+              <p className="mt-5 text-pretty text-[1.0625rem] leading-7 text-blue-100 sm:text-lg sm:leading-8">
                 Search verified programs, understand eligibility, and move from
                 discovery to application without juggling dozens of websites.
               </p>
               <Link
-                className="mt-8 inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-blue-950 shadow-lg transition duration-200 hover:-translate-y-0.5 hover:bg-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-950"
+                className="mt-7 inline-flex min-h-11 w-full max-w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-center text-sm font-semibold text-blue-950 shadow-lg transition duration-200 hover:-translate-y-0.5 hover:bg-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-950 sm:mt-8 sm:w-auto"
                 data-marketing-reveal-item=""
                 data-marketing-reveal-step="1"
                 href="/opportunities"
@@ -232,6 +239,7 @@ export default function HomePage() {
               </Link>
             </div>
             <div
+              className="min-w-0 max-w-full"
               data-marketing-reveal-item=""
               data-marketing-reveal-scale=""
               data-marketing-reveal-step="2"

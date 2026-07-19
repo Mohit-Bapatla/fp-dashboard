@@ -197,14 +197,14 @@ function StudentDashboardPreview() {
     return () => window.clearTimeout(timer);
   }, [automaticAdvances, autoplayPaused]);
 
-  const selectTab = (index: number, moveFocus = false) => {
+  const selectTab = (index: number, moveFocus = false, refs = tabRefs) => {
     setManualInteraction(true);
     setActiveIndex(index);
     setAnnouncement(
       `Showing ${studentPreviewTabs[index].label}: ${studentPreviewTabs[index].description}`,
     );
     if (moveFocus) {
-      tabRefs.current[index]?.focus();
+      refs.current[index]?.focus();
     }
   };
 
@@ -244,23 +244,26 @@ function StudentDashboardPreview() {
   const handleTabKeyDown = (
     event: KeyboardEvent<HTMLButtonElement>,
     index: number,
+    refs = tabRefs,
   ) => {
+    const tabCount = window.matchMedia("(max-width: 639px)").matches
+      ? 4
+      : studentPreviewTabs.length;
     let nextIndex: number | null = null;
 
     if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-      nextIndex = (index + 1) % studentPreviewTabs.length;
+      nextIndex = (index + 1) % tabCount;
     } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-      nextIndex =
-        (index - 1 + studentPreviewTabs.length) % studentPreviewTabs.length;
+      nextIndex = (index - 1 + tabCount) % tabCount;
     } else if (event.key === "Home") {
       nextIndex = 0;
     } else if (event.key === "End") {
-      nextIndex = studentPreviewTabs.length - 1;
+      nextIndex = tabCount - 1;
     }
 
     if (nextIndex !== null) {
       event.preventDefault();
-      selectTab(nextIndex, true);
+      selectTab(nextIndex, true, refs);
     }
   };
 
@@ -269,7 +272,7 @@ function StudentDashboardPreview() {
   return (
     <figure
       aria-label="Interactive student dashboard preview"
-      className="relative mx-auto w-full max-w-[680px]"
+      className="relative mx-auto w-full min-w-0 max-w-[680px]"
       data-active-tab={activeTab.id}
       data-autoplay-status={autoplayStatus}
       ref={rootRef}
@@ -282,23 +285,26 @@ function StudentDashboardPreview() {
       </p>
       <div
         aria-hidden="true"
-        className="absolute -inset-5 rounded-[2.5rem] bg-[radial-gradient(circle_at_top_right,rgba(22,166,161,0.22),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(47,111,237,0.2),transparent_40%)] blur-2xl"
+        className="absolute -inset-3 rounded-[2rem] bg-[radial-gradient(circle_at_top_right,rgba(22,166,161,0.22),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(47,111,237,0.2),transparent_40%)] blur-2xl sm:-inset-5 sm:rounded-[2.5rem]"
       />
-      <div className="relative overflow-hidden rounded-[1.6rem] border border-white/80 bg-white p-2 shadow-[0_28px_80px_rgba(16,33,58,0.16)] ring-1 ring-border/70">
-        <div className="rounded-[1.2rem] border border-border bg-background">
-          <div className="flex items-center justify-between border-b border-border bg-white px-4 py-3 sm:px-5">
-            <div aria-hidden="true" className="flex items-center gap-2">
-              <span className="size-2.5 rounded-full bg-error/55" />
-              <span className="size-2.5 rounded-full bg-accent-warm/70" />
-              <span className="size-2.5 rounded-full bg-success/60" />
+      <div className="relative max-w-full overflow-hidden rounded-[1.35rem] border border-white/80 bg-white p-1.5 shadow-[0_24px_65px_rgba(16,33,58,0.15)] ring-1 ring-border/70 sm:rounded-[1.6rem] sm:p-2 sm:shadow-[0_28px_80px_rgba(16,33,58,0.16)]">
+        <div className="max-w-full overflow-hidden rounded-[1rem] border border-border bg-background sm:rounded-[1.2rem]">
+          <div className="flex min-w-0 items-center justify-between gap-2 border-b border-border bg-white px-3 py-2.5 sm:px-5 sm:py-3">
+            <div
+              aria-hidden="true"
+              className="flex shrink-0 items-center gap-1.5 sm:gap-2"
+            >
+              <span className="size-2 rounded-full bg-error/55 sm:size-2.5" />
+              <span className="size-2 rounded-full bg-accent-warm/70 sm:size-2.5" />
+              <span className="size-2 rounded-full bg-success/60 sm:size-2.5" />
             </div>
-            <div className="flex items-center gap-2">
-              <span className="rounded-full bg-blue-surface px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-primary">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="truncate rounded-full bg-blue-surface px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-primary sm:px-3 sm:text-[10px] sm:tracking-[0.14em]">
                 Interactive preview
               </span>
               <button
                 aria-label={animationControlLabel}
-                className="grid size-10 place-items-center rounded-full border border-border bg-white text-primary shadow-sm transition hover:border-primary/40 hover:bg-blue-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-60"
+                className="grid size-11 shrink-0 place-items-center rounded-full border border-border bg-white text-primary shadow-sm transition hover:border-primary/40 hover:bg-blue-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-60"
                 disabled={reducedMotion}
                 onClick={toggleAutomaticPreview}
                 title={animationControlLabel}
@@ -312,11 +318,15 @@ function StudentDashboardPreview() {
               </button>
             </div>
           </div>
-          <div className="grid min-h-[390px] sm:grid-cols-[142px_1fr]">
+
+          <div
+            className="grid min-w-0 sm:min-h-[390px] sm:grid-cols-[142px_minmax(0,1fr)]"
+            data-mobile-dashboard="compact"
+          >
             <div className="border-b border-border bg-white p-2 sm:border-b-0 sm:border-r sm:p-3">
               <div
                 aria-label="Dashboard preview tabs"
-                className="flex gap-1 overflow-x-auto sm:flex-col sm:overflow-visible"
+                className="grid grid-cols-2 gap-2 sm:flex sm:flex-col sm:gap-1"
                 role="group"
               >
                 {studentPreviewTabs.map((tab, index) => {
@@ -324,10 +334,11 @@ function StudentDashboardPreview() {
                   const selected = index === activeIndex;
                   return (
                     <button
-                      aria-controls={`${instanceId}-${tab.id}-panel`}
+                      aria-controls={`${instanceId}-active-panel`}
                       aria-pressed={selected}
                       className={cn(
-                        "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-left text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-full",
+                        "min-h-11 min-w-0 items-center justify-center gap-2 rounded-lg px-2 py-2 text-center text-sm font-semibold leading-5 transition-colors sm:w-full sm:justify-start sm:px-3 sm:text-left sm:text-[11px] sm:leading-4",
+                        index > 3 ? "hidden sm:inline-flex" : "flex",
                         selected
                           ? "bg-primary text-white shadow-sm"
                           : "text-muted-foreground hover:bg-blue-surface hover:text-brand-navy",
@@ -352,32 +363,235 @@ function StudentDashboardPreview() {
                 })}
               </div>
             </div>
-            <div className="grid min-h-[390px] p-4 sm:p-5">
-              {studentPreviewTabs.map((tab, index) => {
-                const selected = index === activeIndex;
-                return (
-                  <section
-                    aria-hidden={!selected}
-                    aria-labelledby={`${instanceId}-${tab.id}-tab`}
-                    className={cn(
-                      "col-start-1 row-start-1 transition-opacity duration-300 ease-out motion-reduce:transition-none",
-                      selected
-                        ? "relative z-10 opacity-100"
-                        : "pointer-events-none opacity-0",
-                    )}
-                    id={`${instanceId}-${tab.id}-panel`}
-                    key={tab.id}
-                    role="region"
-                  >
-                    <StudentPreviewPanel tab={tab} />
-                  </section>
-                );
-              })}
+            <div className="min-w-0 p-3 min-[360px]:p-4 sm:min-h-[390px] sm:p-5">
+              <div className="mb-3 flex min-w-0 items-center justify-between gap-3 sm:hidden">
+                <p className="truncate text-xs font-semibold text-brand-navy">
+                  {activeTab.label}
+                </p>
+                <div
+                  aria-label={`${activeIndex + 1} of ${studentPreviewTabs.length}`}
+                  className="flex shrink-0 gap-1"
+                  role="img"
+                >
+                  {studentPreviewTabs.map((tab, index) => (
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "h-1.5 rounded-full transition-[width,background-color] duration-300 motion-reduce:transition-none",
+                        index === activeIndex
+                          ? "w-4 bg-primary"
+                          : "w-1.5 bg-border",
+                      )}
+                      key={tab.id}
+                    />
+                  ))}
+                </div>
+              </div>
+              <section
+                aria-label={`${activeTab.label} dashboard preview`}
+                className="mobile-preview-state min-h-[330px] sm:min-h-0"
+                id={`${instanceId}-active-panel`}
+                key={activeTab.id}
+                role="region"
+              >
+                <div className="sm:hidden">
+                  <MobileStudentPreviewPanel tab={activeTab} />
+                </div>
+                <div className="hidden sm:block">
+                  <StudentPreviewPanel tab={activeTab} />
+                </div>
+              </section>
             </div>
           </div>
         </div>
       </div>
     </figure>
+  );
+}
+
+function MobileStudentPreviewPanel({
+  tab,
+}: {
+  tab: (typeof studentPreviewTabs)[number];
+}) {
+  const TabIcon = tab.icon;
+
+  return (
+    <div className="min-w-0" data-mobile-dashboard-panel={tab.id}>
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-primary">
+            {tab.eyebrow}
+          </p>
+          <h3 className="mt-1 text-lg font-semibold leading-6 tracking-[-0.02em] text-brand-navy">
+            {tab.title}
+          </h3>
+          <p className="mt-1 text-sm leading-5 text-muted-foreground">
+            {tab.description}
+          </p>
+        </div>
+        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-surface text-primary">
+          <TabIcon aria-hidden="true" className="size-4" />
+        </div>
+      </div>
+
+      {tab.id === "overview" ? (
+        <div className="mt-4 space-y-3">
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              ["Matches", "6"],
+              ["Saved", "3"],
+              ["In progress", "1"],
+            ].map(([label, value]) => (
+              <div
+                className="rounded-xl border border-border bg-white p-2.5 text-center shadow-sm"
+                key={label}
+              >
+                <p className="text-lg font-semibold text-brand-navy">{value}</p>
+                <p className="mt-0.5 text-[11px] font-medium leading-4 text-muted-foreground">
+                  {label}
+                </p>
+              </div>
+            ))}
+          </div>
+          <article className="rounded-xl border border-primary/15 bg-white p-3.5 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-brand-navy">
+                Recommended opportunity
+              </p>
+              <span className="rounded-full bg-success/10 px-2 py-1 text-[11px] font-bold text-success">
+                Verified
+              </span>
+            </div>
+            <p className="mt-2 text-sm leading-5 text-muted-foreground">
+              Community health research · Remote option
+            </p>
+          </article>
+        </div>
+      ) : null}
+
+      {tab.id === "discover" ? (
+        <div className="mt-4 space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <span className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-white">
+              Research
+            </span>
+            <span className="rounded-full border border-border bg-white px-3 py-1.5 text-xs font-semibold text-brand-navy">
+              Remote
+            </span>
+          </div>
+          <article className="rounded-xl border border-primary/20 bg-white p-4 shadow-sm">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-success">
+              <BadgeCheck aria-hidden="true" className="size-4" />
+              Eligibility published
+            </span>
+            <p className="mt-3 text-base font-semibold leading-6 text-brand-navy">
+              Community health research program
+            </p>
+            <p className="mt-2 text-sm leading-5 text-muted-foreground">
+              One clear match with a remote option and a published application
+              route.
+            </p>
+          </article>
+        </div>
+      ) : null}
+
+      {tab.id === "saved" ? (
+        <div className="mt-4 space-y-2.5">
+          {[
+            ["Community health project", "Deadline Aug 18"],
+            ["Clinical careers panel", "Registration saved"],
+          ].map(([title, detail]) => (
+            <article
+              className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-border bg-white p-3.5 shadow-sm"
+              key={title}
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-semibold leading-5 text-brand-navy">
+                  {title}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+              </div>
+              <BookmarkCheck
+                aria-hidden="true"
+                className="size-5 shrink-0 text-secondary"
+              />
+            </article>
+          ))}
+        </div>
+      ) : null}
+
+      {tab.id === "applications" ? (
+        <article className="mt-4 rounded-xl border border-border bg-white p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold leading-5 text-brand-navy">
+                Research program application
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Current status and next action
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-blue-surface px-2.5 py-1 text-[11px] font-bold text-primary">
+              In progress
+            </span>
+          </div>
+          <div className="mt-4 space-y-3">
+            <PreviewChecklistItem complete label="Eligibility reviewed" />
+            <PreviewChecklistItem label="Submit through published route" />
+          </div>
+          <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm font-medium leading-5 text-warning">
+            Next: confirm materials before the deadline.
+          </p>
+        </article>
+      ) : null}
+
+      {tab.id === "events" ? (
+        <div className="mt-4 space-y-3">
+          <article className="flex items-center gap-3 rounded-xl border border-border bg-white p-4 shadow-sm">
+            <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-blue-surface text-center text-primary">
+              <span className="text-[10px] font-bold leading-none">AUG</span>
+              <span className="text-base font-bold leading-none">18</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-brand-navy">
+                Clinical careers Q&amp;A
+              </p>
+              <p className="mt-1 text-xs leading-4 text-muted-foreground">
+                Online · Host details published
+              </p>
+            </div>
+          </article>
+        </div>
+      ) : null}
+
+      {tab.id === "profile" ? (
+        <article className="mt-4 rounded-xl border border-border bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-brand-navy">
+              Match preferences
+            </p>
+            <span className="text-base font-bold text-primary">82%</span>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-blue-surface">
+            <div className="h-full w-[82%] rounded-full bg-primary" />
+          </div>
+          <p className="mt-4 text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+            Interests
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {["Research", "Public health", "Patient care"].map((interest) => (
+              <span
+                className="rounded-full bg-blue-surface px-3 py-1.5 text-xs font-semibold text-primary"
+                key={interest}
+              >
+                {interest}
+              </span>
+            ))}
+          </div>
+        </article>
+      ) : null}
+    </div>
   );
 }
 
