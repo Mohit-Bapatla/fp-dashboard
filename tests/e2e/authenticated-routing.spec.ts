@@ -9,7 +9,7 @@ const roleCases = [
   {
     dashboardPath: "/dashboard/student",
     env: "PLAYWRIGHT_STUDENT_STORAGE_STATE",
-    heading: "Student Dashboard",
+    heading: "What needs your attention",
     restrictedPath: "/dashboard/partner",
     role: "student",
   },
