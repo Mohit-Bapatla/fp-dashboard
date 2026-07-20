@@ -167,7 +167,7 @@ describe("opportunity URL verifier", () => {
       {
         request: vi.fn().mockResolvedValue({
           body: new TextEncoder().encode(
-            "<script>const message = 'applications are closed';</script ><style>.notice::after { content: 'applications have closed'; }</style ><main>Program details</main>",
+            "<script>const message = 'applications are closed';</script\t\n ignored><style>.notice::after { content: 'applications have closed'; }</style data-ignored><main>Program details</main>",
           ),
           location: undefined,
           statusCode: 200,
