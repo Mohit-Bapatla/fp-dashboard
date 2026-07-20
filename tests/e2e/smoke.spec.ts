@@ -584,6 +584,11 @@ test("sign-in page loads", async ({ page }) => {
 });
 
 test("signed-out dashboard redirects to sign-in", async ({ page }) => {
+  test.skip(
+    process.env.E2E_CLERK_AVAILABLE !== "true",
+    "Signed-out Clerk routing requires configured development credentials.",
+  );
+
   await page.goto("/dashboard");
 
   await expect(page).toHaveURL(/sign-in/);

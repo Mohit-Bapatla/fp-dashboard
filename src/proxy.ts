@@ -1,6 +1,11 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import {
+  type NextFetchEvent,
+  type NextRequest,
+  NextResponse,
+} from "next/server";
 
+import { requiresClerkMiddleware } from "./lib/auth/middleware-routing";
 import {
   canAccessDashboardPath,
   getDashboardPathForRole,
@@ -11,7 +16,7 @@ import { buildContentSecurityPolicy } from "./lib/security/headers";
 const isDashboardRoute = createRouteMatcher(["/dashboard(.*)"]);
 const isPartnerOnboardingRoute = createRouteMatcher(["/partner-onboarding"]);
 
-export default clerkMiddleware(async (auth, req) => {
+function secureRequest(req: NextRequest) {
   const nonce = crypto.randomUUID().replaceAll("-", "");
   const contentSecurityPolicy = buildContentSecurityPolicy(nonce);
   const requestHeaders = new Headers(req.headers);
@@ -28,6 +33,12 @@ export default clerkMiddleware(async (auth, req) => {
     response.headers.set("Content-Security-Policy", contentSecurityPolicy);
     return response;
   };
+
+  return { nextResponse, secureResponse };
+}
+
+const authenticatedProxy = clerkMiddleware(async (auth, req) => {
+  const { nextResponse, secureResponse } = secureRequest(req);
   const isDashboard = isDashboardRoute(req);
   const isPartnerOnboarding = isPartnerOnboardingRoute(req);
 
@@ -66,6 +77,19 @@ export default clerkMiddleware(async (auth, req) => {
 
   return nextResponse();
 });
+
+export default function proxy(req: NextRequest, event: NextFetchEvent) {
+  const publicOnlyBrowserTest = process.env.E2E_PUBLIC_ONLY === "true";
+
+  // CI exercises signed-out marketing pages without real Clerk credentials.
+  // The seam never bypasses dashboards, auth pages, onboarding, APIs, TRPC, or
+  // Clerk sync routes, and is inactive unless the dedicated test flag is set.
+  if (publicOnlyBrowserTest && !requiresClerkMiddleware(req.nextUrl.pathname)) {
+    return secureRequest(req).nextResponse();
+  }
+
+  return authenticatedProxy(req, event);
+}
 
 export const config = {
   matcher: [

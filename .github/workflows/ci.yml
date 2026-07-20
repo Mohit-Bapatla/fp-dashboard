@@ -93,6 +93,7 @@ jobs:
 
       - name: Run browser checks
         env:
+          E2E_PUBLIC_ONLY: "true"
           PLAYWRIGHT_WEB_SERVER_COMMAND: npm start
         run: npm run test:e2e
 

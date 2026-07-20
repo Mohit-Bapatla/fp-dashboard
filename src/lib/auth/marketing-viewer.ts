@@ -14,6 +14,10 @@ export type MarketingViewer = {
  * performing duplicate Clerk lookups without sharing identity across requests.
  */
 export const getMarketingViewer = cache(async (): Promise<MarketingViewer> => {
+  if (process.env.E2E_PUBLIC_ONLY === "true") {
+    return { role: null, userId: null };
+  }
+
   const { sessionClaims, userId } = await auth();
 
   return {

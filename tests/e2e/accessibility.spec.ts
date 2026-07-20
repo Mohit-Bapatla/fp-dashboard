@@ -74,13 +74,24 @@ test("opportunity search has a specific accessible name and announces results", 
     level: 1,
     name: "Opportunities are temporarily unavailable.",
   });
+  const emptyHeading = page.getByRole("heading", {
+    level: 3,
+    name: "No public listings are open right now",
+  });
   const search = page.getByRole("searchbox", {
     name: "Search opportunities",
     exact: true,
   });
-  await expect(search.first().or(unavailableHeading)).toBeVisible();
-  if ((await search.count()) === 0)
-    test.skip(true, "Directory data is unavailable.");
+  await expect(
+    search.first().or(unavailableHeading).or(emptyHeading),
+  ).toBeVisible();
+  if ((await search.count()) === 0) {
+    await expect(unavailableHeading.or(emptyHeading)).toBeVisible();
+    test.skip(
+      true,
+      "Opportunity search is data-gated when no public listings are open.",
+    );
+  }
 
   await expect(search.first()).toHaveAccessibleDescription(
     "Search by title, host organization, or keyword.",
@@ -98,13 +109,19 @@ test("opportunity card details keep valid definition-list semantics", async ({
     level: 1,
     name: "Opportunities are temporarily unavailable.",
   });
-  await expect(detailLists.first().or(unavailableHeading)).toBeVisible();
+  const emptyHeading = page.getByRole("heading", {
+    level: 3,
+    name: "No public listings are open right now",
+  });
+  await expect(
+    detailLists.first().or(unavailableHeading).or(emptyHeading),
+  ).toBeVisible();
   const detailListCount = await detailLists.count();
   if (detailListCount === 0) {
-    await expect(unavailableHeading).toBeVisible();
+    await expect(unavailableHeading.or(emptyHeading)).toBeVisible();
     test.skip(
       true,
-      "Opportunity-card semantics are database-gated while the deployed schema lacks Opportunity.",
+      "Opportunity-card semantics are data-gated when no public listings are open.",
     );
   }
 
