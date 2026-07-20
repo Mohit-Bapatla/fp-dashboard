@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   allFaqItems,
-  grants,
   homepageFaqItems,
   impactMethodologyNote,
   organizationMetrics,
@@ -62,7 +61,7 @@ describe("public site configuration", () => {
     );
   });
 
-  it("keeps the approved seminar facts and grant records exact", () => {
+  it("keeps the approved seminar facts exact", () => {
     expect(seminar.date).toBe("September 27, 2025");
     expect(seminar.metricsAsOf).toEqual({
       date: "September 27, 2025",
@@ -85,27 +84,26 @@ describe("public site configuration", () => {
       "UC Riverside",
       "The George Washington University",
     ]);
-    expect(grants).toEqual([
-      {
-        amount: "$15,000",
-        funder: "Community Hospital of Long Beach Foundation",
-      },
-      { amount: "$1,000", funder: "Karma for Cara Grant" },
-      { amount: "$720", funder: "North Carolina Community Foundation" },
-    ]);
   });
 
-  it("keeps the approved organization metrics and methodology wording exact", () => {
+  it("keeps the auditable directory metrics and methodology wording exact", () => {
     expect(organizationMetrics).toEqual([
-      { value: "2,000+", label: "Students in the FP community" },
-      { value: "50+", label: "Partner organizations" },
-      {
-        value: "$300K+",
-        label: "Student stipends facilitated through partner programs",
-      },
+      { value: "150", label: "Published opportunity listings" },
+      { value: "147", label: "Listed host organizations" },
+      { value: "Free", label: "Student dashboard access" },
     ]);
     expect(impactMethodologyNote).toBe(
-      "Figures represent cumulative Future Physicians activity. Student stipends reflect funding facilitated through partner programs rather than funds paid directly by FP.",
+      "Directory counts are a production snapshot as of July 19, 2026. A listed host organization is not necessarily a confirmed FP partner, and listing counts do not measure active students, placements, or outcomes.",
+    );
+  });
+
+  it("centralizes accurate fiscal sponsor language", () => {
+    expect(siteConfig.fiscalSponsor.legalName).toBe("The Hack Foundation");
+    expect(siteConfig.fiscalSponsor.relationship).toMatch(
+      /fiscally sponsored/i,
+    );
+    expect(siteConfig.fiscalSponsor.donationNotice).toMatch(
+      /official receipt from HCB/i,
     );
   });
 
@@ -170,7 +168,7 @@ describe("public site configuration", () => {
       "Yes. Creating a student profile and using the FP Dashboard is free.",
     );
     expect(answers.get("Who can create a student profile?")).toBe(
-      "Anyone interested in exploring a healthcare career or gaining healthcare experience can create a student profile.",
+      "People age 13 or older who are interested in exploring a healthcare career or gaining healthcare experience can create a student profile.",
     );
     expect(answers.get("How are opportunities verified?")).toMatch(
       /official source/i,

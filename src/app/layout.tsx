@@ -1,6 +1,6 @@
-import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { headers } from "next/headers";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -61,11 +61,14 @@ export const viewport: Viewport = {
   width: "device-width",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const vercelTelemetryEnabled = Boolean(process.env.VERCEL);
+
   return (
     <html
       suppressHydrationWarning
@@ -77,12 +80,14 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{ __html: marketingMotionBootScript }}
           id="marketing-motion-boot"
+          nonce={nonce}
+          suppressHydrationWarning
         />
       </head>
       <body className="flex min-h-full flex-col">
-        <ClerkProvider>{children}</ClerkProvider>
-        <Analytics />
-        <SpeedInsights />
+        {children}
+        {vercelTelemetryEnabled ? <Analytics /> : null}
+        {vercelTelemetryEnabled ? <SpeedInsights /> : null}
       </body>
     </html>
   );

@@ -125,6 +125,7 @@ export default async function StudentOnboardingPage({
 
         <StudentOnboardingForm
           initialState={initialState}
+          requiresMinimumAgeAffirmation={!profile}
           returnTo={returnTo}
         />
       </div>

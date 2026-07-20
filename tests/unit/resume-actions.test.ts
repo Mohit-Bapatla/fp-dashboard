@@ -31,7 +31,9 @@ vi.mock("@/lib/student/resume", () => ({
 }));
 vi.mock("@/lib/audit/audit-log", () => ({ createAuditLog: vi.fn() }));
 vi.mock("@/lib/student/resume-validation", () => ({
+  sanitizeResumeFileName: vi.fn((name: string) => name),
   validateResumeFile: vi.fn(),
+  validateResumeFileContent: vi.fn().mockReturnValue({ success: true }),
 }));
 vi.mock("@/lib/storage/supabase-admin", () => ({
   createSupabaseAdminClient: vi.fn(),

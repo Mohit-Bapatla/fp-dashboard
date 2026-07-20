@@ -33,7 +33,10 @@ export async function saveStudentProfile(
     redirect("/dashboard");
   }
 
-  const validation = validateStudentProfileForm(formData);
+  const user = await getOrCreateCurrentStudentUser(userId);
+  const validation = validateStudentProfileForm(formData, {
+    requireMinimumAgeAffirmation: !user.studentProfile,
+  });
 
   if (!validation.success) {
     return {
@@ -43,7 +46,6 @@ export async function saveStudentProfile(
     };
   }
 
-  const user = await getOrCreateCurrentStudentUser(userId);
   const rateLimit = await enforceRateLimit({
     action: "student_profile_update",
     identifier: `user:${user.id}`,

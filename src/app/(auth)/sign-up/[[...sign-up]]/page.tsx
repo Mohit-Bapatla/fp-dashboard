@@ -24,7 +24,10 @@ export default async function SignUpPage({
   );
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-4 py-12">
+    <main
+      className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-4 py-12"
+      id="auth-main"
+    >
       <div
         aria-hidden="true"
         className="pathway-grid absolute inset-0 opacity-70"
@@ -37,6 +40,10 @@ export default async function SignUpPage({
         <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
           Join Future Physicians — discover healthcare opportunities and track
           placement progress.
+        </p>
+        <p className="mt-3 max-w-sm text-xs leading-5 text-muted-foreground">
+          The student dashboard is not intended for children under 13. Student
+          profile creation requires an age affirmation during onboarding.
         </p>
       </div>
       <div className="relative">

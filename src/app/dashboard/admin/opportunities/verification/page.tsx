@@ -9,70 +9,98 @@ import {
   setOpportunityVerification,
 } from "./actions";
 
+function getFlaggedMaintenanceChecks(metadata: unknown) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return [];
+  }
+  const checks = (metadata as { checks?: unknown }).checks;
+  if (!Array.isArray(checks)) return [];
+
+  return checks.flatMap((check) => {
+    if (!check || typeof check !== "object" || Array.isArray(check)) return [];
+    const { opportunityId, status } = check as {
+      opportunityId?: unknown;
+      status?: unknown;
+    };
+    return typeof opportunityId === "string" &&
+      typeof status === "string" &&
+      !["HEALTHY", "REDIRECTED"].includes(status)
+      ? [{ opportunityId, status }]
+      : [];
+  });
+}
+
 export default async function VerificationQueuePage() {
   await assertAdminAccess();
   const now = new Date(),
     soon = new Date(now);
   soon.setDate(now.getDate() + 14);
-  const [opportunities, reports, externalRequests] = await Promise.all([
-    prisma.opportunity.findMany({
-      where: {
-        visibility: "PUBLIC_DIRECTORY",
-        AND: [
-          {
-            OR: [
-              {
-                verificationStatus: {
-                  in: ["NEEDS_REVIEW", "STALE", "BROKEN_LINK"],
+  const [opportunities, reports, externalRequests, maintenanceRuns] =
+    await Promise.all([
+      prisma.opportunity.findMany({
+        where: {
+          visibility: "PUBLIC_DIRECTORY",
+          AND: [
+            {
+              OR: [
+                {
+                  verificationStatus: {
+                    in: ["NEEDS_REVIEW", "STALE", "BROKEN_LINK", "ARCHIVED"],
+                  },
                 },
-              },
-              { officialSourceUrl: null },
-              { nextVerificationAt: { lte: soon } },
-              {
-                deadline: { lt: now },
-                availabilityStatus: { in: ["OPEN", "ROLLING"] },
-              },
-            ],
-          },
-        ],
-      },
-      orderBy: { updatedAt: "desc" },
-      take: 100,
-      include: {
-        organization: { select: { name: true } },
-        _count: {
-          select: { correctionReports: { where: { status: "OPEN" } } },
+                { officialSourceUrl: null },
+                { nextVerificationAt: { lte: soon } },
+                {
+                  deadline: { lt: now },
+                  availabilityStatus: { in: ["OPEN", "ROLLING"] },
+                },
+              ],
+            },
+          ],
         },
-      },
-    }),
-    prisma.opportunityCorrectionReport.findMany({
-      where: {
-        status: "OPEN",
-        opportunity: { visibility: "PUBLIC_DIRECTORY" },
-      },
-      orderBy: { createdAt: "asc" },
-      include: { opportunity: { select: { title: true } } },
-    }),
-    prisma.externalOpportunityVerificationRequest.findMany({
-      where: {
-        status: "PENDING",
-        opportunity: { visibility: "STUDENT_PRIVATE" },
-      },
-      orderBy: { createdAt: "asc" },
-      take: 100,
-      select: {
-        createdAt: true,
-        id: true,
-        opportunity: {
-          select: {
-            officialSourceUrl: true,
-            studentOrganizationName: true,
-            title: true,
+        orderBy: { updatedAt: "desc" },
+        take: 100,
+        include: {
+          organization: { select: { name: true } },
+          _count: {
+            select: { correctionReports: { where: { status: "OPEN" } } },
           },
         },
-      },
-    }),
-  ]);
+      }),
+      prisma.opportunityCorrectionReport.findMany({
+        where: {
+          status: "OPEN",
+          opportunity: { visibility: "PUBLIC_DIRECTORY" },
+        },
+        orderBy: { createdAt: "asc" },
+        include: { opportunity: { select: { title: true } } },
+      }),
+      prisma.externalOpportunityVerificationRequest.findMany({
+        where: {
+          status: "PENDING",
+          opportunity: { visibility: "STUDENT_PRIVATE" },
+        },
+        orderBy: { createdAt: "asc" },
+        take: 100,
+        select: {
+          createdAt: true,
+          id: true,
+          opportunity: {
+            select: {
+              officialSourceUrl: true,
+              studentOrganizationName: true,
+              title: true,
+            },
+          },
+        },
+      }),
+      prisma.auditLog.findMany({
+        orderBy: { createdAt: "desc" },
+        select: { createdAt: true, id: true, metadata: true },
+        take: 5,
+        where: { action: "OPPORTUNITY_MAINTENANCE_RUN" },
+      }),
+    ]);
   return (
     <DashboardShell
       navItems={getAdminNavItems("/dashboard/admin/opportunities/verification")}
@@ -90,6 +118,69 @@ export default async function VerificationQueuePage() {
             student corrections before publishing.
           </p>
         </header>
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold">
+              Automated freshness reports
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              The protected, bounded verifier reports source health for human
+              review. It never publishes, archives, or changes a listing.
+            </p>
+          </div>
+          {maintenanceRuns.map((run) => {
+            const metadata =
+              run.metadata &&
+              typeof run.metadata === "object" &&
+              !Array.isArray(run.metadata)
+                ? run.metadata
+                : null;
+            const checked =
+              metadata && typeof metadata.checked === "number"
+                ? metadata.checked
+                : "Unknown";
+            const flaggedChecks = getFlaggedMaintenanceChecks(run.metadata);
+
+            return (
+              <article
+                className="rounded-xl border border-border bg-background p-5"
+                key={run.id}
+              >
+                <h3 className="font-semibold">
+                  {new Intl.DateTimeFormat("en", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  }).format(run.createdAt)}
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {checked} listings checked. Source URLs and response bodies
+                  are not stored in this run log.
+                </p>
+                {flaggedChecks.length > 0 ? (
+                  <ul className="mt-3 space-y-2 text-sm">
+                    {flaggedChecks.map((check) => (
+                      <li key={`${check.opportunityId}-${check.status}`}>
+                        <a
+                          className="font-semibold text-primary underline underline-offset-4"
+                          href={`/dashboard/admin/opportunities/${check.opportunityId}/edit`}
+                        >
+                          Review{" "}
+                          {check.status.replaceAll("_", " ").toLowerCase()}{" "}
+                          listing
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </article>
+            );
+          })}
+          {maintenanceRuns.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">
+              No automated freshness run has been recorded in this environment.
+            </p>
+          ) : null}
+        </section>
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">
             Listings needing attention ({opportunities.length})

@@ -49,5 +49,7 @@ next-env.d.ts
 /src/generated/prisma/
 
 # local assistant and Clerk configuration (can include secrets)
+/.agents/
 /.clerk/
 /.claude/
+/skills-lock.json

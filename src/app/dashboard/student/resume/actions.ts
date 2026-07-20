@@ -1,5 +1,7 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+
 import { revalidatePath } from "next/cache";
 
 import { createAuditLog } from "@/lib/audit/audit-log";
@@ -22,7 +24,11 @@ import {
   getCurrentStudentResumeContext,
 } from "@/lib/student/resume";
 import { RESUME_PARSE_STALE_AFTER_MS } from "@/lib/student/resume-parse-state";
-import { validateResumeFile } from "@/lib/student/resume-validation";
+import {
+  sanitizeResumeFileName,
+  validateResumeFile,
+  validateResumeFileContent,
+} from "@/lib/student/resume-validation";
 import {
   createSupabaseAdminClient,
   resumeBucketName,
@@ -39,7 +45,7 @@ export type ResumeDownloadActionState = {
 };
 
 function buildResumePath(profileId: string, extension: string) {
-  return `students/${profileId}/resume-${Date.now()}.${extension}`;
+  return `students/${profileId}/resume-${randomUUID()}.${extension}`;
 }
 
 function getResumeParseLogContext(
@@ -131,8 +137,24 @@ export async function uploadStudentResume(
   }
 
   const supabase = createSupabaseAdminClient();
-  const newPath = buildResumePath(context.profileId, validation.extension);
   const bytes = await resumeFile.arrayBuffer();
+  const contentValidation = validateResumeFileContent(
+    new Uint8Array(bytes),
+    validation.extension,
+  );
+
+  if (!contentValidation.success) {
+    return {
+      error: contentValidation.error,
+      success: null,
+    };
+  }
+
+  const newPath = buildResumePath(context.profileId, validation.extension);
+  const safeFileName = sanitizeResumeFileName(
+    resumeFile.name,
+    validation.extension,
+  );
   const { error: uploadError } = await supabase.storage
     .from(resumeBucketName)
     .upload(newPath, bytes, {
@@ -166,7 +188,7 @@ export async function uploadStudentResume(
         },
         data: {
           analyzedAt: null,
-          fileName: resumeFile.name,
+          fileName: safeFileName,
           extractedCertifications: [],
           extractedEducation: [],
           extractedExperience: [],
@@ -192,7 +214,7 @@ export async function uploadStudentResume(
           extractedExperience: [],
           extractedSkills: [],
           studentProfileId: context.profileId,
-          fileName: resumeFile.name,
+          fileName: safeFileName,
           fileUrl: newPath,
           parseFailureReason: null,
           parseStatus: "NOT_STARTED",

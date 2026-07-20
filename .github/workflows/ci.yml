@@ -17,7 +17,21 @@ jobs:
   quality:
     name: Quality
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: fp_dashboard_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres -d fp_dashboard_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 5432:5432
     env:
       CI: "true"
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/fp_dashboard_ci?schema=public
@@ -33,10 +47,10 @@ jobs:
       NEXT_PUBLIC_CLERK_SIGN_OUT_FALLBACK_REDIRECT_URL: /sign-in
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
@@ -50,8 +64,14 @@ jobs:
       - name: Validate Prisma schema
         run: npm run db:validate
 
+      - name: Apply disposable CI migrations
+        run: npx prisma migrate deploy
+
       - name: Check formatting
         run: npm run format:check
+
+      - name: Type-check
+        run: npm run typecheck
 
       - name: Lint
         run: npm run lint
@@ -59,8 +79,26 @@ jobs:
       - name: Run unit tests
         run: npm run test
 
+      - name: Scan tracked files for secrets
+        run: npm run security:secrets
+
+      - name: Audit high-severity dependency advisories
+        run: npm run security:audit
+
       - name: Build application
         run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser checks
+        env:
+          E2E_PUBLIC_ONLY: "true"
+          PLAYWRIGHT_WEB_SERVER_COMMAND: npm start
+        run: npm run test:e2e
+
+      - name: Check whitespace errors
+        run: git diff --check
 
   migration-validation:
     name: PostgreSQL 16 migration validation
@@ -85,10 +123,10 @@ jobs:
       MIGRATION_VALIDATION_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/fp_dashboard_migration_validation?schema=public
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm

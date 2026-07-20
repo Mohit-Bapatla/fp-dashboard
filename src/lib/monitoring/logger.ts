@@ -1,13 +1,18 @@
 import "server-only";
 
+import {
+  redactLogMessage,
+  redactTelemetryValue,
+} from "@/lib/monitoring/redaction";
+
 type LogMetadata = Record<string, unknown>;
 
 export function logServerInfo(message: string, metadata?: LogMetadata) {
-  console.info(message, metadata ?? {});
+  console.info(redactLogMessage(message), redactTelemetryValue(metadata ?? {}));
 }
 
 export function logServerWarning(message: string, metadata?: LogMetadata) {
-  console.warn(message, metadata ?? {});
+  console.warn(redactLogMessage(message), redactTelemetryValue(metadata ?? {}));
 }
 
 export function logServerError(
@@ -15,8 +20,8 @@ export function logServerError(
   error: unknown,
   metadata?: LogMetadata,
 ) {
-  console.error(message, {
-    error: error instanceof Error ? error.message : error,
-    ...metadata,
-  });
+  console.error(
+    redactLogMessage(message),
+    redactTelemetryValue({ error, ...metadata }),
+  );
 }

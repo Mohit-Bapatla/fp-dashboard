@@ -653,7 +653,10 @@ export function OpportunityWalkthrough() {
           referenceHeight > 0
             ? entry.intersectionRect.height / referenceHeight
             : 0;
-        setInView(entry.isIntersecting && visibleRatio >= 0.6);
+        // On a narrow viewport the walkthrough is taller than the viewport.
+        // Keep it active while a substantial portion is visible so an explicit
+        // Resume action does not immediately flip back to auto-paused.
+        setInView(entry.isIntersecting && visibleRatio >= 0.4);
       },
       { threshold: Array.from({ length: 11 }, (_, index) => index / 10) },
     );
@@ -702,6 +705,10 @@ export function OpportunityWalkthrough() {
   function toggleManualPause() {
     if (manualPaused) {
       setKeyboardFocusWithin(false);
+      // The resume control can only be activated while visible. Refresh a
+      // stale observer snapshot immediately; subsequent scroll/visibility
+      // changes still update `inView` and pause offscreen animation.
+      setInView(true);
     }
     setManualPaused((paused) => !paused);
   }

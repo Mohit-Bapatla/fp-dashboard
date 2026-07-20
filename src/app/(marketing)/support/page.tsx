@@ -2,7 +2,6 @@ import {
   ArrowRight,
   Boxes,
   Building2,
-  CircleDollarSign,
   Gift,
   GraduationCap,
   HandHeart,
@@ -27,7 +26,7 @@ import {
   PageCta,
 } from "@/components/marketing/supporting-page-sections";
 import { createPublicMetadata } from "@/lib/public-metadata";
-import { grants, siteConfig } from "@/lib/site-config";
+import { siteConfig } from "@/lib/site-config";
 
 const description =
   "Support Future Physicians through grants, sponsorships, donations, institutional collaboration, program support, or in-kind contributions.";
@@ -162,27 +161,29 @@ export default function SupportPage() {
 
       <MarketingSection id="grants">
         <SectionHeading
-          description="Future Physicians has received the grants and awards listed below."
-          title="Grants and awards"
+          description="Funding relationships are described according to their actual role. A grant, sponsorship, fiscal sponsor, host organization, or event supporter is not automatically an FP program partner."
+          title="Funding disclosures"
         />
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {grants.map((grant) => (
-            <article
-              className="rounded-3xl border border-border bg-white p-7 shadow-[0_14px_40px_rgba(16,33,58,0.07)]"
-              key={grant.funder}
-            >
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-blue-surface text-primary">
-                <CircleDollarSign aria-hidden="true" className="size-6" />
-              </div>
-              <p className="mt-6 text-4xl font-semibold tracking-[-0.045em] text-primary">
-                {grant.amount}
-              </p>
-              <h2 className="mt-3 text-xl font-semibold tracking-[-0.025em] text-brand-navy">
-                {grant.funder}
-              </h2>
-            </article>
-          ))}
-        </div>
+        <article className="mt-10 max-w-3xl rounded-3xl border border-border bg-white p-7 shadow-[0_14px_40px_rgba(16,33,58,0.07)]">
+          <Landmark aria-hidden="true" className="size-7 text-primary" />
+          <h2 className="mt-5 text-2xl font-semibold text-brand-navy">
+            Fiscal sponsorship
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-muted-foreground">
+            {siteConfig.fiscalSponsor.relationship}
+          </p>
+          <p className="mt-3 text-sm leading-7 text-muted-foreground">
+            {siteConfig.fiscalSponsor.donationNotice}
+          </p>
+          <a
+            className="mt-5 inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            href="https://hcb.hackclub.com/branding"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Review HCB fiscal-sponsorship information
+          </a>
+        </article>
       </MarketingSection>
 
       <MarketingSection id="donate" tone="blue">

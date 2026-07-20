@@ -40,6 +40,8 @@ const footerGroups = [
       { href: "/dashboard", label: "Dashboard" },
       { href: "/privacy", label: "Privacy" },
       { href: "/terms", label: "Terms" },
+      { href: "/accessibility", label: "Accessibility" },
+      { href: "/data-deletion", label: "Data requests" },
     ],
   },
 ] as const;
@@ -97,6 +99,9 @@ export function MarketingFooter() {
               Helping students discover, apply to, and manage verified
               healthcare opportunities from one profile.
             </p>
+            <p className="mt-4 max-w-sm text-xs leading-5 text-muted-foreground">
+              {siteConfig.fiscalSponsor.relationship}
+            </p>
             <div
               aria-label="Future Physicians social channels"
               className="mt-5 flex flex-wrap gap-3"
@@ -132,6 +137,9 @@ export function MarketingFooter() {
                       <Link
                         className="rounded text-sm text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         href={item.href}
+                        prefetch={
+                          item.href.startsWith("/dashboard") ? false : undefined
+                        }
                       >
                         {item.label}
                       </Link>

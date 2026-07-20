@@ -4,6 +4,7 @@ import { runStudentReminderWorkflows } from "@/lib/jobs/student-reminders";
 import {
   enforcePublicRateLimit,
   formatRateLimitMessage,
+  getRateLimitResponseHeaders,
 } from "@/lib/security/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
           error: formatRateLimitMessage(rateLimit),
           success: false,
         },
-        { status: 429 },
+        { headers: getRateLimitResponseHeaders(rateLimit), status: 429 },
       );
     }
 
