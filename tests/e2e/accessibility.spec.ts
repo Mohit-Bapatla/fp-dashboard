@@ -15,8 +15,13 @@ const publicRoutes = [
   "/support",
   "/faq",
   "/contact",
+  "/accessibility",
+  "/data-deletion",
   "/privacy",
   "/terms",
+  ...(process.env.E2E_CLERK_AVAILABLE === "true"
+    ? (["/sign-in", "/sign-up"] as const)
+    : []),
 ] as const;
 
 test("public routes have no detectable WCAG A/AA axe violations", async ({
@@ -58,6 +63,29 @@ test("public routes have no detectable WCAG A/AA axe violations", async ({
 
     expect.soft(violations, `${route}\n${summary}`).toEqual([]);
   }
+});
+
+test("opportunity search has a specific accessible name and announces results", async ({
+  page,
+}) => {
+  await page.goto("/opportunities", { waitUntil: "domcontentloaded" });
+
+  const unavailableHeading = page.getByRole("heading", {
+    level: 1,
+    name: "Opportunities are temporarily unavailable.",
+  });
+  const search = page.getByRole("searchbox", {
+    name: "Search opportunities",
+    exact: true,
+  });
+  await expect(search.first().or(unavailableHeading)).toBeVisible();
+  if ((await search.count()) === 0)
+    test.skip(true, "Directory data is unavailable.");
+
+  await expect(search.first()).toHaveAccessibleDescription(
+    "Search by title, host organization, or keyword.",
+  );
+  await expect(page.getByRole("status").first()).toContainText(/opportunit/i);
 });
 
 test("opportunity card details keep valid definition-list semantics", async ({

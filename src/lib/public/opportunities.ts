@@ -86,6 +86,7 @@ const publicOpportunitySelect = {
   organization: {
     select: {
       name: true,
+      status: true,
       website: true,
     },
   },

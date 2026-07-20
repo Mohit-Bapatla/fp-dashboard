@@ -20,7 +20,7 @@ import {
 } from "@/lib/site-config";
 
 const description =
-  "Explore Future Physicians' organization-wide reach and dated program outcomes, with clear distinctions between community, partner, stipend, and event measures.";
+  "Explore a dated directory snapshot and separately reported program measures, with clear definitions and limitations.";
 
 export const metadata = createPublicMetadata({
   description,
@@ -50,9 +50,9 @@ export default function ImpactPage() {
 
       <MarketingSection id="organization-impact" tone="blue">
         <SectionHeading
-          description="These cumulative figures describe organization-wide community reach, partner relationships, and student stipend value facilitated through partner programs."
-          eyebrow="Organization-wide impact"
-          title="A growing community around healthcare opportunity."
+          description="These current, auditable figures describe the public opportunity directory and student access. They do not claim student placements, active membership, or confirmed partnerships."
+          eyebrow="Directory snapshot"
+          title="Healthcare opportunities with clearly scoped counts."
         />
         <div className="mt-10 grid gap-5 md:grid-cols-3">
           {organizationMetrics.map((metric) => (

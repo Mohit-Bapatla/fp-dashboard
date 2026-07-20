@@ -38,8 +38,12 @@ export type StudentProfileFormValues = {
 };
 
 export type StudentProfileFieldErrors = Partial<
-  Record<keyof StudentProfileFormValues, string>
+  Record<keyof StudentProfileFormValues | "minimumAgeAffirmation", string>
 >;
+
+export type StudentProfileValidationOptions = {
+  requireMinimumAgeAffirmation?: boolean;
+};
 
 export type StudentProfileValidationResult =
   | {
@@ -236,6 +240,7 @@ export function valuesFromFormData(
 
 export function validateStudentProfileForm(
   formData: FormData,
+  options: StudentProfileValidationOptions = {},
 ): StudentProfileValidationResult {
   const values = valuesFromFormData(formData);
   const errors: StudentProfileFieldErrors = {};
@@ -248,6 +253,14 @@ export function validateStudentProfileForm(
 
   if (values.opportunityTypes.length === 0) {
     errors.opportunityTypes = "Choose at least one opportunity type.";
+  }
+
+  if (
+    options.requireMinimumAgeAffirmation &&
+    formData.get("minimumAgeAffirmation") !== "on"
+  ) {
+    errors.minimumAgeAffirmation =
+      "Confirm that you are at least 13 years old to create a student profile.";
   }
 
   if (values.gradeYear === "Other" && !values.gradeYearCustom) {

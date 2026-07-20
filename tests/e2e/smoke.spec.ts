@@ -9,9 +9,9 @@ const generalSupportContact = "/contact#general-support";
 const partnershipContact = "/contact#partnerships";
 
 const organizationMetrics = [
-  ["2,000+", "Students in the FP community"],
-  ["50+", "Partner organizations"],
-  ["$300K+", "Student stipends facilitated through partner programs"],
+  ["150", "Published opportunity listings"],
+  ["147", "Listed host organizations"],
+  ["Free", "Student dashboard access"],
 ] as const;
 
 const publicRoutes = [
@@ -26,6 +26,8 @@ const publicRoutes = [
   "/support",
   "/faq",
   "/contact",
+  "/accessibility",
+  "/data-deletion",
   "/privacy",
   "/terms",
 ] as const;
@@ -259,31 +261,23 @@ test("support metadata includes canonical social sharing images", async ({
   );
 });
 
-test("support page includes approved grants and exact inquiry destinations", async ({
+test("support page includes fiscal-sponsor disclosure and exact inquiry destinations", async ({
   page,
 }) => {
   await page.goto("/support");
 
   for (const value of ["$15,000", "$1,000", "$720"]) {
-    await expect(page.getByText(value, { exact: true })).toBeVisible();
+    await expect(page.getByText(value, { exact: true })).toHaveCount(0);
   }
   await expect(
-    page.getByText("Community Hospital of Long Beach Foundation", {
-      exact: true,
+    page.getByText(/fiscally sponsored by The Hack Foundation/i).first(),
+  ).toBeVisible();
+  await expect(page.getByText(/official receipt from HCB/i)).toBeVisible();
+  await expect(
+    page.getByRole("link", {
+      name: "Review HCB fiscal-sponsorship information",
     }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Karma for Cara Grant", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("North Carolina Community Foundation", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByText(
-      "Future Physicians has received the grants and awards listed below.",
-      { exact: true },
-    ),
-  ).toBeVisible();
+  ).toHaveAttribute("href", "https://hcb.hackclub.com/branding");
   await expect(
     page.getByText(/These are neutral operating categories/i),
   ).toHaveCount(0);
@@ -458,7 +452,7 @@ test("impact page keeps exact metrics and removes the metric glossary", async ({
   }
   await expect(
     page.getByText(
-      "Figures represent cumulative Future Physicians activity. Student stipends reflect funding facilitated through partner programs rather than funds paid directly by FP.",
+      "Directory counts are a production snapshot as of July 19, 2026. A listed host organization is not necessarily a confirmed FP partner, and listing counts do not measure active students, placements, or outcomes.",
       { exact: true },
     ),
   ).toBeVisible();
@@ -478,7 +472,7 @@ test("FAQ answers and structured data use the same approved wording", async ({
     "Is Future Physicians free for students?":
       "Yes. Creating a student profile and using the FP Dashboard is free.",
     "Who can create a student profile?":
-      "Anyone interested in exploring a healthcare career or gaining healthcare experience can create a student profile.",
+      "People age 13 or older who are interested in exploring a healthcare career or gaining healthcare experience can create a student profile.",
     "Does Future Physicians guarantee a placement?":
       "No. Future Physicians helps students find relevant opportunities and stay organized throughout the application process, but each host organization makes its own acceptance and placement decisions.",
   } as const;
@@ -577,6 +571,10 @@ test("legacy support route redirects permanently", async ({ page }) => {
 });
 
 test("sign-in page loads", async ({ page }) => {
+  test.skip(
+    process.env.E2E_CLERK_AVAILABLE !== "true",
+    "A real Clerk browser-test environment is required.",
+  );
   await page.goto("/sign-in");
 
   await expect(page).toHaveURL(/sign-in/);

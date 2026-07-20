@@ -12,6 +12,7 @@ vi.mock("@/lib/jobs/student-reminders", () => ({
 vi.mock("@/lib/security/rate-limit", () => ({
   enforcePublicRateLimit: mocks.rateLimit,
   formatRateLimitMessage: vi.fn(() => "Too many requests."),
+  getRateLimitResponseHeaders: vi.fn(() => ({ "Retry-After": "60" })),
 }));
 
 import { GET } from "@/app/api/jobs/student-reminders/route";

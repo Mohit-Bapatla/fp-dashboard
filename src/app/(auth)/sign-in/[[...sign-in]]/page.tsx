@@ -22,7 +22,10 @@ export default async function SignInPage({
   ]);
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-4 py-12">
+    <main
+      className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-4 py-12"
+      id="auth-main"
+    >
       <div
         aria-hidden="true"
         className="pathway-grid absolute inset-0 opacity-70"

@@ -2,7 +2,7 @@ import type { OpportunityRelationshipType } from "@/generated/prisma/enums";
 
 const labels: Record<OpportunityRelationshipType, string> = {
   EXTERNAL_PUBLIC: "External Opportunity",
-  FP_PARTNER: "FP Partner",
+  FP_PARTNER: "Host-managed",
   FP_OWNED: "FP-Owned",
 };
 
@@ -33,9 +33,9 @@ export function OpportunityRelationshipDisclaimer({
   if (relationshipType === "FP_PARTNER")
     return (
       <p>
-        Future Physicians supports this partner opportunity, but the host
-        organization controls selection unless the listing explicitly says
-        otherwise.
+        The host organization controls selection unless the listing explicitly
+        says otherwise. This relationship label does not by itself establish a
+        public partnership or guarantee an outcome.
       </p>
     );
   return (

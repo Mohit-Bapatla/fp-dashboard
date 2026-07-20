@@ -44,6 +44,7 @@ import {
   type PublicOpportunity,
 } from "@/lib/public/opportunities";
 import { isOpportunitySubmittable } from "@/lib/opportunities/student-visibility";
+import { getPublicOpportunityRelationshipLabel } from "@/lib/opportunities/public-relationship";
 import { createPublicMetadata } from "@/lib/public-metadata";
 import { siteConfig } from "@/lib/site-config";
 
@@ -129,11 +130,10 @@ function getApplicationActionLabel(
 }
 
 function getRelationshipLabel(opportunity: PublicOpportunity) {
-  return opportunity.relationshipType === "FP_OWNED"
-    ? "Future Physicians program"
-    : opportunity.relationshipType === "FP_PARTNER"
-      ? "FP partner-managed opportunity"
-      : "Publicly sourced listing";
+  return getPublicOpportunityRelationshipLabel({
+    organizationStatus: opportunity.organization.status,
+    relationshipType: opportunity.relationshipType,
+  });
 }
 
 export default async function PublicOpportunityPage({
@@ -508,6 +508,22 @@ export default async function PublicOpportunityPage({
                 availability, application paths, and source links before a
                 listing appears here.
               </p>
+              <div className="mt-4 rounded-xl border border-border bg-muted/50 p-4 text-sm leading-6 text-muted-foreground">
+                <p>
+                  Opportunity information is sourced from the host or its
+                  published materials. Details, deadlines, and availability can
+                  change, so confirm them with the official source before
+                  applying.
+                </p>
+                <p className="mt-3">
+                  A listing does not by itself establish an FP partnership or
+                  endorsement. Future Physicians does not control a third
+                  party&apos;s eligibility rules, interviews, acceptance,
+                  placement, pay, or other outcomes. Eligibility information and
+                  recommendations are not guarantees. External applications are
+                  submitted to and handled by the host organization.
+                </p>
+              </div>
               <div className="mt-4 grid gap-2">
                 {opportunity.officialSourceUrl ? (
                   <a

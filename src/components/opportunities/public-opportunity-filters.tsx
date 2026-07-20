@@ -31,28 +31,41 @@ const inputClass =
 
 function FilterFields({
   filters,
+  idPrefix,
   options,
   showEligibility,
 }: {
   filters: PublicOpportunityFilterValues;
+  idPrefix: string;
   options: PublicOpportunityFilterOptions;
   showEligibility: boolean;
 }) {
   return (
     <>
-      <label className="block">
-        <span className="mb-2 block text-sm font-semibold text-brand-navy">
-          Search
-        </span>
+      <div className="block">
+        <label
+          className="mb-2 block text-sm font-semibold text-brand-navy"
+          htmlFor={`${idPrefix}-search`}
+        >
+          Search opportunities
+        </label>
         <input
+          aria-describedby={`${idPrefix}-search-help`}
           className={inputClass}
           defaultValue={filters.q}
+          id={`${idPrefix}-search`}
           maxLength={120}
           name="q"
           placeholder="Title, organization, or keyword"
           type="search"
         />
-      </label>
+        <span
+          className="mt-1.5 block text-xs leading-5 text-muted-foreground"
+          id={`${idPrefix}-search-help`}
+        >
+          Search by title, host organization, or keyword.
+        </span>
+      </div>
 
       <FilterSelect label="Opportunity type" name="type" value={filters.type}>
         {studentOpportunityTypeOptions.map((type) => (
@@ -188,10 +201,12 @@ function FilterSelect({
 
 function FilterForm({
   filters,
+  idPrefix,
   options,
   showEligibility,
 }: {
   filters: PublicOpportunityFilterValues;
+  idPrefix: string;
   options: PublicOpportunityFilterOptions;
   showEligibility: boolean;
 }) {
@@ -199,6 +214,7 @@ function FilterForm({
     <form action="/opportunities" className="space-y-5" method="get">
       <FilterFields
         filters={filters}
+        idPrefix={idPrefix}
         options={options}
         showEligibility={showEligibility}
       />
@@ -238,6 +254,10 @@ export function PublicOpportunityFilters({
 
   return (
     <div>
+      <p className="sr-only" role="status">
+        {resultCount} {resultCount === 1 ? "opportunity" : "opportunities"}{" "}
+        found.
+      </p>
       <details className="rounded-2xl border border-border bg-white shadow-sm lg:hidden">
         <summary className="flex min-h-14 list-none items-center justify-between gap-4 rounded-2xl px-5 text-sm font-semibold text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">
           <span className="inline-flex items-center gap-2">
@@ -256,6 +276,7 @@ export function PublicOpportunityFilters({
         <div className="border-t border-border p-5">
           <FilterForm
             filters={filters}
+            idPrefix="mobile-opportunity"
             options={options}
             showEligibility={showEligibility}
           />
@@ -282,6 +303,7 @@ export function PublicOpportunityFilters({
         </div>
         <FilterForm
           filters={filters}
+          idPrefix="desktop-opportunity"
           options={options}
           showEligibility={showEligibility}
         />

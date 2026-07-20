@@ -21,6 +21,7 @@ import {
 
 type StudentOnboardingFormProps = {
   initialState: StudentOnboardingActionState;
+  requiresMinimumAgeAffirmation?: boolean;
   returnTo?: string;
 };
 
@@ -394,6 +395,7 @@ function SpecialtyTagInput({
 
 export function StudentOnboardingForm({
   initialState,
+  requiresMinimumAgeAffirmation = false,
   returnTo = "/dashboard/student",
 }: StudentOnboardingFormProps) {
   const [state, formAction, isPending] = useActionState(
@@ -617,6 +619,40 @@ export function StudentOnboardingForm({
               </label>
             ) : null}
           </div>
+          {requiresMinimumAgeAffirmation ? (
+            <div className="sm:col-span-2">
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-muted/30 p-4 text-sm leading-6 text-foreground">
+                <input
+                  aria-describedby="minimum-age-help minimum-age-error"
+                  aria-invalid={Boolean(
+                    state.fieldErrors.minimumAgeAffirmation,
+                  )}
+                  className="mt-1 size-4 shrink-0 accent-primary"
+                  name="minimumAgeAffirmation"
+                  required
+                  type="checkbox"
+                />
+                <span>
+                  <span className="font-semibold">
+                    I confirm that I am at least 13 years old.
+                  </span>
+                  <span
+                    className="mt-1 block text-muted-foreground"
+                    id="minimum-age-help"
+                  >
+                    The student dashboard is not intended for children under 13.
+                    A parent or guardian can contact support to discuss an
+                    appropriate path.
+                  </span>
+                </span>
+              </label>
+              {state.fieldErrors.minimumAgeAffirmation ? (
+                <p className="mt-1 text-xs text-red-600" id="minimum-age-error">
+                  {state.fieldErrors.minimumAgeAffirmation}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </section>
 
         <section

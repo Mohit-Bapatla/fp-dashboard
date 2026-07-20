@@ -40,34 +40,33 @@ export const siteConfig = {
     seminarRecording: "https://www.youtube.com/watch?v=6U2EA3O12YY",
     tiktok: "https://www.tiktok.com/@futurephysicians.org",
   },
+  fiscalSponsor: {
+    legalName: "The Hack Foundation",
+    publicName: "Hack Club",
+    relationship:
+      "Future Physicians is fiscally sponsored by The Hack Foundation (d.b.a. Hack Club), a 501(c)(3) nonprofit.",
+    donationNotice:
+      "Donations are processed through HCB. Donors receive the official receipt from HCB and should retain it. Tax treatment depends on applicable law and the receipt, and HCB fees and terms can change.",
+  },
 } as const;
 
 export const organizationMetrics = [
   {
-    value: "2,000+",
-    label: "Students in the FP community",
+    value: "150",
+    label: "Published opportunity listings",
   },
   {
-    value: "50+",
-    label: "Partner organizations",
+    value: "147",
+    label: "Listed host organizations",
   },
   {
-    value: "$300K+",
-    label: "Student stipends facilitated through partner programs",
+    value: "Free",
+    label: "Student dashboard access",
   },
 ] as const;
 
 export const impactMethodologyNote =
-  "Figures represent cumulative Future Physicians activity. Student stipends reflect funding facilitated through partner programs rather than funds paid directly by FP.";
-
-export const grants = [
-  {
-    amount: "$15,000",
-    funder: "Community Hospital of Long Beach Foundation",
-  },
-  { amount: "$1,000", funder: "Karma for Cara Grant" },
-  { amount: "$720", funder: "North Carolina Community Foundation" },
-] as const;
+  "Directory counts are a production snapshot as of July 19, 2026. A listed host organization is not necessarily a confirmed FP partner, and listing counts do not measure active students, placements, or outcomes.";
 
 export const seminar = {
   slug: "global-healthcare-seminar-2025",
@@ -126,7 +125,7 @@ export const faqGroups = [
         id: "student-profile-eligibility",
         question: "Who can create a student profile?",
         answer:
-          "Anyone interested in exploring a healthcare career or gaining healthcare experience can create a student profile.",
+          "People age 13 or older who are interested in exploring a healthcare career or gaining healthcare experience can create a student profile.",
       },
       {
         id: "student-dashboard-free",

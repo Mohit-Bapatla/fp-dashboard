@@ -21,7 +21,7 @@ export default function TermsPage() {
       <PageHero
         eyebrow="Terms"
         title="Terms of use"
-        description="Important limitations for using the Future Physicians website, opportunity directory, and FP Dashboard during beta."
+        description="Important rules and limitations for the website, opportunity directory, and FP Dashboard. Last reviewed July 19, 2026."
       />
       <MarketingContainer className="py-14 sm:py-20">
         <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
@@ -32,6 +32,13 @@ export default function TermsPage() {
                 opportunity, and program workflows. Users are responsible for
                 providing accurate information and keeping account access
                 secure.
+              </LegalSection>
+              <LegalSection title="Student age and authority">
+                The student dashboard is not intended for children under 13. A
+                student creating a profile must confirm they are at least 13. If
+                law or a program requires parent or guardian involvement, the
+                user is responsible for obtaining it. Organization users must be
+                authorized to act for the organization they select.
               </LegalSection>
               <LegalSection title="Opportunity information">
                 Future Physicians reviews public listings, but deadlines,
@@ -49,6 +56,25 @@ export default function TermsPage() {
                 The platform does not make automated acceptance, rejection, or
                 placement decisions. Authorized reviewers remain responsible for
                 decisions and communications.
+              </LegalSection>
+              <LegalSection title="Third-party services and links">
+                External application portals, host organizations, fiscal sponsor
+                services, and other linked websites operate under their own
+                terms and privacy practices. A listing or link is not an
+                endorsement, partnership, or guarantee unless FP expressly says
+                otherwise.
+              </LegalSection>
+              <LegalSection title="Uploaded materials">
+                Users must have permission to submit the content they upload and
+                must not upload malware, unlawful material, or information they
+                are not authorized to share. Resume parsing and other automated
+                assistance can be inaccurate and requires user review.
+              </LegalSection>
+              <LegalSection title="Availability and changes">
+                FP may correct, suspend, or remove content and access to protect
+                users and service integrity. Beta functionality may change or be
+                unavailable. These terms do not create a promise of
+                uninterrupted service or a particular program outcome.
               </LegalSection>
               <LegalSection title="Questions">
                 Questions about these terms can be sent to{" "}
@@ -68,9 +94,10 @@ export default function TermsPage() {
             </p>
             <p className="mt-3 text-sm leading-6 text-brand-navy">
               These beta terms preserve the project&apos;s existing limitations
-              but are not a complete legal agreement. Counsel should review
-              eligibility, minors, liability, third-party links, and dispute
-              provisions before public launch.
+              but are not a complete legal agreement. Draft for review — not
+              legal advice and not attorney approved. Counsel should review
+              eligibility, minors, liability, intellectual property, third-party
+              links, governing law, and dispute provisions.
             </p>
             <Link
               className={`${secondaryButtonClass} mt-5 w-full`}

@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+import {
+  privateDashboardHeaders,
+  securityHeaders,
+} from "./src/lib/security/headers";
+
 const pdfRuntimeFiles = [
   "./node_modules/@napi-rs/canvas/**/*",
   "./node_modules/@napi-rs/canvas-linux-x64-gnu/**/*",
@@ -9,6 +14,18 @@ const pdfRuntimeFiles = [
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
+  async headers() {
+    return [
+      {
+        headers: [...securityHeaders],
+        source: "/(.*)",
+      },
+      {
+        headers: [...privateDashboardHeaders],
+        source: "/dashboard/:path*",
+      },
+    ];
+  },
   async redirects() {
     return [
       {

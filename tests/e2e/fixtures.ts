@@ -119,7 +119,20 @@ function isAllowedRequestCancellation(request: Request) {
   }
 
   try {
-    const pathname = new URL(request.url()).pathname;
+    const url = new URL(request.url());
+    const pathname = url.pathname;
+
+    // Next may cancel an in-flight React Server Component prefetch when a test
+    // intentionally navigates elsewhere. Restrict this allowance to aborted
+    // same-origin GET fetches carrying Next's exact RSC query marker; HTTP
+    // failures, document requests, scripts, and ordinary application fetches
+    // remain failures.
+    if (
+      url.searchParams.has("_rsc") &&
+      ["fetch", "xhr"].includes(request.resourceType())
+    ) {
+      return true;
+    }
 
     // Next's development-only font endpoint can still be fetching when an
     // intentional multi-page test navigates again. Only that exact browser

@@ -9,6 +9,7 @@ type WorkflowSource = "cron" | "manual";
 
 type RuleName =
   | "expiredOpportunities"
+  | "expiredRateLimits"
   | "stalePlacementRequests"
   | "dueFollowUps"
   | "applicationsUnderReview"
@@ -95,6 +96,17 @@ function hoursAgo(hours: number, now: Date) {
   date.setHours(date.getHours() - hours);
 
   return date;
+}
+
+export async function cleanupExpiredRateLimits(now: Date) {
+  const result = emptyRuleResult("expiredRateLimits");
+  const deleted = await prisma.actionRateLimit.deleteMany({
+    where: { expiresAt: { lt: now } },
+  });
+
+  result.changed = deleted.count;
+  result.scanned = deleted.count;
+  return result;
 }
 
 function uniqueIds(ids: Array<string | null | undefined>) {
@@ -575,6 +587,9 @@ export async function runOperationalWorkflows({
   const staffRecipientIds = await getStaffAdminRecipientIds();
 
   const results = [
+    await runRule("expiredRateLimits", () =>
+      cleanupExpiredRateLimits(startedAtDate),
+    ),
     await runRule("expiredOpportunities", () =>
       closeExpiredOpportunities(startedAtDate),
     ),

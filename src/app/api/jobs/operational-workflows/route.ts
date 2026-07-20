@@ -4,6 +4,7 @@ import { runOperationalWorkflows } from "@/lib/jobs/operational-workflows";
 import {
   enforcePublicRateLimit,
   formatRateLimitMessage,
+  getRateLimitResponseHeaders,
 } from "@/lib/security/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,7 @@ export async function GET(request: NextRequest) {
           success: false,
         },
         {
+          headers: getRateLimitResponseHeaders(rateLimit),
           status: 429,
         },
       );

@@ -255,8 +255,11 @@ export function StudentResumeManager({
               </button>
             </div>
             <p className="mt-3 text-xs leading-5 text-muted-foreground">
-              PDF and DOCX files up to 5 MB are supported. After uploading, use
-              Analyze resume to refresh your private review and matching data.
+              PDF and DOCX files up to 5 MB are supported. Files are kept in
+              private storage and checked for the expected file structure, but
+              FP does not currently provide a malware-scanning guarantee. After
+              uploading, use Analyze resume to refresh your private review and
+              matching data.
             </p>
           </form>
         </div>

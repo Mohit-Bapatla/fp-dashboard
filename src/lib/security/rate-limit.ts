@@ -256,3 +256,9 @@ export function formatRateLimitMessage(result?: RateLimitResult) {
 
   return friendlyRateLimitMessage;
 }
+
+export function getRateLimitResponseHeaders(result: RateLimitResult) {
+  return {
+    "Retry-After": String(Math.max(1, result.retryAfterSeconds)),
+  };
+}
