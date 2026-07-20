@@ -9,10 +9,14 @@ const generalSupportContact = "/contact#general-support";
 const partnershipContact = "/contact#partnerships";
 
 const organizationMetrics = [
-  ["150", "Published opportunity listings"],
-  ["147", "Listed host organizations"],
-  ["Free", "Student dashboard access"],
+  ["2,000+", "Students in the FP community"],
+  ["50+", "Partner organizations"],
+  ["$300K+", "Student stipends facilitated through partner programs"],
 ] as const;
+
+const impactMethodologyNote =
+  "These figures represent cumulative Future Physicians activity as of July 20, 2026. The stipend figure reflects funding facilitated through partner programs, not money paid directly by Future Physicians.";
+const substackAccessibleName = "Future Physicians newsletter on Substack";
 
 const publicRoutes = [
   "/opportunities",
@@ -48,7 +52,10 @@ const requiredViewports = [
   { width: 1440, height: 900 },
   { width: 1024, height: 768 },
   { width: 768, height: 1024 },
+  { width: 430, height: 932 },
   { width: 390, height: 844 },
+  { width: 375, height: 812 },
+  { width: 360, height: 800 },
   { width: 320, height: 700 },
 ] as const;
 
@@ -73,6 +80,9 @@ test("homepage explains the product and exposes the public navigation", async ({
   await expect(
     page.getByRole("link", { name: "Explore Opportunities" }).first(),
   ).toHaveAttribute("href", "/opportunities");
+  await expect(
+    page.getByRole("link", { name: "Sign In", exact: true }).first(),
+  ).toHaveAttribute("href", "/sign-in");
 
   const footer = page.getByRole("contentinfo");
   for (const [name, href] of [
@@ -101,6 +111,9 @@ test("homepage keeps the approved metrics and removes unrelated program previews
     await expect(metricLabel).toBeVisible();
     await expect(metricLabel.locator("..")).toContainText(value);
   }
+  await expect(
+    page.getByText(impactMethodologyNote, { exact: true }),
+  ).toBeVisible();
 
   await expect(
     page.getByText("Create Partner Workspace", { exact: true }),
@@ -166,6 +179,9 @@ test("mobile navigation is keyboard-accessible", async ({ page }) => {
     page.getByRole("navigation", { name: "Mobile navigation" }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "For Students" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: substackAccessibleName }),
+  ).toHaveAttribute("href", "https://futurephysicians.substack.com/");
   await expect(
     page.getByRole("button", { name: "Close navigation menu" }),
   ).toBeFocused();
@@ -397,6 +413,16 @@ test("general support navigation lands on the visible contact section", async ({
   ).toHaveAttribute("href", "mailto:support@futurephysicians.org");
 
   await page.goto("/contact");
+  await expect(
+    page.getByText(
+      /Do not email passwords, full identification documents, private student records/i,
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByText("No response time is promised on this page.", {
+      exact: true,
+    }),
+  ).toHaveCount(0);
   const samePageSupport = page.getByRole("link", {
     name: "Email general support",
   });
@@ -451,16 +477,44 @@ test("impact page keeps exact metrics and removes the metric glossary", async ({
     await expect(metricLabel.locator("..")).toContainText(value);
   }
   await expect(
-    page.getByText(
-      "Directory counts are a production snapshot as of July 19, 2026. A listed host organization is not necessarily a confirmed FP partner, and listing counts do not measure active students, placements, or outcomes.",
-      { exact: true },
-    ),
+    page.getByText(impactMethodologyNote, { exact: true }),
   ).toBeVisible();
   await expect(page.getByText("Metric glossary", { exact: false })).toHaveCount(
     0,
   );
   await expect(page.locator("#definitions")).toHaveCount(0);
   await expect(page.locator('a[href="#definitions"]')).toHaveCount(0);
+});
+
+test("newsletter destinations use the official accessible Substack mark", async ({
+  page,
+}) => {
+  for (const route of [
+    "/",
+    "/contact",
+    "/events",
+    "/events/global-healthcare-seminar-2025",
+  ]) {
+    await page.goto(route);
+    const links = page.getByRole("link", { name: substackAccessibleName });
+    expect(
+      await links.count(),
+      `${route} should expose Substack`,
+    ).toBeGreaterThan(0);
+
+    for (const link of await links.all()) {
+      await expect(link).toHaveAttribute(
+        "href",
+        "https://futurephysicians.substack.com/",
+      );
+      await expect(link).toHaveAttribute("target", "_blank");
+      await expect(link).toHaveAttribute("rel", "noopener noreferrer");
+      await expect(link.locator("svg[data-substack-mark]")).toHaveCount(1);
+      const box = await link.boundingBox();
+      expect(box?.width).toBeGreaterThanOrEqual(44);
+      expect(box?.height).toBeGreaterThanOrEqual(44);
+    }
+  }
 });
 
 test("FAQ answers and structured data use the same approved wording", async ({
@@ -575,12 +629,38 @@ test("sign-in page loads", async ({ page }) => {
     process.env.E2E_CLERK_AVAILABLE !== "true",
     "A real Clerk browser-test environment is required.",
   );
-  await page.goto("/sign-in");
+  await page.goto("/");
+  await page
+    .getByRole("banner")
+    .getByRole("link", { name: "Sign In", exact: true })
+    .click();
 
   await expect(page).toHaveURL(/sign-in/);
   await expect(
     page.getByRole("heading", { name: "Welcome back" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Continue with Google" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Email address")).toBeVisible();
+  await expect(page.getByRole("link", { name: /Sign up/i })).toBeVisible();
+});
+
+test("sign-up page renders Clerk account creation", async ({ page }) => {
+  test.skip(
+    process.env.E2E_CLERK_AVAILABLE !== "true",
+    "A real Clerk browser-test environment is required.",
+  );
+  await page.goto("/sign-up");
+
+  await expect(page).toHaveURL(/sign-up/);
+  await expect(
+    page.getByRole("heading", { name: "Create your account" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Continue with Google" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Email address")).toBeVisible();
 });
 
 test("signed-out dashboard redirects to sign-in", async ({ page }) => {

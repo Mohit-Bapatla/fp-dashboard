@@ -18,6 +18,7 @@ import {
   MetricCard,
   PageCta,
 } from "@/components/marketing/supporting-page-sections";
+import { SubstackNewsletterLink } from "@/components/marketing/substack-newsletter-link";
 import { createPublicMetadata } from "@/lib/public-metadata";
 import { seminar, siteConfig } from "@/lib/site-config";
 
@@ -228,14 +229,7 @@ export default function GlobalHealthcareSeminarPage() {
               See future events
               <ArrowRight aria-hidden="true" className="size-4" />
             </Link>
-            <a
-              className={secondaryButtonClass}
-              href={siteConfig.links.newsletter}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              Subscribe to the newsletter
-            </a>
+            <SubstackNewsletterLink />
           </>
         }
         description="Future event details will appear only after the schedule, audience, format, and registration route are confirmed."

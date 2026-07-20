@@ -70,6 +70,8 @@ const allowedConsoleMessages: readonly AllowedConsoleMessage[] = [
 const applicationErrorSignatures = [
   "Application error: a client-side exception has occurred",
   "Application error: a server-side exception has occurred",
+  "Dashboard unavailable",
+  "We could not load this view",
   "Internal Server Error",
 ] as const;
 

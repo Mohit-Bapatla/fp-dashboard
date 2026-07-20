@@ -32,6 +32,14 @@ const expectedSocialLinks = [
   },
 ] as const;
 
+const expectedFooterIconLinks = [
+  ...expectedSocialLinks,
+  {
+    href: "https://futurephysicians.substack.com/",
+    label: "Future Physicians newsletter on Substack",
+  },
+] as const;
+
 const accessibilityTags = [
   "wcag2a",
   "wcag2aa",
@@ -743,8 +751,8 @@ for (const viewport of mobileViewports.filter(({ width }) =>
 
     const footer = page.getByRole("contentinfo");
     const socialLinks = footer.locator("[data-social-link]");
-    await expect(socialLinks).toHaveCount(3);
-    for (const { href, label } of expectedSocialLinks) {
+    await expect(socialLinks).toHaveCount(expectedFooterIconLinks.length);
+    for (const { href, label } of expectedFooterIconLinks) {
       const exactLink = footer.locator(
         `[data-social-link][aria-label=${JSON.stringify(label)}]`,
       );

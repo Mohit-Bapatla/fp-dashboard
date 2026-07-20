@@ -6,6 +6,7 @@ import {
 } from "next/server";
 
 import { requiresClerkMiddleware } from "./lib/auth/middleware-routing";
+import { isPublicOnlyBrowserTest } from "./lib/auth/public-only-browser-test";
 import {
   canAccessDashboardPath,
   getDashboardPathForRole,
@@ -79,11 +80,12 @@ const authenticatedProxy = clerkMiddleware(async (auth, req) => {
 });
 
 export default function proxy(req: NextRequest, event: NextFetchEvent) {
-  const publicOnlyBrowserTest = process.env.E2E_PUBLIC_ONLY === "true";
+  const publicOnlyBrowserTest = isPublicOnlyBrowserTest();
 
   // CI exercises signed-out marketing pages without real Clerk credentials.
   // The seam never bypasses dashboards, auth pages, onboarding, APIs, TRPC, or
-  // Clerk sync routes, and is inactive unless the dedicated test flag is set.
+  // Clerk sync routes, and the helper additionally requires GitHub Actions
+  // markers while rejecting every Vercel environment.
   if (publicOnlyBrowserTest && !requiresClerkMiddleware(req.nextUrl.pathname)) {
     return secureRequest(req).nextResponse();
   }

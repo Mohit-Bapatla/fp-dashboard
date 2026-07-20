@@ -20,7 +20,7 @@ import {
 } from "@/lib/site-config";
 
 const description =
-  "Explore a dated directory snapshot and separately reported program measures, with clear definitions and limitations.";
+  "Explore cumulative Future Physicians activity and separately reported program measures, with clear definitions and dates.";
 
 export const metadata = createPublicMetadata({
   description,
@@ -45,14 +45,14 @@ export default function ImpactPage() {
         }
         description={description}
         eyebrow="Impact"
-        title="Growing access, measured with care."
+        title="Future Physicians activity, measured with care."
       />
 
       <MarketingSection id="organization-impact" tone="blue">
         <SectionHeading
-          description="These current, auditable figures describe the public opportunity directory and student access. They do not claim student placements, active membership, or confirmed partnerships."
-          eyebrow="Directory snapshot"
-          title="Healthcare opportunities with clearly scoped counts."
+          description="These figures describe cumulative community reach, partner organizations, and student stipend funding facilitated through partner programs. Facilitated funding is not money paid directly by Future Physicians."
+          eyebrow="Cumulative activity"
+          title="Community activity with clearly scoped measures."
         />
         <div className="mt-10 grid gap-5 md:grid-cols-3">
           {organizationMetrics.map((metric) => (

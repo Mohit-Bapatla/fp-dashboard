@@ -69,6 +69,33 @@ for (const roleCase of roleCases) {
       ).toBeVisible();
     });
 
+    test(`keeps a signed-in ${roleCase.role} viewer on the role dashboard from the public site`, async ({
+      page,
+    }) => {
+      test.skip(
+        !hasStorageState,
+        `Set ${roleCase.env} to a development-Clerk Playwright storage-state file`,
+      );
+
+      await page.goto("/");
+
+      const header = page.getByRole("banner");
+      await expect(
+        header.getByRole("link", { name: "Sign In", exact: true }),
+      ).toHaveCount(0);
+      const dashboardEntry = header.getByRole("link", { name: /^Open / });
+      await expect(dashboardEntry).toHaveAttribute(
+        "href",
+        roleCase.dashboardPath,
+      );
+      await dashboardEntry.click();
+
+      await expect(page).toHaveURL(new RegExp(`${roleCase.dashboardPath}$`));
+      await expect(
+        page.getByRole("heading", { level: 1, name: roleCase.heading }),
+      ).toBeVisible();
+    });
+
     if ("restrictedPath" in roleCase) {
       test(`redirects ${roleCase.role} away from another role's workspace`, async ({
         page,
