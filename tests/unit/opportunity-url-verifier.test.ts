@@ -159,4 +159,23 @@ describe("opportunity URL verifier", () => {
     );
     expect(reopened.status).toBe("LIKELY_REOPENED");
   });
+
+  it("ignores availability phrases inside script and style elements", async () => {
+    const result = await verifyOpportunityUrl(
+      "https://health.example.edu/apply",
+      null,
+      {
+        request: vi.fn().mockResolvedValue({
+          body: new TextEncoder().encode(
+            "<script>const message = 'applications are closed';</script ><style>.notice::after { content: 'applications have closed'; }</style ><main>Program details</main>",
+          ),
+          location: undefined,
+          statusCode: 200,
+        }),
+        resolve: resolvePublic,
+      },
+    );
+
+    expect(result.status).toBe("HEALTHY");
+  });
 });
