@@ -24,6 +24,10 @@ describe("pending Clerk session task routing", () => {
 
     expect(authLayout).toContain("<RedirectToTasks />");
     expect(dashboardLayout).toContain("<RedirectToTasks />");
+    expect(authLayout).toContain("localization={clerkEmailCodeLocalization}");
+    expect(dashboardLayout).toContain(
+      "localization={clerkEmailCodeLocalization}",
+    );
   });
 
   it("documents an onboarding sign-up force and fallback redirect", () => {
