@@ -13,6 +13,7 @@ import {
   validateStudentNotificationPreferenceForm,
 } from "@/lib/student/notification-preference-validation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 
 export type StudentNotificationPreferenceActionState = {
   error: string | null;
@@ -26,8 +27,9 @@ export async function updateStudentNotificationPreferences(
 ): Promise<StudentNotificationPreferenceActionState> {
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
+  const profile = getCompletedStudentProfile(user.studentProfile);
 
-  if (!user.studentProfile) {
+  if (!profile) {
     return {
       error: "Complete your student profile before saving reminders.",
       fieldErrors: {},
@@ -65,7 +67,7 @@ export async function updateStudentNotificationPreferences(
     quietHoursEnd: validation.data.quietHoursEnd || null,
     quietHoursStart: validation.data.quietHoursStart || null,
   };
-  const studentProfileId = user.studentProfile.id;
+  const studentProfileId = profile.id;
 
   try {
     await prisma.$transaction(async (tx) => {

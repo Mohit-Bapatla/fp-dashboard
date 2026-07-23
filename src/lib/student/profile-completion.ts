@@ -57,3 +57,9 @@ export function getStudentProfileCompletion(
     isComplete: completedFields === completionFields.length,
   };
 }
+
+export function getCompletedStudentProfile<
+  TProfile extends StudentProfileForCompletion,
+>(profile: TProfile | null) {
+  return getStudentProfileCompletion(profile).isComplete ? profile : null;
+}

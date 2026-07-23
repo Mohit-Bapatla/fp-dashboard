@@ -47,7 +47,15 @@ const authenticatedProxy = clerkMiddleware(async (auth, req) => {
     return nextResponse();
   }
 
-  const { redirectToSignIn, sessionClaims, userId } = await auth();
+  const { redirectToSignIn, sessionClaims, sessionStatus, userId } =
+    await auth();
+
+  if (sessionStatus === "pending") {
+    const pendingTaskUrl = req.nextUrl.clone();
+    pendingTaskUrl.pathname = "/sign-in";
+    pendingTaskUrl.searchParams.set("redirect_url", req.url);
+    return secureResponse(NextResponse.redirect(pendingTaskUrl));
+  }
 
   if (!userId) {
     return secureResponse(redirectToSignIn({ returnBackUrl: req.url }));

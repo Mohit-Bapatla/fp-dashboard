@@ -6,6 +6,7 @@ import { optionalSafeExternalUrl } from "@/lib/security/safe-url";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 const categories = [
   "BROKEN_LINK",
   "INCORRECT_DEADLINE",
@@ -21,7 +22,7 @@ const value = (data: FormData, key: string) => {
 export async function reportIncorrectOpportunity(formData: FormData) {
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
-  if (!user.studentProfile) return;
+  if (!getCompletedStudentProfile(user.studentProfile)) return;
   const opportunityId = value(formData, "opportunityId"),
     rawCategory = value(formData, "category"),
     details = value(formData, "details").slice(0, 2000),

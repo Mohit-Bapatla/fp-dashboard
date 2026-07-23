@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, ChevronLeft, ChevronRight, Plus, Save, X } from "lucide-react";
+import Link from "next/link";
 import {
   useActionState,
   useEffect,
@@ -20,6 +21,7 @@ import {
 } from "@/lib/student/profile-validation";
 
 type StudentOnboardingFormProps = {
+  initialStep?: number;
   initialState: StudentOnboardingActionState;
   requiresMinimumAgeAffirmation?: boolean;
   returnTo?: string;
@@ -394,6 +396,7 @@ function SpecialtyTagInput({
 }
 
 export function StudentOnboardingForm({
+  initialStep = 0,
   initialState,
   requiresMinimumAgeAffirmation = false,
   returnTo = "/dashboard/student",
@@ -402,18 +405,18 @@ export function StudentOnboardingForm({
     saveStudentProfile,
     initialState,
   );
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(initialStep);
   const initialGradeYear = getGradeYearControlValues(state.values.gradeYear);
   const [selectedGradeYear, setSelectedGradeYear] = useState(
     initialGradeYear.selectedValue,
   );
-  const [saveRequested, setSaveRequested] = useState(false);
+  const handledSaveSequence = useRef(initialState.saveSequence);
   const errorSummaryRef = useRef<HTMLDivElement>(null);
   const progress = useMemo(
     () => Math.round(((step + 1) / steps.length) * 100),
     [step],
   );
-  const isSaving = saveRequested && isPending;
+  const isSaving = isPending;
   const hasErrors = Boolean(
     state.formError || Object.values(state.fieldErrors).some(Boolean),
   );
@@ -421,6 +424,25 @@ export function StudentOnboardingForm({
   useEffect(() => {
     if (hasErrors) errorSummaryRef.current?.focus();
   }, [hasErrors, state.fieldErrors, state.formError]);
+
+  useEffect(() => {
+    if (
+      state.saveStatus === "saved" &&
+      state.saveSequence > handledSaveSequence.current
+    ) {
+      handledSaveSequence.current = state.saveSequence;
+      setStep(
+        state.resumeStep ??
+          Math.min((state.savedStep ?? step) + 1, steps.length - 1),
+      );
+    }
+  }, [
+    state.resumeStep,
+    state.savedStep,
+    state.saveSequence,
+    state.saveStatus,
+    step,
+  ]);
 
   return (
     <form
@@ -436,6 +458,7 @@ export function StudentOnboardingForm({
       }}
     >
       <input name="returnTo" type="hidden" value={returnTo} />
+      <input name="step" type="hidden" value={step} />
       <div className="border-b border-border p-6">
         <nav aria-label="Form progress" className="mb-5">
           <ol className="flex items-center">
@@ -498,6 +521,18 @@ export function StudentOnboardingForm({
             <p className="mt-2 text-right">{progress}%</p>
           </div>
         </div>
+        <p
+          aria-live="polite"
+          className="mt-4 min-h-6 text-sm font-medium text-muted-foreground"
+        >
+          {isSaving
+            ? "Saving this step…"
+            : state.saveStatus === "saved"
+              ? "Saved. You can safely refresh or come back later."
+              : state.saveStatus === "error"
+                ? "This step was not saved. Earlier saved steps remain available."
+                : "Progress is saved when you continue from each step."}
+        </p>
       </div>
 
       {hasErrors ? (
@@ -507,8 +542,27 @@ export function StudentOnboardingForm({
           role="alert"
           tabIndex={-1}
         >
-          {state.formError ??
-            "Review the highlighted fields before saving your profile."}
+          <p>
+            {state.formError ??
+              "Review the highlighted fields before saving your profile."}
+          </p>
+          {state.supportReference ? (
+            <Link
+              className="mt-2 inline-flex min-h-10 items-center rounded-lg border border-red-300 bg-white px-3 text-sm font-semibold text-red-800"
+              href="/dashboard/support"
+            >
+              Contact support
+            </Link>
+          ) : null}
+          {state.resumeStep != null && state.resumeStep !== step ? (
+            <button
+              className="mt-2 min-h-10 rounded-lg border border-red-300 bg-white px-3 text-sm font-semibold text-red-800"
+              onClick={() => setStep(state.resumeStep ?? step)}
+              type="button"
+            >
+              Return to the step that needs attention
+            </button>
+          ) : null}
         </div>
       ) : null}
 
@@ -867,14 +921,12 @@ export function StudentOnboardingForm({
           <button
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isSaving}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              setStep((current) => Math.min(current + 1, steps.length - 1));
-            }}
-            type="button"
+            formAction={formAction}
+            type="submit"
           >
-            Continue
+            {state.saveStatus === "error"
+              ? "Try saving again"
+              : "Save and continue"}
             <ChevronRight aria-hidden="true" className="h-4 w-4" />
           </button>
         ) : (
@@ -882,13 +934,12 @@ export function StudentOnboardingForm({
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isSaving}
             formAction={formAction}
-            onClick={() => setSaveRequested(true)}
             type="submit"
           >
             {isSaving ? (
               <>
                 <Save aria-hidden="true" className="h-4 w-4" />
-                Saving
+                Saving…
               </>
             ) : (
               <>

@@ -27,9 +27,21 @@ vi.mock("@/lib/student/authorization", () => ({
   assertStudentAccess: vi.fn().mockResolvedValue({ userId: "clerk-1" }),
 }));
 vi.mock("@/lib/student/profile", () => ({
-  getCurrentStudentProfile: vi
-    .fn()
-    .mockResolvedValue({ id: "user-1", studentProfile: { id: "profile-1" } }),
+  getCurrentStudentProfile: vi.fn().mockResolvedValue({
+    id: "user-1",
+    studentProfile: {
+      availability: ["Weekends"],
+      careerGoals: "Explore clinical care",
+      city: "Chicago",
+      country: "United States",
+      gradeYear: "College freshman",
+      id: "profile-1",
+      interestedSpecialties: ["Pediatrics"],
+      opportunityTypes: ["SHADOWING"],
+      school: "Example University",
+      state: "Illinois",
+    },
+  }),
 }));
 
 import {

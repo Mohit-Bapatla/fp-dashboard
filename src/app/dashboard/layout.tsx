@@ -1,4 +1,4 @@
-import { ClerkProvider } from "@clerk/nextjs";
+import { ClerkProvider, RedirectToTasks } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import type { ReactNode } from "react";
@@ -13,5 +13,10 @@ export default async function DashboardLayout({
   children: ReactNode;
 }) {
   const nonce = (await headers()).get("x-nonce") ?? undefined;
-  return <ClerkProvider nonce={nonce}>{children}</ClerkProvider>;
+  return (
+    <ClerkProvider nonce={nonce}>
+      <RedirectToTasks />
+      {children}
+    </ClerkProvider>
+  );
 }

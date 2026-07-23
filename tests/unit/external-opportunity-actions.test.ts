@@ -23,7 +23,18 @@ vi.mock("@/lib/student/authorization", () => ({
 vi.mock("@/lib/student/profile", () => ({
   getCurrentStudentProfile: vi.fn().mockResolvedValue({
     id: "user-1",
-    studentProfile: { id: "profile-owner" },
+    studentProfile: {
+      availability: ["Weekends"],
+      careerGoals: "Explore clinical care",
+      city: "Chicago",
+      country: "United States",
+      gradeYear: "College freshman",
+      id: "profile-owner",
+      interestedSpecialties: ["Pediatrics"],
+      opportunityTypes: ["SHADOWING"],
+      school: "Example University",
+      state: "Illinois",
+    },
   }),
 }));
 vi.mock("@/lib/security/rate-limit", () => ({

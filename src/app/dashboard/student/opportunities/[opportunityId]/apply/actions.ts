@@ -23,6 +23,7 @@ import { assertStudentAccess } from "@/lib/student/authorization";
 import type { StudentApplicationActionState } from "@/lib/student/application-validation";
 import { validateStudentApplicationForm } from "@/lib/student/application-validation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 import { redirect } from "next/navigation";
 import { canSubmitExistingApplication } from "@/lib/student/application-workspace";
 import {
@@ -152,11 +153,11 @@ export async function submitStudentApplication(
   }
 
   const user = await getCurrentStudentProfile(userId);
+  const profile = getCompletedStudentProfile(user.studentProfile);
 
-  if (!user.studentProfile) {
+  if (!profile) {
     redirect("/dashboard/student/onboarding");
   }
-  const profile = user.studentProfile;
 
   const rateLimit = await enforceRateLimit({
     action: "application_submit",
@@ -386,7 +387,7 @@ export async function submitStudentApplication(
 
   const match = getOpportunityMatchScore({
     opportunity,
-    profile: user.studentProfile,
+    profile,
     resume,
   });
 
@@ -414,11 +415,11 @@ export async function confirmExternalApplicationSubmission(formData: FormData) {
   const user = await getCurrentStudentProfile(userId);
   const opportunityId = getString(formData, "opportunityId");
   const confirmed = formData.get("confirmedExternalSubmission") === "on";
+  const profile = getCompletedStudentProfile(user.studentProfile);
 
-  if (!user.studentProfile || !opportunityId || !confirmed) {
+  if (!profile || !opportunityId || !confirmed) {
     return;
   }
-  const profile = user.studentProfile;
 
   const rateLimit = await enforceRateLimit({
     action: "external_application_confirmation",

@@ -6,10 +6,12 @@ import { ExternalOpportunityForm } from "@/components/student/external-opportuni
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 
 export default async function AddExternalOpportunityPage() {
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
+  const profile = getCompletedStudentProfile(user.studentProfile);
 
   return (
     <DashboardShell
@@ -39,7 +41,7 @@ export default async function AddExternalOpportunityPage() {
           </div>
         </header>
 
-        {!user.studentProfile ? (
+        {!profile ? (
           <section className="rounded-xl border border-border bg-background p-6">
             Complete student onboarding before creating a private application
             source.

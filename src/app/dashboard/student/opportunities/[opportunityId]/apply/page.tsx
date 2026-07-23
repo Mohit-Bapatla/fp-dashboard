@@ -11,6 +11,7 @@ import { startApplicationWorkspace } from "@/app/dashboard/student/applications/
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 import { prisma } from "@/lib/db/prisma";
 import {
   getApplyPageDecision,
@@ -62,7 +63,7 @@ export default async function StudentOpportunityApplyPage({
   const query = await searchParams;
   const now = new Date();
   const user = await getCurrentStudentProfile(userId);
-  const profile = user.studentProfile;
+  const profile = getCompletedStudentProfile(user.studentProfile);
   const opportunity = await prisma.opportunity.findFirst({
     where: profile
       ? studentAccessiblePreparationOpportunityWhere(

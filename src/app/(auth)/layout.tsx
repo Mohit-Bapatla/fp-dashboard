@@ -1,4 +1,4 @@
-import { ClerkProvider } from "@clerk/nextjs";
+import { ClerkProvider, RedirectToTasks } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import type { ReactNode } from "react";
@@ -16,6 +16,7 @@ export default async function AuthLayout({
 
   return (
     <ClerkProvider nonce={nonce}>
+      <RedirectToTasks />
       <a
         className="fixed left-4 top-3 z-[100] -translate-y-20 rounded-lg bg-brand-navy px-4 py-2 text-sm font-semibold text-white transition focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         href="#auth-main"

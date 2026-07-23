@@ -4,21 +4,23 @@ import { RoleBadge } from "@/components/dashboard/role-badge";
 import { StudentNotificationPreferencesForm } from "@/components/student/student-notification-preferences-form";
 import { StudentWeeklyPlanPreview } from "@/components/student/student-weekly-plan-preview";
 import { assertStudentAccess } from "@/lib/student/authorization";
+import { getStudentNavItems } from "@/lib/student/navigation";
 import { getStudentNotificationPreference } from "@/lib/student/notification-preferences";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 import { getStudentWeeklyPlan } from "@/lib/student/weekly-plan";
-import { getStudentNavItems } from "@/lib/student/navigation";
 
 export default async function StudentSettingsPage() {
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
-  const notificationPreference = user.studentProfile
-    ? await getStudentNotificationPreference(user.studentProfile.id)
+  const profile = getCompletedStudentProfile(user.studentProfile);
+  const notificationPreference = profile
+    ? await getStudentNotificationPreference(profile.id)
     : null;
   const weeklyPlan =
-    user.studentProfile && notificationPreference
+    profile && notificationPreference
       ? await getStudentWeeklyPlan({
-          studentProfileId: user.studentProfile.id,
+          studentProfileId: profile.id,
           timezone: notificationPreference.timezone,
         })
       : null;

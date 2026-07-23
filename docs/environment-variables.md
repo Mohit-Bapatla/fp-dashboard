@@ -17,6 +17,8 @@
 - `NEXT_PUBLIC_CLERK_SIGN_UP_URL`: sign-up path.
 - `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL`: post-sign-in fallback.
 - `NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL`: post-sign-up fallback.
+- `NEXT_PUBLIC_CLERK_SIGN_UP_FORCE_REDIRECT_URL`: post-sign-up destination,
+  including after email verification and other required sign-up tasks.
 - `NEXT_PUBLIC_CLERK_SIGN_OUT_FALLBACK_REDIRECT_URL`: post-sign-out fallback.
 
 ## Database
