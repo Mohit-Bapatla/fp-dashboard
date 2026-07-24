@@ -27,7 +27,9 @@ export function DashboardAccountMenu({ displayName }: { displayName: string }) {
   const [error, setError] = useState<string | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [controller] = useState(() =>
-    createDashboardSignOutController(signOut),
+    createDashboardSignOutController(signOut, () => {
+      window.location.replace("/");
+    }),
   );
 
   const handleSignOut = () => {
