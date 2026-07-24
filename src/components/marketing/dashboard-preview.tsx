@@ -114,6 +114,10 @@ function StudentDashboardPreview() {
   const [reducedMotion, setReducedMotion] = useState(false);
   const rootRef = useRef<HTMLElement>(null);
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const pauseIntentRef = useRef<{
+    activeIndex: number;
+    automaticAdvances: number;
+  } | null>(null);
   const [autoplayTimer] = useState(createManagedAutoplayTimer);
   const instanceId = useId();
 
@@ -230,6 +234,9 @@ function StudentDashboardPreview() {
         : "Pause dashboard preview";
 
   const toggleAutomaticPreview = () => {
+    const pauseIntent = pauseIntentRef.current;
+    pauseIntentRef.current = null;
+
     if (reducedMotion) {
       return;
     }
@@ -247,6 +254,12 @@ function StudentDashboardPreview() {
     const willPause = !automaticPaused;
     if (willPause) {
       autoplayTimer.cancel();
+      // A timeout can enqueue its state update after the control becomes
+      // actionable but before the click handler runs. Restore the state the
+      // viewer actually pressed Pause on so that queued transition cannot
+      // appear after the control reports a paused state.
+      setActiveIndex(pauseIntent?.activeIndex ?? activeIndex);
+      setAutomaticAdvances(pauseIntent?.automaticAdvances ?? automaticAdvances);
     }
     setAutomaticPaused(willPause);
     setAnnouncement(
@@ -321,7 +334,21 @@ function StudentDashboardPreview() {
                 aria-label={animationControlLabel}
                 className="grid size-11 shrink-0 place-items-center rounded-full border border-border bg-white text-primary shadow-sm transition hover:border-primary/40 hover:bg-blue-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-60"
                 disabled={reducedMotion}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    pauseIntentRef.current = {
+                      activeIndex,
+                      automaticAdvances,
+                    };
+                  }
+                }}
                 onClick={toggleAutomaticPreview}
+                onPointerDown={() => {
+                  pauseIntentRef.current = {
+                    activeIndex,
+                    automaticAdvances,
+                  };
+                }}
                 title={animationControlLabel}
                 type="button"
               >
