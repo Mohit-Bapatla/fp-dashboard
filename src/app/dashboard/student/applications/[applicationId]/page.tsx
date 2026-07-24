@@ -21,6 +21,7 @@ import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getStudentNotificationPreference } from "@/lib/student/notification-preferences";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 
 import {
   startApplicationWorkspace,
@@ -52,8 +53,8 @@ export default async function ApplicationWorkspacePage({
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
   const { applicationId } = await params;
-  if (!user.studentProfile) notFound();
-  const profile = user.studentProfile;
+  const profile = getCompletedStudentProfile(user.studentProfile);
+  if (!profile) notFound();
 
   const [application, resumes, notificationPreference] = await Promise.all([
     prisma.application.findFirst({

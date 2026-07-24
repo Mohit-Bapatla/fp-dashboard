@@ -11,6 +11,7 @@ import { createNotifications } from "@/lib/notifications/notifications";
 import { getCurrentPartnerContext } from "@/lib/partner/context";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -322,8 +323,9 @@ export async function respondToInterviewRequest(formData: FormData) {
   const notes = getString(formData, "studentResponseNotes");
   const redirectTo = getSafeRedirect(formData);
   const user = await getCurrentStudentProfile(userId);
+  const profile = getCompletedStudentProfile(user.studentProfile);
 
-  if (!user.studentProfile || !interviewId) {
+  if (!profile || !interviewId) {
     redirect(redirectTo);
   }
 
@@ -331,7 +333,7 @@ export async function respondToInterviewRequest(formData: FormData) {
     where: {
       id: interviewId,
       application: {
-        studentProfileId: user.studentProfile.id,
+        studentProfileId: profile.id,
         opportunity: {
           visibility: "PUBLIC_DIRECTORY",
           organization: {

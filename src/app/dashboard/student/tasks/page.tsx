@@ -25,6 +25,7 @@ import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getStudentNotificationPreference } from "@/lib/student/notification-preferences";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 
 type StudentTasksPageProps = {
   searchParams: Promise<{
@@ -60,7 +61,7 @@ export default async function StudentTasksPage({
 }: StudentTasksPageProps) {
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
-  const profile = user.studentProfile;
+  const profile = getCompletedStudentProfile(user.studentProfile);
 
   if (!profile) {
     return (

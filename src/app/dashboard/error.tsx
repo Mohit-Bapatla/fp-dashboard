@@ -4,6 +4,8 @@ import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
 import { useEffect } from "react";
 
+import { DASHBOARD_SUPPORT_ACTION } from "@/lib/support-contact";
+
 export default function DashboardError({
   error,
   reset,
@@ -47,6 +49,12 @@ export default function DashboardError({
           >
             Try again
           </button>
+          <Link
+            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-primary/25 bg-blue-surface px-5 text-sm font-semibold text-primary transition hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            href={DASHBOARD_SUPPORT_ACTION.href}
+          >
+            {DASHBOARD_SUPPORT_ACTION.label}
+          </Link>
           <Link
             className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-background px-5 text-sm font-semibold text-brand-navy transition hover:bg-blue-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             href="/"

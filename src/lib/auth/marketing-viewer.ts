@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { cache } from "react";
 
 import { getRoleFromSessionClaims, type AppRole } from "@/lib/auth/roles";
+import { isPublicOnlyBrowserTest } from "@/lib/auth/public-only-browser-test";
 
 export type MarketingViewer = {
   role: AppRole | null;
@@ -14,7 +15,7 @@ export type MarketingViewer = {
  * performing duplicate Clerk lookups without sharing identity across requests.
  */
 export const getMarketingViewer = cache(async (): Promise<MarketingViewer> => {
-  if (process.env.E2E_PUBLIC_ONLY === "true") {
+  if (isPublicOnlyBrowserTest()) {
     return { role: null, userId: null };
   }
 

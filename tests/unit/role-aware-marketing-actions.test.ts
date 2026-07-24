@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getDashboardEntryAction } from "@/components/marketing/dashboard-entry-button";
+import { getMarketingHeaderActions } from "@/components/marketing/marketing-header";
 import { getPublicOpportunityCardAction } from "@/components/opportunities/public-opportunity-card";
 
 describe("role-aware marketing actions", () => {
@@ -32,6 +33,24 @@ describe("role-aware marketing actions", () => {
       href: "/dashboard/partner",
       label: "Open Partner Dashboard",
       linkType: "internal",
+    });
+  });
+
+  it("renders immediate role-aware dashboard navigation in the public header", () => {
+    expect(getMarketingHeaderActions(null)).toEqual({
+      account: {
+        href: "/sign-up?redirect_url=%2Fdashboard%2Fstudent%2Fonboarding",
+        label: "Create Free Profile",
+      },
+      showSignIn: true,
+    });
+    expect(getMarketingHeaderActions("STUDENT")).toEqual({
+      account: { href: "/dashboard/student", label: "Dashboard" },
+      showSignIn: false,
+    });
+    expect(getMarketingHeaderActions("ADMIN")).toEqual({
+      account: { href: "/dashboard/admin", label: "Dashboard" },
+      showSignIn: false,
     });
   });
 

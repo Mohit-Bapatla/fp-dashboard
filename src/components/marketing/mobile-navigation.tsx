@@ -6,7 +6,7 @@ import Link from "next/link";
 import type { MouseEvent, ReactNode } from "react";
 import { useState } from "react";
 
-import { siteConfig } from "@/lib/site-config";
+import { SubstackNewsletterLink } from "./substack-newsletter-link";
 
 const navigation = [
   { href: "/opportunities", label: "Opportunities" },
@@ -126,14 +126,7 @@ export function MobileNavigation({
                 </Link>
               ) : null}
               {accountAction}
-              <a
-                className="text-center text-xs font-medium text-muted-foreground underline-offset-4 hover:underline"
-                href={siteConfig.links.newsletter}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                Get the FP newsletter ↗
-              </a>
+              <SubstackNewsletterLink className="justify-self-center" />
             </div>
           </Dialog.Popup>
         </Dialog.Viewport>

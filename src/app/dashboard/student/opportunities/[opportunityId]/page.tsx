@@ -17,6 +17,7 @@ import {
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 import { prisma } from "@/lib/db/prisma";
 import {
   isStudentOpportunityPreparable,
@@ -38,7 +39,7 @@ export default async function StudentOpportunityDetailPage({
 
   const { opportunityId } = await params;
   const user = await getCurrentStudentProfile(userId);
-  const profile = user.studentProfile;
+  const profile = getCompletedStudentProfile(user.studentProfile);
   const opportunity = await prisma.opportunity.findFirst({
     where: studentAccessibleReadOnlyOpportunityWhere(
       opportunityId,

@@ -30,6 +30,7 @@ import {
 } from "@/lib/security/rate-limit";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -76,8 +77,9 @@ export async function createStudentPlacementRequest(
   }
 
   const user = await getCurrentStudentProfile(userId);
+  const profile = getCompletedStudentProfile(user.studentProfile);
 
-  if (!user.studentProfile) {
+  if (!profile) {
     redirect("/dashboard/student/onboarding");
   }
 
@@ -101,7 +103,7 @@ export async function createStudentPlacementRequest(
       ...validation.data,
       requestedById: user.id,
       status: "NEW",
-      studentProfileId: user.studentProfile.id,
+      studentProfileId: profile.id,
     },
     select: {
       id: true,
@@ -143,7 +145,7 @@ export async function createStudentPlacementRequest(
       queueEmailSkipped: queueEmailResult.skipped,
       studentEmailSent: studentEmailResult.sent,
       studentEmailSkipped: studentEmailResult.skipped,
-      studentProfileId: user.studentProfile.id,
+      studentProfileId: profile.id,
       title: request.title,
     },
   });

@@ -12,6 +12,7 @@ import {
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 
 import {
   cancelProgramEventRegistration,
@@ -26,7 +27,7 @@ export default async function StudentEventDetailPage({
   const { eventId } = await params;
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
-  const studentProfileId = user.studentProfile?.id;
+  const studentProfileId = getCompletedStudentProfile(user.studentProfile)?.id;
 
   const event = await prisma.programEvent.findFirst({
     where: {

@@ -23,6 +23,7 @@ import {
   applicationTaskOwnership,
 } from "@/lib/student/owned-records";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 
 export type StudentTaskActionState = {
   error: string | null;
@@ -60,8 +61,9 @@ function revalidateTaskPaths(applicationId: string) {
 async function getMutationContext(action: string, limit: number) {
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
+  const profile = getCompletedStudentProfile(user.studentProfile);
 
-  if (!user.studentProfile) {
+  if (!profile) {
     return {
       ok: false as const,
       error: "Complete your student profile before managing application tasks.",
@@ -84,7 +86,7 @@ async function getMutationContext(action: string, limit: number) {
 
   return {
     ok: true as const,
-    profileId: user.studentProfile.id,
+    profileId: profile.id,
     userId: user.id,
   };
 }

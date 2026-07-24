@@ -8,6 +8,7 @@ import { createAuditLog } from "@/lib/audit/audit-log";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 import { applicationOwnership } from "@/lib/student/owned-records";
 import {
   canSubmitExistingApplication,
@@ -44,8 +45,8 @@ export async function startApplicationWorkspace(formData: FormData) {
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
   const opportunityId = value(formData, "opportunityId");
-  if (!user.studentProfile || !opportunityId) return;
-  const profile = user.studentProfile;
+  const profile = getCompletedStudentProfile(user.studentProfile);
+  if (!profile || !opportunityId) return;
   const rate = await enforceRateLimit({
     action: "application_workspace_mutation",
     identifier: `user:${user.id}`,
@@ -181,8 +182,8 @@ export async function startApplicationWorkspace(formData: FormData) {
 export async function updateApplicationWorkspace(formData: FormData) {
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
-  if (!user.studentProfile) return;
-  const profile = user.studentProfile;
+  const profile = getCompletedStudentProfile(user.studentProfile);
+  if (!profile) return;
   const rate = await enforceRateLimit({
     action: "application_workspace_update",
     identifier: `user:${user.id}`,

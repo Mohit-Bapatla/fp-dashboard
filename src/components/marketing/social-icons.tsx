@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export type SocialPlatform = "instagram" | "linkedin" | "tiktok";
+export type SocialPlatform = "instagram" | "linkedin" | "substack" | "tiktok";
 
 export function SocialIcon({
   className,
@@ -9,6 +9,28 @@ export function SocialIcon({
   className?: string;
   platform: SocialPlatform;
 }) {
+  if (platform === "substack") {
+    return (
+      <svg
+        aria-hidden="true"
+        className={cn("size-5", className)}
+        data-substack-mark=""
+        focusable="false"
+        viewBox="0 0 1000 1000"
+      >
+        <path
+          d="M764.166 348.371H236.319V419.402H764.166V348.371Z"
+          fill="#FF6719"
+        />
+        <path
+          d="M236.319 483.752V813.999L500.231 666.512L764.19 813.999V483.752H236.319Z"
+          fill="#FF6719"
+        />
+        <path d="M764.166 213H236.319V284.019H764.166V213Z" fill="#FF6719" />
+      </svg>
+    );
+  }
+
   if (platform === "instagram") {
     return (
       <svg

@@ -60,7 +60,18 @@ vi.mock("@/lib/student/profile", () => ({
     email: "student@example.org",
     firstName: "Student",
     lastName: "Demo",
-    studentProfile: { id: "profile-1" },
+    studentProfile: {
+      availability: ["Weekends"],
+      careerGoals: "Explore clinical care",
+      city: "Chicago",
+      country: "United States",
+      gradeYear: "College freshman",
+      id: "profile-1",
+      interestedSpecialties: ["Pediatrics"],
+      opportunityTypes: ["SHADOWING"],
+      school: "Example University",
+      state: "Illinois",
+    },
   }),
 }));
 vi.mock("@/lib/student/application-validation", () => ({

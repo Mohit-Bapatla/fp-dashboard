@@ -43,6 +43,7 @@ import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getStudentNotificationPreference } from "@/lib/student/notification-preferences";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getStudentProfileCompletion } from "@/lib/student/profile-completion";
 import { buildResumePresentation } from "@/lib/student/resume-presentation";
 import { getResumeAlignmentOpportunities } from "@/lib/student/resume-review-data";
 
@@ -76,7 +77,8 @@ function formatStatus(value: string) {
 export default async function StudentDashboardPage() {
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
-  const profile = user.studentProfile;
+  const profileCompletion = getStudentProfileCompletion(user.studentProfile);
+  const profile = profileCompletion.isComplete ? user.studentProfile : null;
   const now = new Date();
 
   const data = profile
@@ -305,7 +307,9 @@ export default async function StudentDashboardPage() {
           <section className="rounded-xl border border-dashed border-border bg-background p-8">
             <UserRound aria-hidden="true" className="h-6 w-6 text-primary" />
             <h2 className="mt-4 text-xl font-semibold">
-              Complete your application profile first
+              {user.studentProfile
+                ? "Continue your application profile"
+                : "Complete your application profile first"}
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
               Add your school, location, interests, and goals to unlock private
@@ -315,7 +319,7 @@ export default async function StudentDashboardPage() {
               className="mt-5 inline-flex min-h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground"
               href="/dashboard/student/onboarding"
             >
-              Start onboarding
+              {user.studentProfile ? "Continue onboarding" : "Start onboarding"}
             </Link>
           </section>
         ) : (

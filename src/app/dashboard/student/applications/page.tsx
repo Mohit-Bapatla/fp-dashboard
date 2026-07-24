@@ -11,6 +11,7 @@ import { getRecordCommentThread } from "@/lib/comments/record-comments";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 import { prisma } from "@/lib/db/prisma";
 
 type StudentApplicationsPageProps = {
@@ -92,7 +93,7 @@ export default async function StudentApplicationsPage({
   const view = getViewFilter(params.view);
   const status = getStatusFilter(params.status);
   const user = await getCurrentStudentProfile(userId);
-  const profile = user.studentProfile;
+  const profile = getCompletedStudentProfile(user.studentProfile);
 
   if (!profile) {
     return (

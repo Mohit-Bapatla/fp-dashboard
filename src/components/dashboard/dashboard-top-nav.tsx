@@ -1,4 +1,3 @@
-import { UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { Bell } from "lucide-react";
 import Link from "next/link";
@@ -7,6 +6,7 @@ import { prisma } from "@/lib/db/prisma";
 import { getCurrentUserNotificationSummary } from "@/lib/notifications/notifications";
 import { cn } from "@/lib/utils";
 
+import { DashboardAccountMenu } from "./dashboard-account-menu";
 import { DashboardMobileNavigation } from "./dashboard-mobile-navigation";
 import { RoleBadge } from "./role-badge";
 import type { DashboardNavItem, DashboardRole } from "./role-config";
@@ -170,7 +170,7 @@ export async function DashboardTopNav({
               </p>
             </div>
           ) : null}
-          <UserButton />
+          <DashboardAccountMenu displayName={displayName || "Account"} />
         </div>
       </div>
     </header>

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db/prisma";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 import { savedOpportunityOwnership } from "@/lib/student/owned-records";
 import { studentDirectoryOpportunityWhere } from "@/lib/opportunities/student-visibility";
 
@@ -23,7 +24,8 @@ async function baseContext(formData: FormData) {
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
   const opportunityId = value(formData, "opportunityId");
-  if (!user.studentProfile || !opportunityId) return null;
+  const profile = getCompletedStudentProfile(user.studentProfile);
+  if (!profile || !opportunityId) return null;
   const rate = await enforceRateLimit({
     action: "saved_opportunity_mutation",
     identifier: `user:${user.id}`,
@@ -31,7 +33,7 @@ async function baseContext(formData: FormData) {
     windowSeconds: 3600,
   });
   if (!rate.allowed) return null;
-  return { opportunityId, profileId: user.studentProfile.id, userId: user.id };
+  return { opportunityId, profileId: profile.id, userId: user.id };
 }
 async function visibleOpportunityContext(formData: FormData) {
   const ctx = await baseContext(formData);
