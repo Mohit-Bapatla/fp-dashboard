@@ -12,7 +12,10 @@ import {
 } from "react";
 
 import { saveStudentProfile } from "@/app/dashboard/student/onboarding/actions";
-import type { StudentOnboardingActionState } from "@/lib/student/onboarding-state";
+import {
+  requiresMinimumAgeControl,
+  type StudentOnboardingActionState,
+} from "@/lib/student/onboarding-state";
 import { cn } from "@/lib/utils";
 import {
   opportunityTypeOptions,
@@ -683,7 +686,7 @@ export function StudentOnboardingForm({
                   )}
                   className="mt-1 size-4 shrink-0 accent-primary"
                   name="minimumAgeAffirmation"
-                  required
+                  required={requiresMinimumAgeControl(step)}
                   type="checkbox"
                 />
                 <span>

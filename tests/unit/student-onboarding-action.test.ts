@@ -154,7 +154,7 @@ describe("student onboarding action", () => {
 
     expect(mocks.acquireLock).toHaveBeenCalledWith(
       expect.anything(),
-      "clerk-a",
+      "database-a",
     );
     expect(mocks.profileUpsert).toHaveBeenCalledWith({
       where: { userId: "database-a" },

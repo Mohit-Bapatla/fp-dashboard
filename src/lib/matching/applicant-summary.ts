@@ -116,6 +116,7 @@ async function enrichApplicantSummary(input: ApplicantSummaryInput) {
     ].join("\n\n"),
     schema: applicantSummarySchema,
     schemaName: "applicant_summary",
+    timeoutMs: 3_000,
   });
 }
 

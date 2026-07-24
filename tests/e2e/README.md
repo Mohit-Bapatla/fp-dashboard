@@ -55,3 +55,19 @@ The seminar scan verifies that the YouTube embed has a non-empty title, then
 excludes the cross-origin player subtree. YouTube currently injects a roleless
 `div` with `aria-label` inside that vendor-controlled document; first-party
 ARIA rules remain enabled everywhere else.
+
+## Disposable onboarding reset
+
+`npm run test:reset:onboarding` is a local test utility for repeating student
+onboarding. It requires `NODE_ENV=test`, an explicit internal user ID beginning
+with `reliability_`, and `DISPOSABLE_TEST_DATABASE_URL` pointing to localhost
+database `fp_reliability` or `fp_dashboard_reliability_test`.
+
+The utility clears onboarding fields, the two onboarding audit events, and only
+applications whose IDs begin with `reliability_` for that student. It does not
+read `DATABASE_URL`, delete Clerk users, or expose a web route.
+
+`npm run test:seed:reliability` provisions the matching two-student,
+two-organization, two-partner, and admin database fixtures. It has the same
+local-database and `NODE_ENV=test` guards and requires five Clerk development
+user IDs through the documented `DISPOSABLE_*_CLERK_ID` environment variables.
