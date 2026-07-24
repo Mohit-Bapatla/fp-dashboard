@@ -5,8 +5,18 @@
   "overrides": {
     "@clerk/shared": "4.13.1",
     "@hono/node-server": "1.19.14",
+    "ajv": {
+      "fast-uri": "3.1.4"
+    },
     "hono": "4.12.25",
+    "minimatch@^3.1.0": {
+      "brace-expansion": "1.1.16"
+    },
+    "minimatch@^10.0.0": {
+      "brace-expansion": "5.0.8"
+    },
     "postcss": "8.5.19",
+    "sharp": "0.35.3",
     "vite": "8.0.16"
   },
   "scripts": {
