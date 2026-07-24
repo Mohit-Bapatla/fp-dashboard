@@ -42,7 +42,8 @@ describe("dashboard account menu", () => {
     );
     const setError = vi.fn();
     const setPending = vi.fn();
-    const controller = createDashboardSignOutController(signOut);
+    const onSignedOut = vi.fn();
+    const controller = createDashboardSignOutController(signOut, onSignedOut);
 
     const firstRequest = controller.run({ setError, setPending });
     const duplicateRequest = await controller.run({ setError, setPending });
@@ -56,6 +57,7 @@ describe("dashboard account menu", () => {
     completeSignOut?.();
     await expect(firstRequest).resolves.toBe(true);
     expect(controller.isPending()).toBe(true);
+    expect(onSignedOut).toHaveBeenCalledOnce();
   });
 
   it("keeps the control recoverable after a failed sign-out", async () => {
@@ -65,15 +67,48 @@ describe("dashboard account menu", () => {
       .mockResolvedValueOnce(undefined);
     const setError = vi.fn();
     const setPending = vi.fn();
-    const controller = createDashboardSignOutController(signOut);
+    const onSignedOut = vi.fn();
+    const controller = createDashboardSignOutController(signOut, onSignedOut);
 
     await expect(controller.run({ setError, setPending })).resolves.toBe(false);
     expect(setPending).toHaveBeenNthCalledWith(1, true);
     expect(setPending).toHaveBeenNthCalledWith(2, false);
     expect(setError).toHaveBeenLastCalledWith(DASHBOARD_SIGN_OUT_ERROR);
     expect(controller.isPending()).toBe(false);
+    expect(onSignedOut).not.toHaveBeenCalled();
 
     await expect(controller.run({ setError, setPending })).resolves.toBe(true);
     expect(signOut).toHaveBeenCalledTimes(2);
+    expect(onSignedOut).toHaveBeenCalledOnce();
+  });
+
+  it("does not update an unmounted view when sign-out later fails", async () => {
+    let rejectSignOut: ((error: Error) => void) | undefined;
+    const signOut = vi.fn(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectSignOut = reject;
+        }),
+    );
+    const setError = vi.fn();
+    const setPending = vi.fn();
+    let isActive = true;
+    const controller = createDashboardSignOutController(signOut);
+
+    const request = controller.run({
+      isActive: () => isActive,
+      setError,
+      setPending,
+    });
+    isActive = false;
+    rejectSignOut?.(new Error("offline"));
+
+    await expect(request).resolves.toBe(false);
+    expect(signOut).toHaveBeenCalledOnce();
+    expect(setPending).toHaveBeenCalledOnce();
+    expect(setPending).toHaveBeenCalledWith(true);
+    expect(setError).toHaveBeenCalledOnce();
+    expect(setError).toHaveBeenCalledWith(null);
+    expect(controller.isPending()).toBe(false);
   });
 });

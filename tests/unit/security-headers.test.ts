@@ -15,6 +15,10 @@ describe("security headers", () => {
     expect(csp).toContain("default-src 'self'");
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).toContain("'nonce-test-nonce'");
+    expect(csp).toContain(
+      "connect-src 'self' https://clerk.futurephysicians.org",
+    );
+    expect(csp).not.toContain("https://*.futurephysicians.org");
     expect(csp).not.toContain("script-src 'self' 'unsafe-inline'");
     expect(csp).not.toContain("'unsafe-eval'");
     expect(headers.get("X-Content-Type-Options")).toBe("nosniff");
