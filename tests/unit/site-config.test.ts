@@ -103,6 +103,9 @@ describe("public site configuration", () => {
     expect(impactMethodologyNote).toBe(
       "These figures represent cumulative Future Physicians activity as of July 20, 2026. The stipend figure reflects funding facilitated through partner programs, not money paid directly by Future Physicians.",
     );
+    expect(JSON.stringify(organizationMetrics)).not.toContain(
+      "150 verified opportunities",
+    );
   });
 
   it("centralizes accurate fiscal sponsor language", () => {

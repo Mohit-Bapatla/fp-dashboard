@@ -111,6 +111,10 @@ test("homepage keeps the approved metrics and removes unrelated program previews
     await expect(metricLabel).toBeVisible();
     await expect(metricLabel.locator("..")).toContainText(value);
   }
+  const approvedMetrics = page.getByRole("region", {
+    name: "Future Physicians organization metrics",
+  });
+  await expect(approvedMetrics).not.toContainText("150 verified opportunities");
   await expect(
     page.getByText(impactMethodologyNote, { exact: true }),
   ).toBeVisible();
@@ -230,6 +234,8 @@ test("key public pages avoid horizontal overflow at required breakpoints", async
     for (const viewport of requiredViewports) {
       await page.setViewportSize(viewport);
       await page.goto(url, { waitUntil: "load" });
+      await expect(page.locator("#main-content")).toBeVisible();
+      expect(new URL(page.url()).pathname).toBe(url);
       await page.evaluate(() => document.fonts.ready);
       const dimensions = await page.evaluate(() => ({
         clientWidth: document.documentElement.clientWidth,
@@ -247,6 +253,8 @@ test("key public pages avoid horizontal overflow at required breakpoints", async
   )) {
     await page.setViewportSize({ width: 320, height: 700 });
     await page.goto(url, { waitUntil: "load" });
+    await expect(page.locator("#main-content")).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(url);
     await page.evaluate(() => document.fonts.ready);
     const dimensions = await page.evaluate(() => ({
       clientWidth: document.documentElement.clientWidth,

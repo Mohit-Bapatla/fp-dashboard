@@ -8,6 +8,11 @@ import {
   type TestInfo,
 } from "@playwright/test";
 
+import {
+  isExpectedSupersededChunkCancellation,
+  toPageErrorIssue,
+} from "./runtime-monitor-policy";
+
 type RuntimeIssueKind =
   | "application-error-boundary"
   | "console-error"
@@ -112,7 +117,10 @@ function formatHttpFailure(response: Response) {
   return `${response.status()} ${response.request().method()} ${response.url()}`;
 }
 
-function isAllowedRequestCancellation(request: Request) {
+function isAllowedRequestCancellation(
+  request: Request,
+  hasSupersedingMainFrameNavigation: boolean,
+) {
   if (
     request.method() !== "GET" ||
     request.failure()?.errorText !== "net::ERR_ABORTED"
@@ -142,6 +150,23 @@ function isAllowedRequestCancellation(request: Request) {
     if (
       request.resourceType() === "font" &&
       pathname === "/__nextjs_font/geist-latin.woff2"
+    ) {
+      return true;
+    }
+
+    // A new same-origin document navigation cancels unfinished scripts from
+    // the page it supersedes. Ignore only the exact production chunk
+    // cancellation observed from Chromium in that narrow window. Missing,
+    // corrupt, 4xx/5xx, ERR_FAILED, and non-navigation chunk failures remain
+    // visible to the runtime monitor.
+    if (
+      isExpectedSupersededChunkCancellation({
+        errorText: request.failure()?.errorText ?? null,
+        hasSupersedingMainFrameNavigation,
+        method: request.method(),
+        resourceType: request.resourceType(),
+        url: request.url(),
+      })
     ) {
       return true;
     }
@@ -188,12 +213,30 @@ function installRuntimeErrorMonitor(
   baseURL: string | undefined,
   issues: RuntimeIssue[],
 ) {
+  let supersedingMainFrameNavigation: {
+    fromUrl: string;
+    toUrl: string;
+  } | null = null;
+  const onRequest = (request: Request) => {
+    if (
+      !request.isNavigationRequest() ||
+      request.frame() !== page.mainFrame()
+    ) {
+      return;
+    }
+
+    const fromUrl = page.url();
+    const toUrl = request.url();
+    supersedingMainFrameNavigation =
+      isApplicationUrl(fromUrl, baseURL) && isApplicationUrl(toUrl, baseURL)
+        ? { fromUrl, toUrl }
+        : null;
+  };
+  const onLoad = () => {
+    supersedingMainFrameNavigation = null;
+  };
   const onPageError = (error: Error) => {
-    issues.push({
-      detail: error.stack ?? error.message,
-      kind: "page-error",
-      url: page.url(),
-    });
+    issues.push(toPageErrorIssue(error, page.url()));
   };
   const onConsole = (message: ConsoleMessage) => {
     const type = message.type();
@@ -216,9 +259,19 @@ function installRuntimeErrorMonitor(
     }
   };
   const onRequestFailed = (request: Request) => {
+    const isMainFrameRequest = (() => {
+      try {
+        return request.frame() === page.mainFrame();
+      } catch {
+        return false;
+      }
+    })();
     if (
       !isApplicationUrl(request.url(), baseURL) ||
-      isAllowedRequestCancellation(request)
+      isAllowedRequestCancellation(
+        request,
+        isMainFrameRequest && supersedingMainFrameNavigation !== null,
+      )
     ) {
       return;
     }
@@ -241,12 +294,16 @@ function installRuntimeErrorMonitor(
     });
   };
 
+  page.on("request", onRequest);
+  page.on("load", onLoad);
   page.on("pageerror", onPageError);
   page.on("console", onConsole);
   page.on("requestfailed", onRequestFailed);
   page.on("response", onResponse);
 
   return () => {
+    page.off("request", onRequest);
+    page.off("load", onLoad);
     page.off("pageerror", onPageError);
     page.off("console", onConsole);
     page.off("requestfailed", onRequestFailed);

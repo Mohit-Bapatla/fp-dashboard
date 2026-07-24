@@ -8,6 +8,13 @@ vi.mock("next/headers", () => ({
   ),
 }));
 
+vi.mock("@/lib/auth/marketing-viewer", () => ({
+  getMarketingViewer: vi.fn(async () => ({
+    role: null,
+    userId: null,
+  })),
+}));
+
 vi.mock("@clerk/nextjs", () => ({
   SignIn: (props: Record<string, string>) => (
     <div

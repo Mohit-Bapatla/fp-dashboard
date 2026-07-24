@@ -10,7 +10,11 @@ import { syncCurrentUserFromClerk } from "@/lib/auth/user-sync";
 import { getPartnerNavItems } from "@/lib/partner/navigation";
 import { getStaffNavItems } from "@/lib/staff/navigation";
 import { getStudentNavItems } from "@/lib/student/navigation";
-import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/support-contact";
+import {
+  DASHBOARD_SUPPORT_ACTION,
+  SUPPORT_EMAIL,
+  SUPPORT_MAILTO,
+} from "@/lib/support-contact";
 
 const reportDetails = [
   "Your role and the account email you used.",
@@ -59,11 +63,11 @@ export default async function SupportPage() {
             title="Existing feedback"
           />
           <SupportCard
-            actionLabel="Email support"
-            description={`Email ${SUPPORT_EMAIL} with the issue details below.`}
-            href={SUPPORT_MAILTO}
+            actionLabel={DASHBOARD_SUPPORT_ACTION.label}
+            description="Open the public contact page for Future Physicians support."
+            href={DASHBOARD_SUPPORT_ACTION.href}
             icon={Mail}
-            title="Email support"
+            title="Contact support"
           />
           <SupportCard
             description="Use launch and beta docs to verify whether the behavior is expected during rollout."
@@ -170,7 +174,7 @@ function getGuideHref(role: DashboardRole) {
   return "/dashboard/student/beta";
 }
 
-function SupportCard({
+export function SupportCard({
   actionLabel = "Open",
   description,
   href,

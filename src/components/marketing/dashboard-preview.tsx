@@ -19,6 +19,7 @@ import type { LucideIcon } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { createManagedAutoplayTimer } from "@/lib/marketing/autoplay-timer";
 import { cn } from "@/lib/utils";
 
 type StudentPreviewTab =
@@ -113,15 +114,23 @@ function StudentDashboardPreview() {
   const [reducedMotion, setReducedMotion] = useState(false);
   const rootRef = useRef<HTMLElement>(null);
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const [autoplayTimer] = useState(createManagedAutoplayTimer);
   const instanceId = useId();
+
+  useEffect(() => () => autoplayTimer.cancel(), [autoplayTimer]);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const updatePreference = () => setReducedMotion(media.matches);
+    const updatePreference = () => {
+      if (media.matches) {
+        autoplayTimer.cancel();
+      }
+      setReducedMotion(media.matches);
+    };
     updatePreference();
     media.addEventListener("change", updatePreference);
     return () => media.removeEventListener("change", updatePreference);
-  }, []);
+  }, [autoplayTimer]);
 
   useEffect(() => {
     const node = rootRef.current;
@@ -182,6 +191,7 @@ function StudentDashboardPreview() {
 
   useEffect(() => {
     if (autoplayPaused) {
+      autoplayTimer.cancel();
       return;
     }
 
@@ -189,15 +199,16 @@ function StudentDashboardPreview() {
       automaticAdvances === 0
         ? INITIAL_AUTOPLAY_DELAY_MS
         : AUTOPLAY_STEP_DELAY_MS;
-    const timer = window.setTimeout(() => {
+    autoplayTimer.schedule(() => {
       setActiveIndex((current) => (current + 1) % studentPreviewTabs.length);
       setAutomaticAdvances((current) => current + 1);
     }, delay);
 
-    return () => window.clearTimeout(timer);
-  }, [automaticAdvances, autoplayPaused]);
+    return () => autoplayTimer.cancel();
+  }, [automaticAdvances, autoplayPaused, autoplayTimer]);
 
   const selectTab = (index: number, moveFocus = false, refs = tabRefs) => {
+    autoplayTimer.cancel();
     setManualInteraction(true);
     setActiveIndex(index);
     setAnnouncement(
@@ -224,6 +235,7 @@ function StudentDashboardPreview() {
     }
 
     if (replayAvailable) {
+      autoplayTimer.cancel();
       setActiveIndex(0);
       setAutomaticAdvances(0);
       setAutomaticPaused(false);
@@ -233,6 +245,9 @@ function StudentDashboardPreview() {
     }
 
     const willPause = !automaticPaused;
+    if (willPause) {
+      autoplayTimer.cancel();
+    }
     setAutomaticPaused(willPause);
     setAnnouncement(
       willPause
@@ -346,7 +361,10 @@ function StudentDashboardPreview() {
                       id={`${instanceId}-${tab.id}-tab`}
                       key={tab.id}
                       onClick={() => selectTab(index)}
-                      onFocus={() => setManualInteraction(true)}
+                      onFocus={() => {
+                        autoplayTimer.cancel();
+                        setManualInteraction(true);
+                      }}
                       onKeyDown={(event) => handleTabKeyDown(event, index)}
                       ref={(node) => {
                         tabRefs.current[index] = node;

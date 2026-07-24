@@ -1,7 +1,10 @@
 import { SignIn } from "@clerk/nextjs";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 import { BrandMark } from "@/components/shared/brand-mark";
+import { getMarketingViewer } from "@/lib/auth/marketing-viewer";
+import { getDashboardPathForRole } from "@/lib/auth/roles";
 import { safeInternalPath, safeRequestOrigin } from "@/lib/security/safe-url";
 
 export default async function SignInPage({
@@ -9,6 +12,11 @@ export default async function SignInPage({
 }: {
   searchParams: Promise<{ redirect_url?: string | string[] }>;
 }) {
+  const { role } = await getMarketingViewer();
+  if (role) {
+    redirect(getDashboardPathForRole(role));
+  }
+
   const [query, requestHeaders] = await Promise.all([searchParams, headers()]);
   const requested = Array.isArray(query.redirect_url)
     ? query.redirect_url[0]
