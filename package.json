@@ -29,6 +29,8 @@
     "test": "npm run test:unit",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
+    "test:reset:onboarding": "tsx scripts/reset-disposable-onboarding.ts",
+    "test:seed:reliability": "tsx scripts/seed-disposable-reliability-fixtures.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "security:audit": "npm audit --audit-level=high",

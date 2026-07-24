@@ -15,6 +15,10 @@ export type StudentOnboardingActionState = {
   values: StudentProfileFormValues;
 };
 
+export function requiresMinimumAgeControl(step: number) {
+  return step === 0;
+}
+
 export const initialStudentOnboardingActionState: StudentOnboardingActionState =
   {
     fieldErrors: {},

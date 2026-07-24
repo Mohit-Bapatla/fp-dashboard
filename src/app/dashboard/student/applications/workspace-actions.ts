@@ -13,7 +13,12 @@ import { applicationOwnership } from "@/lib/student/owned-records";
 import {
   canSubmitExistingApplication,
   getEffectiveApplicationMethod,
+  parseApplicationTargetDate,
 } from "@/lib/student/application-workspace";
+import {
+  createWorkflowSupportReference,
+  logWorkflowFailure,
+} from "@/lib/reliability/workflow-errors";
 import {
   isStudentOpportunitySubmittable,
   studentAccessiblePreparationOpportunityWhere,
@@ -29,16 +34,20 @@ const value = (data: FormData, key: string) => {
   return typeof item === "string" ? item.trim() : "";
 };
 
-function parseOptionalDate(value: string) {
-  if (!value) return { valid: true as const, date: null };
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return { valid: false as const, date: null };
+function workspaceRedirect(
+  applicationId: string,
+  status: "conflict" | "error" | "invalid_date" | "rate_limited" | "saved",
+  referenceId?: string,
+) {
+  const params = new URLSearchParams({ workspace: status });
+
+  if (referenceId) {
+    params.set("reference", referenceId);
   }
 
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return date.toISOString().slice(0, 10) === value
-    ? { valid: true as const, date }
-    : { valid: false as const, date: null };
+  redirect(
+    `/dashboard/student/applications/${applicationId}?${params.toString()}#workspace-plan`,
+  );
 }
 
 export async function startApplicationWorkspace(formData: FormData) {
@@ -120,11 +129,13 @@ export async function startApplicationWorkspace(formData: FormData) {
       },
       update: {
         applicationMethod,
-        status: "PREPARING",
         lastActivityAt: now,
       },
-      select: { id: true },
+      select: { id: true, status: true },
     });
+    if (!canSubmitExistingApplication(workspace.status)) {
+      return { ...workspace, planAvailable: false };
+    }
     await tx.applicationTask.createMany({
       data: initialTasks.map((task) => ({
         ...task,
@@ -166,15 +177,17 @@ export async function startApplicationWorkspace(formData: FormData) {
         nextAction: nextAction?.task.title ?? null,
       },
     });
-    return workspace;
+    return { ...workspace, planAvailable: true };
   });
-  await createAuditLog({
-    action: "APPLICATION_WORKSPACE_STARTED",
-    actorId: user.id,
-    entityId: application.id,
-    entityType: "Application",
-    metadata: { opportunityId },
-  });
+  if (!existing && application.planAvailable) {
+    await createAuditLog({
+      action: "APPLICATION_WORKSPACE_STARTED",
+      actorId: user.id,
+      entityId: application.id,
+      entityType: "Application",
+      metadata: { opportunityId },
+    });
+  }
   revalidatePath("/dashboard/student/applications");
   redirect(`/dashboard/student/applications/${application.id}`);
 }
@@ -190,12 +203,28 @@ export async function updateApplicationWorkspace(formData: FormData) {
     limit: 60,
     windowSeconds: 3600,
   });
-  if (!rate.allowed) return;
   const applicationId = value(formData, "applicationId");
+  if (!applicationId) return;
+  if (!rate.allowed) {
+    workspaceRedirect(applicationId, "rate_limited");
+  }
   const privateNotes = value(formData, "privateNotes").slice(0, 10_000);
   const resumeId = value(formData, "resumeId");
-  const targetDeadline = parseOptionalDate(value(formData, "targetDeadline"));
-  if (!targetDeadline.valid) return;
+  const targetDeadline = parseApplicationTargetDate(
+    value(formData, "targetDeadline"),
+  );
+  if (!targetDeadline.valid) {
+    workspaceRedirect(applicationId, "invalid_date");
+  }
+  const expectedUpdatedAtValue = value(formData, "expectedUpdatedAt");
+  const expectedUpdatedAt = new Date(expectedUpdatedAtValue);
+  if (
+    !expectedUpdatedAtValue ||
+    !Number.isFinite(expectedUpdatedAt.getTime()) ||
+    expectedUpdatedAt.toISOString() !== expectedUpdatedAtValue
+  ) {
+    workspaceRedirect(applicationId, "conflict");
+  }
   const application = await prisma.application.findFirst({
     where: {
       ...applicationOwnership(profile.id, applicationId),
@@ -214,6 +243,7 @@ export async function updateApplicationWorkspace(formData: FormData) {
       id: true,
       opportunityId: true,
       resumeId: true,
+      updatedAt: true,
       opportunity: {
         select: {
           applicationMethod: true,
@@ -239,84 +269,123 @@ export async function updateApplicationWorkspace(formData: FormData) {
   }
 
   const now = new Date();
-  await prisma.$transaction(async (tx) => {
-    await tx.application.update({
-      where: { id: application.id },
-      data: {
-        lastActivityAt: now,
-        privateNotes: privateNotes || null,
-        resumeId: resumeId || null,
-        targetDeadline: targetDeadline.date,
-      },
+  let saved = false;
+  let failureReference: string | null = null;
+
+  try {
+    saved = await prisma.$transaction(async (tx) => {
+      const update = await tx.application.updateMany({
+        where: {
+          id: application.id,
+          updatedAt: expectedUpdatedAt,
+        },
+        data: {
+          lastActivityAt: now,
+          privateNotes: privateNotes || null,
+          resumeId: resumeId || null,
+          targetDeadline: targetDeadline.date,
+        },
+      });
+      if (update.count !== 1) {
+        return false;
+      }
+      await tx.applicationTask.updateMany({
+        where: {
+          applicationId: application.id,
+          studentControlled: false,
+          type: "SELECT_RESUME",
+        },
+        data: resumeId
+          ? { completedAt: now, status: "COMPLETE" }
+          : { completedAt: null, status: "NOT_STARTED" },
+      });
+      const tasks = await tx.applicationTask.findMany({
+        where: { applicationId: application.id },
+        select: {
+          applicationId: true,
+          completedAt: true,
+          dueAt: true,
+          id: true,
+          required: true,
+          sortOrder: true,
+          status: true,
+          title: true,
+          type: true,
+        },
+      });
+      const nextAction = getApplicationNextAction(
+        tasks,
+        {
+          applicationId: application.id,
+          canSubmit: isStudentOpportunitySubmittable(
+            application.opportunity,
+            profile.id,
+            now,
+          ),
+          opportunityId: application.opportunityId,
+        },
+        now,
+      );
+      await tx.application.update({
+        where: { id: application.id },
+        data: {
+          completionPercent: calculateApplicationProgress(tasks),
+          nextAction: nextAction?.task.title ?? null,
+        },
+      });
+      return true;
     });
-    await tx.applicationTask.updateMany({
-      where: {
-        applicationId: application.id,
-        studentControlled: false,
-        type: "SELECT_RESUME",
-      },
-      data: resumeId
-        ? { completedAt: now, status: "COMPLETE" }
-        : { completedAt: null, status: "NOT_STARTED" },
+  } catch (error) {
+    failureReference = createWorkflowSupportReference();
+    logWorkflowFailure({
+      action: "update_application_workspace",
+      error,
+      referenceId: failureReference,
+      route: "/dashboard/student/applications/[applicationId]",
+      userId: user.id,
     });
-    const tasks = await tx.applicationTask.findMany({
-      where: { applicationId: application.id },
-      select: {
-        applicationId: true,
-        completedAt: true,
-        dueAt: true,
-        id: true,
-        required: true,
-        sortOrder: true,
-        status: true,
-        title: true,
-        type: true,
-      },
-    });
-    const nextAction = getApplicationNextAction(
-      tasks,
-      {
-        applicationId: application.id,
-        canSubmit: isStudentOpportunitySubmittable(
-          application.opportunity,
-          profile.id,
-          now,
-        ),
-        opportunityId: application.opportunityId,
-      },
-      now,
-    );
-    await tx.application.update({
-      where: { id: application.id },
-      data: {
-        completionPercent: calculateApplicationProgress(tasks),
-        nextAction: nextAction?.task.title ?? null,
-      },
-    });
-  });
-  await createAuditLog({
-    action: "APPLICATION_WORKSPACE_UPDATED",
-    actorId: user.id,
-    entityId: application.id,
-    entityType: "Application",
-    metadata: {
-      hasPrivateNotes: Boolean(privateNotes),
-      hasResume: Boolean(resumeId),
-      hasTargetDeadline: Boolean(targetDeadline.date),
-      resumeChanged: application.resumeId !== (resumeId || null),
-    },
-  });
-  if (resumeId && application.resumeId !== resumeId) {
+  }
+
+  if (failureReference) {
+    workspaceRedirect(application.id, "error", failureReference);
+  }
+  if (!saved) {
+    workspaceRedirect(application.id, "conflict");
+  }
+
+  try {
     await createAuditLog({
-      action: "RESUME_SELECTED",
+      action: "APPLICATION_WORKSPACE_UPDATED",
       actorId: user.id,
       entityId: application.id,
       entityType: "Application",
-      metadata: { resumeId },
+      metadata: {
+        hasPrivateNotes: Boolean(privateNotes),
+        hasResume: Boolean(resumeId),
+        hasTargetDeadline: Boolean(targetDeadline.date),
+        resumeChanged: application.resumeId !== (resumeId || null),
+      },
+    });
+    if (resumeId && application.resumeId !== resumeId) {
+      await createAuditLog({
+        action: "RESUME_SELECTED",
+        actorId: user.id,
+        entityId: application.id,
+        entityType: "Application",
+        metadata: { resumeId },
+      });
+    }
+  } catch (error) {
+    logWorkflowFailure({
+      action: "audit_application_workspace_update",
+      error,
+      route: "/dashboard/student/applications/[applicationId]",
+      userId: user.id,
     });
   }
   revalidatePath("/dashboard/student");
   revalidatePath("/dashboard/student/tasks");
   revalidatePath("/dashboard/student/applications");
   revalidatePath(`/dashboard/student/applications/${application.id}`);
+  workspaceRedirect(application.id, "saved");
 }

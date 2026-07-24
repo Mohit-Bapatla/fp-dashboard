@@ -197,7 +197,7 @@ export async function saveStudentProfile(
     }
 
     const transition = await prisma.$transaction(async (transaction) => {
-      await acquireAccountTransitionLock(transaction, userId);
+      await acquireAccountTransitionLock(transaction, user.id);
 
       const account = await transaction.user.findUnique({
         where: { id: user.id },
