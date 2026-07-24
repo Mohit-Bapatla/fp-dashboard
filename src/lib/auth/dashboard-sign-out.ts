@@ -4,6 +4,7 @@ export const DASHBOARD_SIGN_OUT_ERROR =
 type ClerkSignOut = (options: { redirectUrl: string }) => Promise<void>;
 
 type SignOutView = {
+  isActive?: () => boolean;
   setError: (message: string | null) => void;
   setPending: (pending: boolean) => void;
 };
@@ -21,7 +22,7 @@ export function createDashboardSignOutController(
 
   return {
     isPending: () => pending,
-    run: async ({ setError, setPending }) => {
+    run: async ({ isActive, setError, setPending }) => {
       if (pending) {
         return false;
       }
@@ -34,8 +35,10 @@ export function createDashboardSignOutController(
         await signOut({ redirectUrl: "/" });
       } catch {
         pending = false;
-        setPending(false);
-        setError(DASHBOARD_SIGN_OUT_ERROR);
+        if (isActive?.() ?? true) {
+          setPending(false);
+          setError(DASHBOARD_SIGN_OUT_ERROR);
+        }
         return false;
       }
 

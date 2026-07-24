@@ -81,4 +81,34 @@ describe("dashboard account menu", () => {
     expect(signOut).toHaveBeenCalledTimes(2);
     expect(onSignedOut).toHaveBeenCalledOnce();
   });
+
+  it("does not update an unmounted view when sign-out later fails", async () => {
+    let rejectSignOut: ((error: Error) => void) | undefined;
+    const signOut = vi.fn(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectSignOut = reject;
+        }),
+    );
+    const setError = vi.fn();
+    const setPending = vi.fn();
+    let isActive = true;
+    const controller = createDashboardSignOutController(signOut);
+
+    const request = controller.run({
+      isActive: () => isActive,
+      setError,
+      setPending,
+    });
+    isActive = false;
+    rejectSignOut?.(new Error("offline"));
+
+    await expect(request).resolves.toBe(false);
+    expect(signOut).toHaveBeenCalledOnce();
+    expect(setPending).toHaveBeenCalledOnce();
+    expect(setPending).toHaveBeenCalledWith(true);
+    expect(setError).toHaveBeenCalledOnce();
+    expect(setError).toHaveBeenCalledWith(null);
+    expect(controller.isPending()).toBe(false);
+  });
 });

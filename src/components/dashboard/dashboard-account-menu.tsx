@@ -2,7 +2,7 @@
 
 import { useClerk } from "@clerk/nextjs";
 import { ChevronDown, LogOut, UserRound } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { createDashboardSignOutController } from "@/lib/auth/dashboard-sign-out";
 
@@ -26,14 +26,24 @@ export function DashboardAccountMenu({ displayName }: { displayName: string }) {
   const { signOut } = useClerk();
   const [error, setError] = useState<string | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const isMounted = useRef(true);
   const [controller] = useState(() =>
     createDashboardSignOutController(signOut, () => {
       window.location.replace("/");
     }),
   );
 
+  useEffect(() => {
+    isMounted.current = true;
+
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   const handleSignOut = () => {
     void controller.run({
+      isActive: () => isMounted.current,
       setError,
       setPending: setIsSigningOut,
     });
