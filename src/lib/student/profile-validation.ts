@@ -245,14 +245,34 @@ function splitSpecialtyList(value: string) {
 }
 
 function getOpportunityTypes(formData: FormData) {
-  return formData
-    .getAll("opportunityTypes")
-    .filter((value): value is OpportunityType => {
-      return (
-        typeof value === "string" &&
-        opportunityTypeOptions.includes(value as OpportunityType)
-      );
-    });
+  const seen = new Set<OpportunityType>();
+
+  return formData.getAll("opportunityTypes").flatMap((value) => {
+    if (
+      typeof value !== "string" ||
+      !opportunityTypeOptions.includes(value as OpportunityType)
+    ) {
+      return [];
+    }
+
+    const opportunityType = value as OpportunityType;
+
+    if (seen.has(opportunityType)) {
+      return [];
+    }
+
+    seen.add(opportunityType);
+    return [opportunityType];
+  });
+}
+
+function hasInvalidOpportunityType(formData: FormData) {
+  return formData.getAll("opportunityTypes").some((value) => {
+    return (
+      typeof value !== "string" ||
+      !opportunityTypeOptions.includes(value as OpportunityType)
+    );
+  });
 }
 
 function validateOptionalUrl(value: string) {
@@ -481,6 +501,8 @@ export function validateStudentProfileStep(
 
   if (step === 2 && values.opportunityTypes.length === 0) {
     errors.opportunityTypes = "Choose at least one opportunity type.";
+  } else if (step === 2 && hasInvalidOpportunityType(formData)) {
+    errors.opportunityTypes = "Choose only listed opportunity types.";
   }
 
   for (const field of ["linkedinUrl", "githubUrl", "portfolioUrl"] as const) {
@@ -531,6 +553,8 @@ export function validateStudentProfileForm(
 
   if (values.opportunityTypes.length === 0) {
     errors.opportunityTypes = "Choose at least one opportunity type.";
+  } else if (hasInvalidOpportunityType(formData)) {
+    errors.opportunityTypes = "Choose only listed opportunity types.";
   }
 
   if (

@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { SupportCard } from "@/app/dashboard/support/page";
 import DashboardError from "@/app/dashboard/error";
+import ApplicationWorkspaceError from "@/app/dashboard/student/applications/[applicationId]/error";
 import { DASHBOARD_SUPPORT_ACTION } from "@/lib/support-contact";
 
 vi.mock("@sentry/nextjs", () => ({
@@ -45,5 +46,19 @@ describe("dashboard support navigation", () => {
     expect(markup).toContain('href="/contact"');
     expect(markup).toContain(">Contact support</a>");
     expect(markup).not.toContain("mailto:");
+  });
+
+  it("keeps the application workspace error recoverable", () => {
+    const markup = renderToStaticMarkup(
+      createElement(ApplicationWorkspaceError, {
+        error: Object.assign(new Error("test"), { digest: "SAFE1234" }),
+        reset: vi.fn(),
+      }),
+    );
+
+    expect(markup).toContain(">Try again</button>");
+    expect(markup).toContain('href="/contact"');
+    expect(markup).toContain("Support reference: SAFE1234");
+    expect(markup).not.toContain("Error: test");
   });
 });

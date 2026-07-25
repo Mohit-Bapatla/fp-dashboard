@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { requiresMinimumAgeControl } from "@/lib/student/onboarding-state";
 import { validateStudentProfileStep } from "@/lib/student/profile-validation";
 
 function basicStep() {
@@ -13,6 +14,13 @@ function basicStep() {
 }
 
 describe("step-level student onboarding validation", () => {
+  it("does not let a hidden age control block later steps", () => {
+    expect(requiresMinimumAgeControl(0)).toBe(true);
+    expect(requiresMinimumAgeControl(1)).toBe(false);
+    expect(requiresMinimumAgeControl(2)).toBe(false);
+    expect(requiresMinimumAgeControl(3)).toBe(false);
+  });
+
   it("saves a valid basic step without requiring later fields", () => {
     const result = validateStudentProfileStep(basicStep(), 0, {
       requireMinimumAgeAffirmation: true,
@@ -52,6 +60,40 @@ describe("step-level student onboarding validation", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.errors.availability).toMatch(/1,000/);
+    }
+  });
+
+  it("rejects mixed invalid opportunity types instead of silently dropping them", () => {
+    const form = new FormData();
+    form.set("interestedSpecialties", "Pediatrics");
+    form.set("availability", "Weekends");
+    form.append("opportunityTypes", "SHADOWING");
+    form.append("opportunityTypes", "NOT_A_REAL_TYPE");
+
+    const result = validateStudentProfileStep(form, 2);
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.errors.opportunityTypes).toMatch(/only listed/i);
+    }
+  });
+
+  it("deduplicates valid opportunity types and preserves empty optional arrays", () => {
+    const form = new FormData();
+    form.set("interestedSpecialties", "Pediatrics, pediatrics");
+    form.set("availability", "Weekends");
+    form.append("opportunityTypes", "SHADOWING");
+    form.append("opportunityTypes", "SHADOWING");
+
+    const result = validateStudentProfileStep(form, 2);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.interestedSpecialties).toEqual(["Pediatrics"]);
+      expect(result.data.opportunityTypes).toEqual(["SHADOWING"]);
+      expect(result.data.languages).toEqual([]);
+      expect(result.data.certifications).toEqual([]);
+      expect(result.data.preferredSeasons).toEqual([]);
     }
   });
 });

@@ -16,6 +16,7 @@ import { PartnerOpportunityList } from "@/components/partner/partner-opportunity
 import { prisma } from "@/lib/db/prisma";
 import { getCurrentPartnerContext } from "@/lib/partner/context";
 import { getPartnerNavItems } from "@/lib/partner/navigation";
+import { loadOptionalWorkflowData } from "@/lib/reliability/workflow-errors";
 
 export default async function PartnerDashboardPage() {
   const context = await getCurrentPartnerContext();
@@ -51,51 +52,59 @@ export default async function PartnerDashboardPage() {
     );
   }
 
+  const opportunities = await prisma.opportunity.findMany({
+    where: {
+      visibility: "PUBLIC_DIRECTORY",
+      organizationId: {
+        in: organizationIds,
+      },
+      organization: {
+        isSystemPlaceholder: false,
+      },
+    },
+    orderBy: [
+      {
+        updatedAt: "desc",
+      },
+    ],
+    take: 8,
+    select: {
+      id: true,
+      title: true,
+      type: true,
+      status: true,
+      deadline: true,
+      capacity: true,
+      updatedAt: true,
+      organization: {
+        select: {
+          name: true,
+        },
+      },
+      _count: {
+        select: {
+          applications: true,
+        },
+      },
+    },
+  });
+  const statLoad = (action: string, load: () => Promise<number>) =>
+    loadOptionalWorkflowData({
+      action,
+      fallback: 0,
+      load,
+      route: "/dashboard/partner",
+      userId: context.user.id,
+    });
   const [
     totalOpportunities,
     publishedOpportunities,
     closedOpportunities,
     totalApplications,
-    opportunities,
   ] = await Promise.all([
-    prisma.opportunity.count({
-      where: {
-        visibility: "PUBLIC_DIRECTORY",
-        organizationId: {
-          in: organizationIds,
-        },
-        organization: {
-          isSystemPlaceholder: false,
-        },
-      },
-    }),
-    prisma.opportunity.count({
-      where: {
-        visibility: "PUBLIC_DIRECTORY",
-        organizationId: {
-          in: organizationIds,
-        },
-        organization: {
-          isSystemPlaceholder: false,
-        },
-        status: "PUBLISHED",
-      },
-    }),
-    prisma.opportunity.count({
-      where: {
-        visibility: "PUBLIC_DIRECTORY",
-        organizationId: {
-          in: organizationIds,
-        },
-        organization: {
-          isSystemPlaceholder: false,
-        },
-        status: "CLOSED",
-      },
-    }),
-    prisma.application.count({
-      where: {
-        opportunity: {
+    statLoad("load_partner_total_opportunities", () =>
+      prisma.opportunity.count({
+        where: {
           visibility: "PUBLIC_DIRECTORY",
           organizationId: {
             in: organizationIds,
@@ -104,44 +113,51 @@ export default async function PartnerDashboardPage() {
             isSystemPlaceholder: false,
           },
         },
-      },
-    }),
-    prisma.opportunity.findMany({
-      where: {
-        visibility: "PUBLIC_DIRECTORY",
-        organizationId: {
-          in: organizationIds,
+      }),
+    ),
+    statLoad("load_partner_published_opportunities", () =>
+      prisma.opportunity.count({
+        where: {
+          visibility: "PUBLIC_DIRECTORY",
+          organizationId: {
+            in: organizationIds,
+          },
+          organization: {
+            isSystemPlaceholder: false,
+          },
+          status: "PUBLISHED",
         },
-        organization: {
-          isSystemPlaceholder: false,
+      }),
+    ),
+    statLoad("load_partner_closed_opportunities", () =>
+      prisma.opportunity.count({
+        where: {
+          visibility: "PUBLIC_DIRECTORY",
+          organizationId: {
+            in: organizationIds,
+          },
+          organization: {
+            isSystemPlaceholder: false,
+          },
+          status: "CLOSED",
         },
-      },
-      orderBy: [
-        {
-          updatedAt: "desc",
-        },
-      ],
-      take: 8,
-      select: {
-        id: true,
-        title: true,
-        type: true,
-        status: true,
-        deadline: true,
-        capacity: true,
-        updatedAt: true,
-        organization: {
-          select: {
-            name: true,
+      }),
+    ),
+    statLoad("load_partner_total_applications", () =>
+      prisma.application.count({
+        where: {
+          opportunity: {
+            visibility: "PUBLIC_DIRECTORY",
+            organizationId: {
+              in: organizationIds,
+            },
+            organization: {
+              isSystemPlaceholder: false,
+            },
           },
         },
-        _count: {
-          select: {
-            applications: true,
-          },
-        },
-      },
-    }),
+      }),
+    ),
   ]);
 
   return (
@@ -176,22 +192,38 @@ export default async function PartnerDashboardPage() {
           <StatCard
             helper="All opportunities connected to your linked organization records."
             label="Total opportunities"
-            value={totalOpportunities.toString()}
+            value={
+              totalOpportunities.available
+                ? totalOpportunities.value.toString()
+                : "Unavailable"
+            }
           />
           <StatCard
             helper="Published opportunities visible in student workflows."
             label="Published"
-            value={publishedOpportunities.toString()}
+            value={
+              publishedOpportunities.available
+                ? publishedOpportunities.value.toString()
+                : "Unavailable"
+            }
           />
           <StatCard
             helper="Closed opportunity records owned by your organization."
             label="Closed"
-            value={closedOpportunities.toString()}
+            value={
+              closedOpportunities.available
+                ? closedOpportunities.value.toString()
+                : "Unavailable"
+            }
           />
           <StatCard
             helper="Applications across your linked organization opportunities."
             label="Applications"
-            value={totalApplications.toString()}
+            value={
+              totalApplications.available
+                ? totalApplications.value.toString()
+                : "Unavailable"
+            }
           />
         </section>
 

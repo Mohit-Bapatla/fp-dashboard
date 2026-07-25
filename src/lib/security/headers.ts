@@ -12,7 +12,7 @@ export function buildContentSecurityPolicy(nonce: string) {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    "connect-src 'self' https://*.accounts.dev https://*.clerk.accounts.dev https://*.clerk.com https://*.clerk.dev https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://vitals.vercel-insights.com https://va.vercel-scripts.com",
+    "connect-src 'self' https://clerk.futurephysicians.org https://*.accounts.dev https://*.clerk.accounts.dev https://*.clerk.com https://*.clerk.dev https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://vitals.vercel-insights.com https://va.vercel-scripts.com",
     "frame-src 'self' https://*.accounts.dev https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://www.youtube-nocookie.com",
     "worker-src 'self' blob:",
     "manifest-src 'self'",
