@@ -8,12 +8,14 @@ import { StudentPlacementRequestForm } from "@/components/placement-requests/stu
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 
 export default async function NewStudentPlacementRequestPage() {
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
+  const profile = getCompletedStudentProfile(user.studentProfile);
 
-  if (!user.studentProfile) {
+  if (!profile) {
     return (
       <DashboardShell
         navItems={getStudentNavItems("/dashboard/student/placement-requests")}

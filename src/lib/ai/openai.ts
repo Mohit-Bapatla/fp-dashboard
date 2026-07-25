@@ -33,10 +33,12 @@ export async function createStructuredJsonResponse<T>({
   input,
   schema,
   schemaName,
+  timeoutMs,
 }: {
   input: string;
   schema: Record<string, unknown>;
   schemaName: string;
+  timeoutMs?: number;
 }): Promise<T | null> {
   const openai = getOpenAiClient();
 
@@ -45,18 +47,21 @@ export async function createStructuredJsonResponse<T>({
   }
 
   try {
-    const response = await openai.responses.create({
-      input,
-      model: process.env.OPENAI_MODEL?.trim() || defaultModel,
-      text: {
-        format: {
-          name: schemaName,
-          schema,
-          strict: true,
-          type: "json_schema",
+    const response = await openai.responses.create(
+      {
+        input,
+        model: process.env.OPENAI_MODEL?.trim() || defaultModel,
+        text: {
+          format: {
+            name: schemaName,
+            schema,
+            strict: true,
+            type: "json_schema",
+          },
         },
       },
-    });
+      timeoutMs ? { maxRetries: 0, timeout: timeoutMs } : undefined,
+    );
     const text = response.output_text;
 
     if (!text) {

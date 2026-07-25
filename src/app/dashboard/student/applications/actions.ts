@@ -10,6 +10,7 @@ import {
 } from "@/lib/notifications/notifications";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -36,15 +37,16 @@ export async function withdrawStudentApplication(formData: FormData) {
   }
 
   const user = await getCurrentStudentProfile(userId);
+  const profile = getCompletedStudentProfile(user.studentProfile);
 
-  if (!user.studentProfile) {
+  if (!profile) {
     return;
   }
 
   const application = await prisma.application.findFirst({
     where: {
       id: applicationId,
-      studentProfileId: user.studentProfile.id,
+      studentProfileId: profile.id,
       status: {
         in: ["SUBMITTED", "UNDER_REVIEW"],
       },

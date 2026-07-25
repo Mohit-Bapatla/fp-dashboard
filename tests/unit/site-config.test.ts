@@ -5,6 +5,7 @@ import {
   homepageFaqItems,
   impactMethodologyNote,
   organizationMetrics,
+  organizationMetricsAsOf,
   partnerFaqItems,
   seminar,
   siteConfig,
@@ -86,14 +87,24 @@ describe("public site configuration", () => {
     ]);
   });
 
-  it("keeps the auditable directory metrics and methodology wording exact", () => {
+  it("keeps the approved cumulative metrics and methodology wording exact", () => {
     expect(organizationMetrics).toEqual([
-      { value: "150", label: "Published opportunity listings" },
-      { value: "147", label: "Listed host organizations" },
-      { value: "Free", label: "Student dashboard access" },
+      { value: "2,000+", label: "Students in the FP community" },
+      { value: "50+", label: "Partner organizations" },
+      {
+        value: "$300K+",
+        label: "Student stipends facilitated through partner programs",
+      },
     ]);
+    expect(organizationMetricsAsOf).toEqual({
+      date: "July 20, 2026",
+      isoDate: "2026-07-20",
+    });
     expect(impactMethodologyNote).toBe(
-      "Directory counts are a production snapshot as of July 19, 2026. A listed host organization is not necessarily a confirmed FP partner, and listing counts do not measure active students, placements, or outcomes.",
+      "These figures represent cumulative Future Physicians activity as of July 20, 2026. The stipend figure reflects funding facilitated through partner programs, not money paid directly by Future Physicians.",
+    );
+    expect(JSON.stringify(organizationMetrics)).not.toContain(
+      "150 verified opportunities",
     );
   });
 

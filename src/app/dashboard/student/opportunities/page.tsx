@@ -27,6 +27,7 @@ import {
   type StudentOpportunityFilters as StudentOpportunityFiltersType,
 } from "@/lib/student/opportunity-filters";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 import { prisma } from "@/lib/db/prisma";
 import { studentDirectoryOpportunityWhere } from "@/lib/opportunities/student-visibility";
 
@@ -131,7 +132,7 @@ export default async function StudentOpportunitiesPage({
   const params = await searchParams;
   const filters = getStudentOpportunityFilters(params);
   const user = await getCurrentStudentProfile(userId);
-  const profile = user.studentProfile;
+  const profile = getCompletedStudentProfile(user.studentProfile);
   const filterSource = await prisma.opportunity.findMany({
     where: {
       ...studentDirectoryOpportunityWhere(),

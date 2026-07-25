@@ -9,6 +9,7 @@ import {
   resumeBucketName,
 } from "@/lib/storage/supabase-admin";
 import { getOrCreateCurrentStudentUser } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 
 export type CurrentStudentResumeContext = {
   profileId: string;
@@ -28,14 +29,15 @@ export async function getCurrentStudentResumeContext(): Promise<CurrentStudentRe
   }
 
   const user = await getOrCreateCurrentStudentUser(userId);
+  const profile = getCompletedStudentProfile(user.studentProfile);
 
-  if (!user.studentProfile) {
+  if (!profile) {
     return null;
   }
 
   const resume = await prisma.resume.findFirst({
     where: {
-      studentProfileId: user.studentProfile.id,
+      studentProfileId: profile.id,
     },
     orderBy: {
       updatedAt: "desc",
@@ -43,7 +45,7 @@ export async function getCurrentStudentResumeContext(): Promise<CurrentStudentRe
   });
 
   return {
-    profileId: user.studentProfile.id,
+    profileId: profile.id,
     resume,
     userId: user.id,
   };

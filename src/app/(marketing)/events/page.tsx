@@ -8,10 +8,10 @@ import {
   secondaryButtonClass,
 } from "@/components/marketing/page-shell";
 import {
-  ExternalTextLink,
   MarketingSection,
   PageCta,
 } from "@/components/marketing/supporting-page-sections";
+import { SubstackNewsletterLink } from "@/components/marketing/substack-newsletter-link";
 import { createPublicMetadata } from "@/lib/public-metadata";
 import { seminar, siteConfig } from "@/lib/site-config";
 
@@ -28,17 +28,7 @@ export default function EventsPage() {
   return (
     <>
       <PageHero
-        actions={
-          <a
-            className={primaryButtonClass}
-            href={siteConfig.links.newsletter}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Get event updates
-            <ArrowRight aria-hidden="true" className="size-4" />
-          </a>
-        }
+        actions={<SubstackNewsletterLink />}
         description={description}
         eyebrow="Future Physicians events"
         title="Join what is next. Revisit what is complete."
@@ -63,9 +53,7 @@ export default function EventsPage() {
             announcements in the meantime.
           </p>
           <div className="mt-6">
-            <ExternalTextLink href={siteConfig.links.newsletter}>
-              Subscribe to the newsletter
-            </ExternalTextLink>
+            <SubstackNewsletterLink />
           </div>
         </div>
       </MarketingSection>
@@ -134,14 +122,7 @@ export default function EventsPage() {
       <PageCta
         actions={
           <>
-            <a
-              className={secondaryButtonClass}
-              href={siteConfig.links.newsletter}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              Subscribe for updates
-            </a>
+            <SubstackNewsletterLink />
             <Link className={secondaryButtonClass} href="/students">
               Explore the student platform
             </Link>

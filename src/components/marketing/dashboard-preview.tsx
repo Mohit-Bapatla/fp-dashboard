@@ -19,6 +19,7 @@ import type { LucideIcon } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { createManagedAutoplayTimer } from "@/lib/marketing/autoplay-timer";
 import { cn } from "@/lib/utils";
 
 type StudentPreviewTab =
@@ -113,15 +114,27 @@ function StudentDashboardPreview() {
   const [reducedMotion, setReducedMotion] = useState(false);
   const rootRef = useRef<HTMLElement>(null);
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const pauseIntentRef = useRef<{
+    activeIndex: number;
+    automaticAdvances: number;
+  } | null>(null);
+  const [autoplayTimer] = useState(createManagedAutoplayTimer);
   const instanceId = useId();
+
+  useEffect(() => () => autoplayTimer.cancel(), [autoplayTimer]);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const updatePreference = () => setReducedMotion(media.matches);
+    const updatePreference = () => {
+      if (media.matches) {
+        autoplayTimer.cancel();
+      }
+      setReducedMotion(media.matches);
+    };
     updatePreference();
     media.addEventListener("change", updatePreference);
     return () => media.removeEventListener("change", updatePreference);
-  }, []);
+  }, [autoplayTimer]);
 
   useEffect(() => {
     const node = rootRef.current;
@@ -182,6 +195,7 @@ function StudentDashboardPreview() {
 
   useEffect(() => {
     if (autoplayPaused) {
+      autoplayTimer.cancel();
       return;
     }
 
@@ -189,15 +203,16 @@ function StudentDashboardPreview() {
       automaticAdvances === 0
         ? INITIAL_AUTOPLAY_DELAY_MS
         : AUTOPLAY_STEP_DELAY_MS;
-    const timer = window.setTimeout(() => {
+    autoplayTimer.schedule(() => {
       setActiveIndex((current) => (current + 1) % studentPreviewTabs.length);
       setAutomaticAdvances((current) => current + 1);
     }, delay);
 
-    return () => window.clearTimeout(timer);
-  }, [automaticAdvances, autoplayPaused]);
+    return () => autoplayTimer.cancel();
+  }, [automaticAdvances, autoplayPaused, autoplayTimer]);
 
   const selectTab = (index: number, moveFocus = false, refs = tabRefs) => {
+    autoplayTimer.cancel();
     setManualInteraction(true);
     setActiveIndex(index);
     setAnnouncement(
@@ -219,11 +234,15 @@ function StudentDashboardPreview() {
         : "Pause dashboard preview";
 
   const toggleAutomaticPreview = () => {
+    const pauseIntent = pauseIntentRef.current;
+    pauseIntentRef.current = null;
+
     if (reducedMotion) {
       return;
     }
 
     if (replayAvailable) {
+      autoplayTimer.cancel();
       setActiveIndex(0);
       setAutomaticAdvances(0);
       setAutomaticPaused(false);
@@ -233,6 +252,15 @@ function StudentDashboardPreview() {
     }
 
     const willPause = !automaticPaused;
+    if (willPause) {
+      autoplayTimer.cancel();
+      // A timeout can enqueue its state update after the control becomes
+      // actionable but before the click handler runs. Restore the state the
+      // viewer actually pressed Pause on so that queued transition cannot
+      // appear after the control reports a paused state.
+      setActiveIndex(pauseIntent?.activeIndex ?? activeIndex);
+      setAutomaticAdvances(pauseIntent?.automaticAdvances ?? automaticAdvances);
+    }
     setAutomaticPaused(willPause);
     setAnnouncement(
       willPause
@@ -306,7 +334,21 @@ function StudentDashboardPreview() {
                 aria-label={animationControlLabel}
                 className="grid size-11 shrink-0 place-items-center rounded-full border border-border bg-white text-primary shadow-sm transition hover:border-primary/40 hover:bg-blue-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-60"
                 disabled={reducedMotion}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    pauseIntentRef.current = {
+                      activeIndex,
+                      automaticAdvances,
+                    };
+                  }
+                }}
                 onClick={toggleAutomaticPreview}
+                onPointerDown={() => {
+                  pauseIntentRef.current = {
+                    activeIndex,
+                    automaticAdvances,
+                  };
+                }}
                 title={animationControlLabel}
                 type="button"
               >
@@ -346,7 +388,10 @@ function StudentDashboardPreview() {
                       id={`${instanceId}-${tab.id}-tab`}
                       key={tab.id}
                       onClick={() => selectTab(index)}
-                      onFocus={() => setManualInteraction(true)}
+                      onFocus={() => {
+                        autoplayTimer.cancel();
+                        setManualInteraction(true);
+                      }}
                       onKeyDown={(event) => handleTabKeyDown(event, index)}
                       ref={(node) => {
                         tabRefs.current[index] = node;

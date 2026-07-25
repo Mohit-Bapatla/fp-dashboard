@@ -7,12 +7,26 @@ import {
 export type StudentOnboardingActionState = {
   fieldErrors: StudentProfileFieldErrors;
   formError: string | null;
+  resumeStep: number | null;
+  savedStep: number | null;
+  saveSequence: number;
+  saveStatus: "idle" | "saved" | "error";
+  supportReference: string | null;
   values: StudentProfileFormValues;
 };
+
+export function requiresMinimumAgeControl(step: number) {
+  return step === 0;
+}
 
 export const initialStudentOnboardingActionState: StudentOnboardingActionState =
   {
     fieldErrors: {},
     formError: null,
+    resumeStep: null,
+    savedStep: null,
+    saveSequence: 0,
+    saveStatus: "idle",
+    supportReference: null,
     values: emptyStudentProfileFormValues,
   };

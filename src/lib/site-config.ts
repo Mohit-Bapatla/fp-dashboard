@@ -52,21 +52,26 @@ export const siteConfig = {
 
 export const organizationMetrics = [
   {
-    value: "150",
-    label: "Published opportunity listings",
+    value: "2,000+",
+    label: "Students in the FP community",
   },
   {
-    value: "147",
-    label: "Listed host organizations",
+    value: "50+",
+    label: "Partner organizations",
   },
   {
-    value: "Free",
-    label: "Student dashboard access",
+    value: "$300K+",
+    label: "Student stipends facilitated through partner programs",
   },
 ] as const;
 
+export const organizationMetricsAsOf = {
+  date: "July 20, 2026",
+  isoDate: "2026-07-20",
+} as const;
+
 export const impactMethodologyNote =
-  "Directory counts are a production snapshot as of July 19, 2026. A listed host organization is not necessarily a confirmed FP partner, and listing counts do not measure active students, placements, or outcomes.";
+  "These figures represent cumulative Future Physicians activity as of July 20, 2026. The stipend figure reflects funding facilitated through partner programs, not money paid directly by Future Physicians.";
 
 export const seminar = {
   slug: "global-healthcare-seminar-2025",

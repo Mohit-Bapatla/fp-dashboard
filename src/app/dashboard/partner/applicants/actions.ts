@@ -11,10 +11,8 @@ import { sendTransactionalEmail } from "@/lib/email/resend";
 import { createNotifications } from "@/lib/notifications/notifications";
 import { ensureApplicationOnboardingItems } from "@/lib/onboarding/application-onboarding";
 import { getCurrentPartnerContext } from "@/lib/partner/context";
-import {
-  enforceRateLimit,
-  formatRateLimitMessage,
-} from "@/lib/security/rate-limit";
+import { logWorkflowFailure } from "@/lib/reliability/workflow-errors";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import {
   createSupabaseAdminClient,
   resumeBucketName,
@@ -54,6 +52,17 @@ function getSafeRedirectTo(formData: FormData) {
     : "/dashboard/partner/applicants";
 }
 
+function withResult(
+  redirectTo: string,
+  key: "error" | "notice",
+  value: string,
+) {
+  const url = new URL(redirectTo, "https://dashboard.invalid");
+  url.searchParams.set(key, value);
+
+  return `${url.pathname}${url.search}`;
+}
+
 export async function updatePartnerApplicationStatus(formData: FormData) {
   const context = await getCurrentPartnerContext();
   const applicationId = getString(formData, "applicationId");
@@ -67,9 +76,7 @@ export async function updatePartnerApplicationStatus(formData: FormData) {
   });
 
   if (!rateLimit.allowed) {
-    redirect(
-      `${redirectTo}?error=${encodeURIComponent(formatRateLimitMessage(rateLimit))}`,
-    );
+    redirect(withResult(redirectTo, "error", "rate_limited"));
   }
 
   if (
@@ -118,53 +125,107 @@ export async function updatePartnerApplicationStatus(formData: FormData) {
   });
 
   if (application) {
-    await prisma.application.update({
+    if (application.status === status) {
+      revalidateApplicantReviewPaths();
+      redirect(withResult(redirectTo, "notice", "already_updated"));
+    }
+
+    const update = await prisma.application.updateMany({
       where: {
         id: application.id,
+        status: application.status,
       },
       data: {
         reviewedAt: new Date(),
         status,
       },
     });
+    if (update.count !== 1) {
+      revalidateApplicantReviewPaths();
+      redirect(withResult(redirectTo, "notice", "changed_elsewhere"));
+    }
+
     const email = applicationStatusEmail({
       opportunityTitle: application.opportunity.title,
       status,
       studentName: application.studentProfile.user.email,
     });
-    const [emailResult] = await Promise.all([
-      sendTransactionalEmail({
+    let emailResult = { sent: false, skipped: true };
+    let notificationCreated = false;
+    let onboardingEnsured = status !== "ACCEPTED";
+
+    try {
+      emailResult = await sendTransactionalEmail({
         ...email,
         to: application.studentProfile.user.email,
-      }),
-      createNotifications([application.studentProfile.user.id], {
+      });
+    } catch (error) {
+      logWorkflowFailure({
+        action: "send_partner_application_status_email",
+        error,
+        route: "/dashboard/partner/applicants",
+        userId: context.user.id,
+      });
+    }
+
+    try {
+      await createNotifications([application.studentProfile.user.id], {
         body: `Your application for ${application.opportunity.title} was updated to ${status}.`,
         title: "Application status updated",
-      }),
-    ]);
-
-    await createAuditLog({
-      action: "APPLICATION_STATUS_UPDATED",
-      actorId: context.user.id,
-      entityId: application.id,
-      entityType: "Application",
-      metadata: {
-        emailSent: emailResult.sent,
-        emailSkipped: emailResult.skipped,
-        newStatus: status,
-        opportunityTitle: application.opportunity.title,
-        previousStatus: application.status,
-        source: "partner",
-      },
-    });
+      });
+      notificationCreated = true;
+    } catch (error) {
+      logWorkflowFailure({
+        action: "create_partner_application_status_notification",
+        error,
+        route: "/dashboard/partner/applicants",
+        userId: context.user.id,
+      });
+    }
 
     if (status === "ACCEPTED") {
-      await ensureApplicationOnboardingItems(application.id);
+      try {
+        await ensureApplicationOnboardingItems(application.id);
+        onboardingEnsured = true;
+      } catch (error) {
+        logWorkflowFailure({
+          action: "ensure_application_onboarding_items",
+          error,
+          route: "/dashboard/partner/applicants",
+          userId: context.user.id,
+        });
+      }
+    }
+
+    try {
+      await createAuditLog({
+        action: "APPLICATION_STATUS_UPDATED",
+        actorId: context.user.id,
+        entityId: application.id,
+        entityType: "Application",
+        metadata: {
+          emailSent: emailResult.sent,
+          emailSkipped: emailResult.skipped,
+          newStatus: status,
+          notificationCreated,
+          onboardingEnsured,
+          opportunityTitle: application.opportunity.title,
+          previousStatus: application.status,
+          source: "partner",
+        },
+      });
+    } catch (error) {
+      logWorkflowFailure({
+        action: "audit_partner_application_status_update",
+        error,
+        route: "/dashboard/partner/applicants",
+        userId: context.user.id,
+      });
     }
   }
 
   revalidateApplicantReviewPaths();
-  redirect(redirectTo);
+  redirect(withResult(redirectTo, "notice", "status_updated"));
 }
 
 export async function createPartnerApplicantResumeSignedUrl(

@@ -12,6 +12,7 @@ import { evaluateOpportunityEligibility } from "@/lib/matching/opportunity-eligi
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 import {
   isOpportunityPreparable,
   isOpportunitySubmittable,
@@ -26,7 +27,7 @@ function date(value: Date | null) {
 export default async function StudentSavedPage() {
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
-  const profile = user.studentProfile;
+  const profile = getCompletedStudentProfile(user.studentProfile);
   const saved = profile
     ? await prisma.savedOpportunity.findMany({
         where: {

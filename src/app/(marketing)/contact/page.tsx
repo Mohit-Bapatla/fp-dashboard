@@ -15,11 +15,11 @@ import {
   secondaryButtonClass,
 } from "@/components/marketing/page-shell";
 import {
-  ExternalTextLink,
   MarketingSection,
   PageCta,
 } from "@/components/marketing/supporting-page-sections";
 import { SocialIcon } from "@/components/marketing/social-icons";
+import { SubstackNewsletterLink } from "@/components/marketing/substack-newsletter-link";
 import { createPublicMetadata } from "@/lib/public-metadata";
 import { siteConfig } from "@/lib/site-config";
 
@@ -180,9 +180,6 @@ export default function ContactPage() {
               opportunity issues from the relevant workspace when that action is
               available.
             </p>
-            <p className="mt-4 text-sm leading-6 text-amber-900/85">
-              No response time is promised on this page.
-            </p>
           </div>
         </div>
       </MarketingSection>
@@ -196,11 +193,7 @@ export default function ContactPage() {
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
             <h2 className="font-semibold text-brand-navy">Newsletter</h2>
-            <div className="mt-3 text-sm">
-              <ExternalTextLink href={siteConfig.links.newsletter}>
-                Subscribe
-              </ExternalTextLink>
-            </div>
+            <SubstackNewsletterLink className="mt-3" />
           </div>
           <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
             <h2 className="font-semibold text-brand-navy">
@@ -233,16 +226,7 @@ export default function ContactPage() {
       </MarketingSection>
 
       <PageCta
-        actions={
-          <a
-            className={secondaryButtonClass}
-            href={siteConfig.links.newsletter}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Subscribe to updates
-          </a>
-        }
+        actions={<SubstackNewsletterLink />}
         description="The newsletter is the best route for public opportunity, event, and organization updates."
         eyebrow="Prefer updates to an inquiry?"
         title="Stay informed through the newsletter."

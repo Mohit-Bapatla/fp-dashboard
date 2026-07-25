@@ -14,7 +14,7 @@ export async function acquireAccountTransitionLock(
   await transaction.$queryRaw`
     SELECT pg_advisory_xact_lock(
       hashtext(${accountTransitionLockKey(clerkUserId)})
-    )
+    )::text
   `;
 }
 

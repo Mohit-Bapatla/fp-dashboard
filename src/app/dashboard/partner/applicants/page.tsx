@@ -14,11 +14,18 @@ import { getApplicantSummary } from "@/lib/matching/applicant-summary";
 import { getPageParam, getPagination, getTotalPages } from "@/lib/pagination";
 import { getCurrentPartnerContext } from "@/lib/partner/context";
 import { getPartnerNavItems } from "@/lib/partner/navigation";
+import {
+  loadOptionalWorkflowData,
+  logWorkflowFailure,
+} from "@/lib/reliability/workflow-errors";
 
 type PartnerApplicantsPageProps = {
   searchParams: Promise<{
     opportunityId?: string;
+    error?: string;
+    notice?: string;
     page?: string;
+    reference?: string;
     status?: string;
   }>;
 };
@@ -142,229 +149,353 @@ export default async function PartnerApplicantsPage({
     },
     ...(status ? { status } : {}),
   };
+  const statLoad = (action: string, load: () => Promise<number>) =>
+    loadOptionalWorkflowData({
+      action,
+      fallback: 0,
+      load,
+      route: "/dashboard/partner/applicants",
+      userId: context.user.id,
+    });
 
   const [
-    applications,
-    filteredCount,
-    totalCount,
-    pendingCount,
-    interviewCount,
-    acceptedCount,
+    applicationsResult,
+    filteredCountResult,
+    totalCountResult,
+    pendingCountResult,
+    interviewCountResult,
+    acceptedCountResult,
   ] = await Promise.all([
-    prisma.application.findMany({
-      where,
-      orderBy: [
-        {
-          submittedAt: "desc",
-        },
-        {
-          createdAt: "desc",
-        },
-      ],
-      skip: pagination.skip,
-      take: pagination.take,
-      select: {
-        id: true,
-        status: true,
-        statement: true,
-        submittedAt: true,
-        createdAt: true,
-        reviewedAt: true,
-        onboardingItems: {
-          orderBy: {
-            createdAt: "asc",
-          },
+    loadOptionalWorkflowData({
+      action: "load_partner_applicant_optional_details",
+      fallback: [],
+      load: () =>
+        prisma.application.findMany({
+          where,
+          orderBy: [
+            {
+              submittedAt: "desc",
+            },
+            {
+              createdAt: "desc",
+            },
+          ],
+          skip: pagination.skip,
+          take: pagination.take,
           select: {
-            completedAt: true,
-            description: true,
             id: true,
-            required: true,
-            reviewedAt: true,
-            reviewerNotes: true,
             status: true,
-            studentNotes: true,
+            statement: true,
             submittedAt: true,
-            title: true,
-          },
-        },
-        interviewRequests: {
-          where: {
-            application: {
-              opportunity: {
-                visibility: "PUBLIC_DIRECTORY",
-                organization: {
+            createdAt: true,
+            reviewedAt: true,
+            onboardingItems: {
+              orderBy: {
+                createdAt: "asc",
+              },
+              select: {
+                completedAt: true,
+                description: true,
+                id: true,
+                required: true,
+                reviewedAt: true,
+                reviewerNotes: true,
+                status: true,
+                studentNotes: true,
+                submittedAt: true,
+                title: true,
+              },
+            },
+            interviewRequests: {
+              where: {
+                application: {
+                  opportunity: {
+                    visibility: "PUBLIC_DIRECTORY",
+                    organizationId: {
+                      in: organizationIds,
+                    },
+                    organization: {
+                      isSystemPlaceholder: false,
+                    },
+                  },
+                },
+              },
+              orderBy: {
+                createdAt: "desc",
+              },
+              select: {
+                id: true,
+                location: true,
+                meetingLink: true,
+                notes: true,
+                selectedSlotId: true,
+                status: true,
+                studentResponseNotes: true,
+                proposedSlots: {
+                  orderBy: {
+                    startsAt: "asc",
+                  },
+                  select: {
+                    endsAt: true,
+                    id: true,
+                    selected: true,
+                    startsAt: true,
+                  },
+                },
+              },
+            },
+            serviceHourRecords: {
+              where: {
+                opportunity: {
+                  visibility: "PUBLIC_DIRECTORY",
+                  organizationId: {
+                    in: organizationIds,
+                  },
+                  organization: {
+                    isSystemPlaceholder: false,
+                  },
+                },
+                partnerOrganization: {
+                  id: {
+                    in: organizationIds,
+                  },
                   isSystemPlaceholder: false,
+                },
+              },
+              orderBy: {
+                updatedAt: "desc",
+              },
+              select: {
+                certificateNotes: true,
+                certificateStatus: true,
+                description: true,
+                hours: true,
+                id: true,
+                verificationNotes: true,
+                verificationStatus: true,
+                verifiedAt: true,
+              },
+            },
+            resume: {
+              select: {
+                extractedCertifications: true,
+                extractedEducation: true,
+                extractedExperience: true,
+                extractedSkills: true,
+                fileName: true,
+                parsedSummary: true,
+              },
+            },
+            opportunity: {
+              select: {
+                description: true,
+                eligibilityRequirements: true,
+                id: true,
+                location: true,
+                remoteType: true,
+                specialty: true,
+                title: true,
+                type: true,
+                organization: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+            studentProfile: {
+              select: {
+                school: true,
+                gradeYear: true,
+                city: true,
+                state: true,
+                country: true,
+                availability: true,
+                locationPreference: true,
+                remotePreference: true,
+                interestedSpecialties: true,
+                opportunityTypes: true,
+                experienceLevel: true,
+                user: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+                  },
                 },
               },
             },
           },
-          orderBy: {
-            createdAt: "desc",
-          },
-          select: {
-            id: true,
-            location: true,
-            meetingLink: true,
-            notes: true,
-            selectedSlotId: true,
-            status: true,
-            studentResponseNotes: true,
-            proposedSlots: {
-              orderBy: {
-                startsAt: "asc",
-              },
-              select: {
-                endsAt: true,
-                id: true,
-                selected: true,
-                startsAt: true,
-              },
+        }),
+      route: "/dashboard/partner/applicants",
+      userId: context.user.id,
+    }),
+    statLoad("load_partner_filtered_application_count", () =>
+      prisma.application.count({
+        where,
+      }),
+    ),
+    statLoad("load_partner_total_application_count", () =>
+      prisma.application.count({
+        where: {
+          opportunity: {
+            visibility: "PUBLIC_DIRECTORY",
+            organizationId: {
+              in: organizationIds,
             },
-          },
-        },
-        serviceHourRecords: {
-          where: {
-            opportunity: {
-              visibility: "PUBLIC_DIRECTORY",
-              organization: {
-                isSystemPlaceholder: false,
-              },
-            },
-            partnerOrganization: {
+            organization: {
               isSystemPlaceholder: false,
             },
           },
-          orderBy: {
-            updatedAt: "desc",
-          },
-          select: {
-            certificateNotes: true,
-            certificateStatus: true,
-            description: true,
-            hours: true,
-            id: true,
-            verificationNotes: true,
-            verificationStatus: true,
-            verifiedAt: true,
-          },
         },
-        resume: {
-          select: {
-            extractedCertifications: true,
-            extractedEducation: true,
-            extractedExperience: true,
-            extractedSkills: true,
-            fileName: true,
-            parsedSummary: true,
+      }),
+    ),
+    statLoad("load_partner_pending_application_count", () =>
+      prisma.application.count({
+        where: {
+          status: {
+            in: ["SUBMITTED", "UNDER_REVIEW"],
           },
-        },
-        opportunity: {
-          select: {
-            description: true,
-            eligibilityRequirements: true,
-            id: true,
-            location: true,
-            remoteType: true,
-            specialty: true,
-            title: true,
-            type: true,
+          opportunity: {
+            visibility: "PUBLIC_DIRECTORY",
+            organizationId: {
+              in: organizationIds,
+            },
             organization: {
-              select: {
-                name: true,
-              },
+              isSystemPlaceholder: false,
             },
           },
         },
-        studentProfile: {
-          select: {
-            school: true,
-            gradeYear: true,
-            city: true,
-            state: true,
-            country: true,
-            availability: true,
-            locationPreference: true,
-            remotePreference: true,
-            interestedSpecialties: true,
-            opportunityTypes: true,
-            experienceLevel: true,
-            user: {
-              select: {
-                firstName: true,
-                lastName: true,
-                email: true,
-              },
+      }),
+    ),
+    statLoad("load_partner_interview_application_count", () =>
+      prisma.application.count({
+        where: {
+          status: "INTERVIEW",
+          opportunity: {
+            visibility: "PUBLIC_DIRECTORY",
+            organizationId: {
+              in: organizationIds,
+            },
+            organization: {
+              isSystemPlaceholder: false,
             },
           },
         },
-      },
-    }),
-    prisma.application.count({
-      where,
-    }),
-    prisma.application.count({
-      where: {
-        opportunity: {
-          visibility: "PUBLIC_DIRECTORY",
-          organizationId: {
-            in: organizationIds,
-          },
-          organization: {
-            isSystemPlaceholder: false,
-          },
-        },
-      },
-    }),
-    prisma.application.count({
-      where: {
-        status: {
-          in: ["SUBMITTED", "UNDER_REVIEW"],
-        },
-        opportunity: {
-          visibility: "PUBLIC_DIRECTORY",
-          organizationId: {
-            in: organizationIds,
-          },
-          organization: {
-            isSystemPlaceholder: false,
+      }),
+    ),
+    statLoad("load_partner_accepted_application_count", () =>
+      prisma.application.count({
+        where: {
+          status: "ACCEPTED",
+          opportunity: {
+            visibility: "PUBLIC_DIRECTORY",
+            organizationId: {
+              in: organizationIds,
+            },
+            organization: {
+              isSystemPlaceholder: false,
+            },
           },
         },
-      },
-    }),
-    prisma.application.count({
-      where: {
-        status: "INTERVIEW",
-        opportunity: {
-          visibility: "PUBLIC_DIRECTORY",
-          organizationId: {
-            in: organizationIds,
-          },
-          organization: {
-            isSystemPlaceholder: false,
-          },
-        },
-      },
-    }),
-    prisma.application.count({
-      where: {
-        status: "ACCEPTED",
-        opportunity: {
-          visibility: "PUBLIC_DIRECTORY",
-          organizationId: {
-            in: organizationIds,
-          },
-          organization: {
-            isSystemPlaceholder: false,
-          },
-        },
-      },
-    }),
+      }),
+    ),
   ]);
+  let applications = applicationsResult.value;
+
+  if (!applicationsResult.available) {
+    try {
+      const coreApplications = await prisma.application.findMany({
+        where,
+        orderBy: [{ submittedAt: "desc" }, { createdAt: "desc" }],
+        skip: pagination.skip,
+        take: pagination.take,
+        select: {
+          id: true,
+          status: true,
+          statement: true,
+          submittedAt: true,
+          createdAt: true,
+          reviewedAt: true,
+          opportunity: {
+            select: {
+              description: true,
+              eligibilityRequirements: true,
+              id: true,
+              location: true,
+              remoteType: true,
+              specialty: true,
+              title: true,
+              type: true,
+              organization: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+          studentProfile: {
+            select: {
+              school: true,
+              gradeYear: true,
+              city: true,
+              state: true,
+              country: true,
+              availability: true,
+              locationPreference: true,
+              remotePreference: true,
+              interestedSpecialties: true,
+              opportunityTypes: true,
+              experienceLevel: true,
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      applications = coreApplications.map((application) => ({
+        ...application,
+        interviewRequests: [],
+        onboardingItems: [],
+        resume: null,
+        serviceHourRecords: [],
+      }));
+    } catch (error) {
+      logWorkflowFailure({
+        action: "load_partner_applicant_core_data",
+        error,
+        route: "/dashboard/partner/applicants",
+        userId: context.user.id,
+      });
+      throw error;
+    }
+  }
+  const filteredCount = filteredCountResult.available
+    ? filteredCountResult.value
+    : applications.length;
+  const totalCount = totalCountResult.value;
+  const pendingCount = pendingCountResult.value;
+  const interviewCount = interviewCountResult.value;
+  const acceptedCount = acceptedCountResult.value;
+  const allStatsAvailable = [
+    totalCountResult,
+    pendingCountResult,
+    interviewCountResult,
+    acceptedCountResult,
+  ].every((result) => result.available);
   const totalPages = getTotalPages(filteredCount, pagination.pageSize);
   const redirectTo = buildRedirectTo(status, opportunityId);
-  const feedbackByApplicationAndType = new Map(
-    (
-      await prisma.feedback.findMany({
+  const feedbackResult = await loadOptionalWorkflowData({
+    action: "load_partner_applicant_feedback",
+    fallback: [],
+    load: () =>
+      prisma.feedback.findMany({
         where: {
           authorId: context.user.id,
           entityId: {
@@ -381,8 +512,12 @@ export default async function PartnerApplicantsPage({
           notes: true,
           rating: true,
         },
-      })
-    ).map((feedback) => [
+      }),
+    route: "/dashboard/partner/applicants",
+    userId: context.user.id,
+  });
+  const feedbackByApplicationAndType = new Map(
+    feedbackResult.value.map((feedback) => [
       `${feedback.entityId}:${feedback.feedbackType}`,
       feedback,
     ]),
@@ -414,10 +549,19 @@ export default async function PartnerApplicantsPage({
             : null,
           statement: application.statement,
         }),
-        commentThread: await getRecordCommentThread({
-          entityId: application.id,
-          entityType: "APPLICATION",
-        }),
+        commentThread: (
+          await loadOptionalWorkflowData({
+            action: "load_partner_applicant_comments",
+            fallback: { allowedVisibilities: [], comments: [] },
+            load: () =>
+              getRecordCommentThread({
+                entityId: application.id,
+                entityType: "APPLICATION",
+              }),
+            route: "/dashboard/partner/applicants",
+            userId: context.user.id,
+          })
+        ).value,
       })),
     )
   ).sort((first, second) => second.aiReview.fitScore - first.aiReview.fitScore);
@@ -447,6 +591,36 @@ export default async function PartnerApplicantsPage({
           </div>
         </header>
 
+        {params.error === "rate_limited" ? (
+          <p
+            className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"
+            role="alert"
+          >
+            Too many updates were attempted. Wait a moment and try again.
+          </p>
+        ) : null}
+        {params.notice ? (
+          <p
+            className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900"
+            role="status"
+          >
+            {params.notice === "status_updated"
+              ? "Application status updated."
+              : params.notice === "already_updated"
+                ? "That application already has the selected status."
+                : "The application changed in another session. The latest status is shown below."}
+          </p>
+        ) : null}
+        {!allStatsAvailable ? (
+          <p
+            className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"
+            role="status"
+          >
+            Applicants are available, but one or more summary counts could not
+            be loaded. Try again for refreshed totals.
+          </p>
+        ) : null}
+
         <section
           aria-label="Partner applicant stats"
           className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
@@ -454,22 +628,36 @@ export default async function PartnerApplicantsPage({
           <StatCard
             helper="All applications submitted to your organization opportunities."
             label="Total applicants"
-            value={totalCount.toString()}
+            value={
+              totalCountResult.available ? totalCount.toString() : "Unavailable"
+            }
           />
           <StatCard
             helper="Submitted or under-review applications awaiting decisions."
             label="In review"
-            value={pendingCount.toString()}
+            value={
+              pendingCountResult.available
+                ? pendingCount.toString()
+                : "Unavailable"
+            }
           />
           <StatCard
             helper="Applicants currently marked for interview."
             label="Interview"
-            value={interviewCount.toString()}
+            value={
+              interviewCountResult.available
+                ? interviewCount.toString()
+                : "Unavailable"
+            }
           />
           <StatCard
             helper="Applications accepted by your organization."
             label="Accepted"
-            value={acceptedCount.toString()}
+            value={
+              acceptedCountResult.available
+                ? acceptedCount.toString()
+                : "Unavailable"
+            }
           />
         </section>
 
@@ -524,7 +712,11 @@ export default async function PartnerApplicantsPage({
 
         <PartnerApplicantList
           applications={applicationsWithSummaries}
-          hasAnyApplicants={totalCount > 0}
+          hasAnyApplicants={
+            totalCountResult.available
+              ? totalCount > 0
+              : applications.length > 0
+          }
           redirectTo={redirectTo}
         />
         <PaginationControls

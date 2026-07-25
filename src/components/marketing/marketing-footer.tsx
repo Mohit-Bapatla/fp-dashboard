@@ -1,11 +1,11 @@
-import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
 import { BrandMark } from "@/components/shared/brand-mark";
 import { siteConfig } from "@/lib/site-config";
 
-import { MarketingContainer, primaryButtonClass } from "./page-shell";
+import { MarketingContainer } from "./page-shell";
 import { SocialIcon } from "./social-icons";
+import { SubstackNewsletterLink } from "./substack-newsletter-link";
 
 const footerGroups = [
   {
@@ -81,15 +81,7 @@ export function MarketingFooter() {
               profile or application details.
             </p>
           </div>
-          <a
-            className={primaryButtonClass}
-            href={siteConfig.links.newsletter}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Subscribe to the newsletter
-            <ArrowUpRight aria-hidden="true" className="size-4" />
-          </a>
+          <SubstackNewsletterLink className="lg:justify-self-end" />
         </div>
 
         <div className="mt-12 grid gap-10 lg:grid-cols-[1.1fr_2fr]">

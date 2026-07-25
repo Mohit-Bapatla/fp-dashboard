@@ -28,6 +28,7 @@ import {
 import { createPublicMetadata } from "@/lib/public-metadata";
 import {
   homepageFaqItems,
+  impactMethodologyNote,
   organizationMetrics,
   siteConfig,
 } from "@/lib/site-config";
@@ -159,6 +160,9 @@ export default function HomePage() {
               <DashboardPreview />
             </div>
           </MarketingReveal>
+          <p className="mt-6 max-w-4xl text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-6">
+            {impactMethodologyNote}
+          </p>
         </MarketingContainer>
       </section>
 

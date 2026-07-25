@@ -10,11 +10,12 @@ import { prisma } from "@/lib/db/prisma";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 
 export default async function StudentPlacementRequestsPage() {
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
-  const profile = user.studentProfile;
+  const profile = getCompletedStudentProfile(user.studentProfile);
 
   if (!profile) {
     return (

@@ -1,3 +1,4 @@
+import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -10,17 +11,25 @@ import {
 } from "@/components/student/student-application-task-list";
 import { prisma } from "@/lib/db/prisma";
 import { isStudentOpportunitySubmittable } from "@/lib/opportunities/student-visibility";
+import { loadOptionalWorkflowData } from "@/lib/reliability/workflow-errors";
 import { isSafeExternalUrl } from "@/lib/security/safe-url";
 import {
   getApplicationNextAction,
   getApplicationTaskProgress,
   groupApplicationTasks,
 } from "@/lib/student/application-tasks";
-import { canSubmitExistingApplication } from "@/lib/student/application-workspace";
+import {
+  canSubmitExistingApplication,
+  getOfficialApplicationAction,
+} from "@/lib/student/application-workspace";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getStudentNavItems } from "@/lib/student/navigation";
-import { getStudentNotificationPreference } from "@/lib/student/notification-preferences";
+import {
+  getStudentNotificationPreference,
+  resolveStudentNotificationPreference,
+} from "@/lib/student/notification-preferences";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 
 import {
   startApplicationWorkspace,
@@ -46,34 +55,58 @@ function formatStatus(value: string) {
 
 export default async function ApplicationWorkspacePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ applicationId: string }>;
+  searchParams: Promise<{ reference?: string; workspace?: string }>;
 }) {
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
   const { applicationId } = await params;
-  if (!user.studentProfile) notFound();
-  const profile = user.studentProfile;
+  const profile = getCompletedStudentProfile(user.studentProfile);
+  if (!profile) notFound();
 
-  const [application, resumes, notificationPreference] = await Promise.all([
-    prisma.application.findFirst({
-      where: { id: applicationId, studentProfileId: profile.id },
-      include: {
-        tasks: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
-        resume: { select: { fileName: true } },
-        opportunity: {
-          include: { organization: { select: { name: true } } },
-        },
+  const application = await prisma.application.findFirst({
+    where: { id: applicationId, studentProfileId: profile.id },
+    include: {
+      tasks: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
+      resume: { select: { fileName: true } },
+      opportunity: {
+        include: { organization: { select: { name: true } } },
       },
-    }),
-    prisma.resume.findMany({
-      where: { studentProfileId: profile.id },
-      orderBy: { updatedAt: "desc" },
-      select: { fileName: true, id: true },
-    }),
-    getStudentNotificationPreference(profile.id),
-  ]);
+    },
+  });
   if (!application) notFound();
+  const [resumeResult, notificationPreferenceResult] = await Promise.all([
+    loadOptionalWorkflowData({
+      action: "load_application_resumes",
+      fallback: [],
+      load: () =>
+        prisma.resume.findMany({
+          where: { studentProfileId: profile.id },
+          orderBy: { updatedAt: "desc" },
+          select: { fileName: true, id: true },
+        }),
+      route: "/dashboard/student/applications/[applicationId]",
+      userId: user.id,
+    }),
+    loadOptionalWorkflowData({
+      action: "load_application_notification_preference",
+      fallback: resolveStudentNotificationPreference(null),
+      load: () => getStudentNotificationPreference(profile.id),
+      route: "/dashboard/student/applications/[applicationId]",
+      userId: user.id,
+    }),
+  ]);
+  const resumes = resumeResult.value;
+  const notificationPreference = notificationPreferenceResult.value;
+  const optionalDataAvailable =
+    resumeResult.available && notificationPreferenceResult.available;
+  const workspaceParams = await searchParams;
+  const workspaceStatus = workspaceParams.workspace;
+  const reference = workspaceParams.reference;
+  const safeReference =
+    reference && /^[A-F0-9]{8}$/.test(reference) ? reference : null;
 
   const now = new Date();
   const opportunitySubmissionAllowed = isStudentOpportunitySubmittable(
@@ -96,6 +129,10 @@ export default async function ApplicationWorkspacePage({
   )
     ? application.opportunity.officialApplicationUrl
     : null;
+  const officialApplicationAction = getOfficialApplicationAction({
+    applicationMethod: application.applicationMethod,
+    officialApplicationUrl,
+  });
   const officialSourceUrl = isSafeExternalUrl(
     application.opportunity.officialSourceUrl,
   )
@@ -176,7 +213,38 @@ export default async function ApplicationWorkspacePage({
               relationshipType={application.opportunity.relationshipType}
             />
           </div>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Official deadline:{" "}
+              <span className="font-semibold text-foreground">
+                {formatDate(application.opportunity.deadline)}
+              </span>
+            </p>
+            {officialApplicationAction ? (
+              <a
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-auto"
+                href={officialApplicationAction.href}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                <ExternalLink aria-hidden="true" className="h-4 w-4" />
+                {officialApplicationAction.label}
+                <span className="sr-only"> for {organizationName}</span>
+              </a>
+            ) : null}
+          </div>
         </header>
+
+        {!optionalDataAvailable ? (
+          <section
+            className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"
+            role="status"
+          >
+            Your application is available, but some optional preferences or
+            resume choices could not be loaded. You can keep working and try
+            this page again later.
+          </section>
+        ) : null}
 
         {!hasStructuredPlan ? (
           <section className="rounded-xl border border-primary/20 bg-primary/[0.04] p-6">
@@ -250,13 +318,25 @@ export default async function ApplicationWorkspacePage({
         <form
           action={updateApplicationWorkspace}
           className="rounded-xl border border-border bg-background p-6"
+          id="workspace-plan"
         >
           <input name="applicationId" type="hidden" value={application.id} />
+          <input
+            name="expectedUpdatedAt"
+            type="hidden"
+            value={application.updatedAt.toISOString()}
+          />
           <h2 className="text-xl font-semibold">Your plan</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             Progress and next actions are calculated from required tasks. Your
             notes and target date stay private.
           </p>
+          {workspaceStatus ? (
+            <WorkspaceSaveStatus
+              reference={safeReference}
+              status={workspaceStatus}
+            />
+          ) : null}
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="block text-sm font-medium">
               Personal target date
@@ -296,7 +376,7 @@ export default async function ApplicationWorkspacePage({
             />
           </label>
           <button
-            className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+            className="mt-4 min-h-11 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground"
             type="submit"
           >
             Save workspace
@@ -411,6 +491,44 @@ export default async function ApplicationWorkspacePage({
         </section>
       </div>
     </DashboardShell>
+  );
+}
+
+function WorkspaceSaveStatus({
+  reference,
+  status,
+}: {
+  reference: string | null;
+  status: string;
+}) {
+  const messages: Record<string, string> = {
+    conflict:
+      "This workspace changed in another tab. Reload the page, review the latest values, and try again.",
+    error: `We could not save your workspace. Your earlier data is still available. Try again.${reference ? ` If the problem continues, contact support with reference ${reference}.` : ""}`,
+    invalid_date: "Choose a valid target date and try again.",
+    rate_limited:
+      "Too many updates were attempted. Wait a moment and try again.",
+    saved: "Workspace saved.",
+  };
+  const message = messages[status];
+
+  if (!message) {
+    return null;
+  }
+
+  const isSuccess = status === "saved";
+
+  return (
+    <p
+      className={`mt-4 rounded-lg border p-3 text-sm ${
+        isSuccess
+          ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+          : "border-amber-300 bg-amber-50 text-amber-950"
+      }`}
+      role={isSuccess ? "status" : "alert"}
+    >
+      {message}
+    </p>
   );
 }
 

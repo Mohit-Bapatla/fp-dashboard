@@ -5,8 +5,10 @@ import { StudentOnboardingForm } from "@/components/student/student-onboarding-f
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { RoleBadge } from "@/components/dashboard/role-badge";
 import { getRoleFromSessionClaims } from "@/lib/auth/roles";
+import { prisma } from "@/lib/db/prisma";
 import { safeInternalPath } from "@/lib/security/safe-url";
 import { getStudentNavItems } from "@/lib/student/navigation";
+import { getStudentOnboardingProgress } from "@/lib/student/onboarding-progress";
 import {
   initialStudentOnboardingActionState,
   type StudentOnboardingActionState,
@@ -68,9 +70,27 @@ export default async function StudentOnboardingPage({
     : query.returnTo;
   const returnTo = safeInternalPath(requestedReturnTo, "/dashboard/student");
   const profile = user.studentProfile;
+  const progress = getStudentOnboardingProgress({
+    firstName: user.firstName,
+    lastName: user.lastName,
+    profile,
+  });
+  const minimumAgeAffirmation =
+    profile && !progress.isComplete
+      ? await prisma.auditLog.findFirst({
+          where: {
+            action: "STUDENT_ONBOARDING_AGE_AFFIRMED",
+            actorId: user.id,
+            entityId: profile.id,
+            entityType: "StudentProfile",
+          },
+          select: { id: true },
+        })
+      : null;
   const gradeYearValues = getGradeYearValues(profile?.gradeYear);
   const initialState: StudentOnboardingActionState = {
     ...initialStudentOnboardingActionState,
+    resumeStep: progress.firstIncompleteStep,
     values: {
       firstName: user.firstName ?? "",
       lastName: user.lastName ?? "",
@@ -114,7 +134,11 @@ export default async function StudentOnboardingPage({
             Student onboarding
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
-            {profile ? "Edit your profile" : "Create your student profile"}
+            {progress.isComplete
+              ? "Edit your profile"
+              : profile
+                ? "Continue your student profile"
+                : "Create your student profile"}
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
             Share your goals, availability, location preferences, and interests
@@ -124,8 +148,11 @@ export default async function StudentOnboardingPage({
         </section>
 
         <StudentOnboardingForm
+          initialStep={progress.firstIncompleteStep}
           initialState={initialState}
-          requiresMinimumAgeAffirmation={!profile}
+          requiresMinimumAgeAffirmation={
+            !progress.isComplete && !minimumAgeAffirmation
+          }
           returnTo={returnTo}
         />
       </div>

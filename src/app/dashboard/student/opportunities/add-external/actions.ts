@@ -15,6 +15,7 @@ import {
   validateExternalOpportunity,
 } from "@/lib/student/external-opportunity-validation";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 import { studentExternalOrganizationName } from "@/lib/student/external-opportunity";
 
 export async function addExternalOpportunity(
@@ -32,7 +33,7 @@ export async function addExternalOpportunity(
 
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
-  const studentProfile = user.studentProfile;
+  const studentProfile = getCompletedStudentProfile(user.studentProfile);
   if (!studentProfile) {
     return {
       fieldErrors: {},

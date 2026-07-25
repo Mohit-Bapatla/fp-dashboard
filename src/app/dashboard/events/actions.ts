@@ -22,6 +22,7 @@ import { createNotifications } from "@/lib/notifications/notifications";
 import { assertPlacementQueueAccess } from "@/lib/placement-requests/authorization";
 import { assertStudentAccess } from "@/lib/student/authorization";
 import { getCurrentStudentProfile } from "@/lib/student/profile";
+import { getCompletedStudentProfile } from "@/lib/student/profile-completion";
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -177,10 +178,11 @@ export async function saveProgramEvent(formData: FormData) {
 export async function registerForProgramEvent(formData: FormData) {
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
+  const profile = getCompletedStudentProfile(user.studentProfile);
   const eventId = getString(formData, "eventId");
   const redirectTo = getSafeEventRedirect(formData);
 
-  if (!user.studentProfile || !eventId) {
+  if (!profile || !eventId) {
     redirect(redirectTo);
   }
 
@@ -231,7 +233,7 @@ export async function registerForProgramEvent(formData: FormData) {
     where: {
       eventId_studentProfileId: {
         eventId: event.id,
-        studentProfileId: user.studentProfile.id,
+        studentProfileId: profile.id,
       },
     },
     update: {
@@ -242,7 +244,7 @@ export async function registerForProgramEvent(formData: FormData) {
     create: {
       eventId: event.id,
       status: registrationStatus,
-      studentProfileId: user.studentProfile.id,
+      studentProfileId: profile.id,
     },
     select: {
       id: true,
@@ -279,17 +281,18 @@ export async function registerForProgramEvent(formData: FormData) {
 export async function cancelProgramEventRegistration(formData: FormData) {
   const { userId } = await assertStudentAccess();
   const user = await getCurrentStudentProfile(userId);
+  const profile = getCompletedStudentProfile(user.studentProfile);
   const registrationId = getString(formData, "registrationId");
   const redirectTo = getSafeEventRedirect(formData);
 
-  if (!user.studentProfile || !registrationId) {
+  if (!profile || !registrationId) {
     redirect(redirectTo);
   }
 
   const registration = await prisma.eventRegistration.findFirst({
     where: {
       id: registrationId,
-      studentProfileId: user.studentProfile.id,
+      studentProfileId: profile.id,
       event: {
         startAt: {
           gt: new Date(),
