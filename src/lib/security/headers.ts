@@ -1,6 +1,8 @@
 export function buildContentSecurityPolicy(nonce: string) {
   const developmentEval =
     process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
+  const vercelPreviewFrameSource =
+    process.env.VERCEL_ENV === "preview" ? " https://vercel.live" : "";
   const upgradeInsecureRequests = process.env.VERCEL
     ? ["upgrade-insecure-requests"]
     : [];
@@ -16,7 +18,7 @@ export function buildContentSecurityPolicy(nonce: string) {
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
     "connect-src 'self' https://clerk.futurephysicians.org https://*.accounts.dev https://*.clerk.accounts.dev https://*.clerk.com https://*.clerk.dev https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://vitals.vercel-insights.com https://va.vercel-scripts.com",
-    "frame-src 'self' https://*.accounts.dev https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://www.youtube-nocookie.com",
+    `frame-src 'self' https://*.accounts.dev https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://www.youtube-nocookie.com${vercelPreviewFrameSource}`,
     "worker-src 'self' blob:",
     "manifest-src 'self'",
     "media-src 'self' https:",
