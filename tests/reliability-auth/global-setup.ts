@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import * as crypto from "node:crypto";
 
 import { clerkSetup } from "@clerk/testing/playwright";
 import { config as loadDotenv } from "dotenv";
@@ -154,9 +155,10 @@ export default async function globalSetup() {
   const secretKey = assertDevelopmentClerkKeys();
   await clerkSetup();
 
-  const runId = `${Date.now().toString(36)}${Math.random()
-    .toString(36)
-    .slice(2, 8)}`;
+  const runId = `${Date.now().toString(36)}${crypto
+    .randomUUID()
+    .replaceAll("-", "")
+    .slice(0, 6)}`;
   const definitions = [
     ["STUDENT_A", "Reliability", "Student A", "STUDENT"],
     ["STUDENT_B", "Reliability", "Student B", "STUDENT"],
