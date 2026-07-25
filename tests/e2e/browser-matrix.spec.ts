@@ -96,3 +96,28 @@ test("anonymous opportunity navigation survives back and forward history", async
     }),
   ).toBeVisible();
 });
+
+test("opportunity filters stay synchronized with browser history", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.goto("/opportunities?q=history-one");
+
+  const filters = page.getByText("Search and filters", { exact: true }).first();
+  await filters.click();
+
+  const mobileFilterPanel = page.locator("details");
+  const search = mobileFilterPanel.getByLabel("Search opportunities");
+  await expect(search).toHaveValue("history-one");
+
+  await search.fill("history-two");
+  await mobileFilterPanel
+    .getByRole("button", { name: "Apply filters" })
+    .click();
+  await expect(page).toHaveURL(/q=history-two/);
+  await expect(search).toHaveValue("history-two");
+
+  await page.goBack();
+  await expect(page).toHaveURL(/q=history-one/);
+  await expect(search).toHaveValue("history-one");
+});
