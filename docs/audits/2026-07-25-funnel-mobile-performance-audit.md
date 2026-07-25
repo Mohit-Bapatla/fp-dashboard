@@ -4,7 +4,7 @@ Audit date: 2026-07-25 CDT
 Production URL: https://fp-dashboard-rosy.vercel.app  
 Production deployment commit tested: `8e1dc75c0fc7a6e568526857c375043789124d7b`  
 Audit branch: `codex/funnel-mobile-performance-audit`  
-Implementation commits: `5753513`, `eb334d0`, `3d90bbb`  
+Implementation commits: `5753513`, `eb334d0`, `3d90bbb`, `0a2f54e`
 Status vocabulary: **Verified fact**, **Strong inference**, **Hypothesis**, and **Not measurable**
 
 ## 1. Executive summary
@@ -17,9 +17,11 @@ Status vocabulary: **Verified fact**, **Strong inference**, **Hypothesis**, and 
 
 **Verified fact:** mobile form controls used 14 px text below the `sm` breakpoint, which can trigger unwanted iOS Safari zoom. The onboarding form also blocked Enter on ordinary inputs. Controls now use at least 16 px text on mobile, 44 px minimum height, relevant autofill tokens, and normal form submission semantics.
 
+**Verified fact:** a wired iPhone 14 Pro running iOS 26.5.2 was paired and observed in Finder, macOS device tooling, Safari Apps and Devices Inspection, Safari Web Inspector, and iPhone Mirroring. A production Safari pass covered the homepage, public opportunity discovery, Google OAuth return, the four-step profile form, profile completion, the student dashboard, saving, the external-application start form, and a cold Safari restart. The pass exercised deployed commit `8e1dc75`, not the fixed branch. It found one P1 history-state defect: after Back, the URL/results returned to the prior search while the uncontrolled filter UI retained the newer values. The branch now synchronizes the form on history restoration, with Chromium, WebKit, and iPhone-WebKit regression coverage.
+
 **Verified fact:** Vercel Analytics and Speed Insights are installed and enabled on Vercel. They provide route/RUM data, but the application has no first-touch or last-touch attribution store, no UTM persistence, and no complete acquisition/onboarding event model. Existing `RecommendationEvent` and `AuditLog` records partially cover recommendation and saved onboarding transitions. No new vendor or schema was added.
 
-No P0 security, authorization, data-loss, or deterministic authentication failure was found. The branch is suitable for preview deployment after review, but the funnel is not proven fixed. Production deployment and the progressive-onboarding/analytics schema work require approval.
+No P0 security, authorization, data-loss, or deterministic authentication failure was found. The production physical pass is complete with the remaining coverage limits listed in Section 8; a post-fix physical pass remains impossible until the branch has a preview URL. The branch is suitable for preview deployment after review, but the funnel is not proven fixed. Production deployment and the progressive-onboarding/analytics schema work require approval.
 
 ## 2. Scope and environment
 
@@ -33,6 +35,7 @@ No P0 security, authorization, data-loss, or deterministic authentication failur
 - CI: GitHub Actions on Node 22 with PostgreSQL 16 migration validation.
 - Build output: 86 App Router routes plus proxy middleware.
 - Local host: macOS on Apple hardware; Node used by the shell reported v26 for ad-hoc scripts while project CI targets Node 22.
+- Physical device: iPhone 14 Pro (`iPhone15,2`), iOS 26.5.2 build 23F84, wired USB, Safari on iOS 26.5.2, portrait viewport 393×695 CSS px at DPR 3, plus a direct-user landscape check.
 
 The task originally opened at commit `4847762`, 16 commits behind `origin/main`. Before establishing a baseline, the audit branch was fast-forwarded to the exact deployed production source, `8e1dc75`. All comparisons and fixes in this report use `8e1dc75` as the authoritative starting commit.
 
@@ -41,28 +44,29 @@ No `AGENTS.md` file exists in the repository. README files, architecture/auth/se
 ### Safety boundaries observed
 
 - Production data access was read-only and aggregate/anonymized.
-- No student, partner, opportunity, application, placement, task, or staff record was modified.
+- No non-test student, partner, opportunity, application, placement, task, or staff record was modified.
+- The dedicated production test student resubmitted its existing profile values and temporarily saved one opportunity; the save was removed after verification. No application was submitted or created.
 - No production schema or migration was changed.
 - No real email, notification, message, external application, or contact was sent.
-- No credential, token, cookie, complete student record, resume, or direct identifier was printed or captured.
+- No credential, token, cookie, complete student record, resume, or direct identifier is retained in the repository or report.
 - No new vendor, dependency, paid feature, or production deployment was introduced.
 - Test databases and processes were disposable and local.
 
 ## 3. Baseline repository health
 
-| Gate             | Authoritative baseline at `8e1dc75`                             | Fixed branch                                              |
-| ---------------- | --------------------------------------------------------------- | --------------------------------------------------------- |
-| Install          | `npm ci` passed; 929 packages                                   | Unchanged lockfile                                        |
-| Formatting       | Passed                                                          | Passed                                                    |
-| Type checking    | Passed after deleting stale generated `.next` types             | Passed                                                    |
-| ESLint           | Passed                                                          | Passed                                                    |
-| Unit tests       | 80 files, 365 tests passed                                      | 80 files, 368 tests passed                                |
-| Prisma schema    | Valid                                                           | Valid                                                     |
-| Migrations       | 21/21; clean install, parity, and representative upgrade passed | 21/21 repeated and passed                                 |
-| Production build | Passed; 86 routes                                               | Passed; 86 routes                                         |
-| Secret scan      | No high-confidence tracked secrets                              | Passed                                                    |
-| Dependency audit | Exit 0 at high threshold; seven moderate transitive advisories  | Same                                                      |
-| Browser list/run | 89 Chromium executions before changes                           | 107 executions across Chromium plus focused WebKit matrix |
+| Gate             | Authoritative baseline at `8e1dc75`                             | Fixed branch                                                                     |
+| ---------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Install          | `npm ci` passed; 929 packages                                   | Unchanged lockfile                                                               |
+| Formatting       | Passed                                                          | Passed                                                                           |
+| Type checking    | Passed after deleting stale generated `.next` types             | Passed                                                                           |
+| ESLint           | Passed                                                          | Passed                                                                           |
+| Unit tests       | 80 files, 365 tests passed                                      | 80 files, 368 tests passed                                                       |
+| Prisma schema    | Valid                                                           | Valid                                                                            |
+| Migrations       | 21/21; clean install, parity, and representative upgrade passed | 21/21 repeated and passed                                                        |
+| Production build | Passed; 86 routes                                               | Passed; 86 routes                                                                |
+| Secret scan      | No high-confidence tracked secrets                              | Passed                                                                           |
+| Dependency audit | Exit 0 at high threshold; seven moderate transitive advisories  | Same                                                                             |
+| Browser list/run | 89 Chromium executions before changes                           | 110 executions; 83 passed and 27 authenticated-state skips after isolated reruns |
 
 The first type-check failure referenced a removed route inside `.next`; deleting only that generated directory and rerunning passed. It was environmental, not a source defect.
 
@@ -199,21 +203,47 @@ The browser matrix now covers:
 
 An external YouTube iframe emitted a Chromium GPU driver performance warning during one full concurrent run. The same axe tests passed 9/9 when isolated. The runtime monitor was not weakened to hide it.
 
-The complete CI-shaped suite then passed on repeat: 80 passed, 27 authenticated-state scenarios intentionally skipped, and zero failed across 107 executions.
+After the physical finding added a seventh browser-matrix scenario, the CI-shaped suite contained 110 executions. The final concurrent run produced 81 passes, 27 intentional authenticated-state skips, and two failures caused only by the already-documented YouTube GPU-driver warning. Both affected scenarios then passed in isolation, as did all three new history-state executions. Across unique final scenarios: 83 passed, 27 skipped, and zero persistent application failures.
 
 ## 8. Physical-iPhone findings
 
-**Not tested as of this report draft.** Safari developer features were enabled and the Apps and Devices Inspection window was opened, but only “This Computer” appeared. No iPhone or iPhone Safari tab was visible, so no physical-device claim, model, iOS version, screenshot, console trace, network trace, OAuth transition, keyboard check, file upload, or session-persistence result is recorded.
+### Device and evidence
 
-The device-dependent test rows remain `NOT_RUN`. Completion requires:
+- Finder: `Mohit’s iPhone` visible.
+- macOS device tools: paired and available over wired USB.
+- Device: iPhone 14 Pro (`iPhone15,2`), iOS 26.5.2 build 23F84.
+- Safari: the active tab was visible in Safari Apps and Devices Inspection and inspectable with Web Inspector.
+- Test window: 2026-07-25, approximately 02:28–11:09 America/Chicago.
+- URL: `https://fp-dashboard-rosy.vercel.app` redirected to the canonical `https://www.futurephysicians.org`.
+- Production commit: `8e1dc75c0fc7a6e568526857c375043789124d7b`.
+- Transport: normal Wi-Fi; no device-wide network configuration was changed.
+- Interaction: taps/navigation through iPhone Mirroring; authentication/account selection performed directly by the user; Web Inspector supplied DOM, CSS, console, and network evidence.
 
-1. The iPhone unlocked with Safari open.
-2. Web Inspector enabled on the iPhone if it is not already enabled.
-3. Trust/connection established with this Mac.
-4. A dedicated test account, with authentication performed by the user.
-5. A preview deployment of the fixed commit for a full post-fix authenticated pass, or explicit approval of an equivalent safe test environment.
+### Verified production passes
 
-The production URL still serves `8e1dc75`; therefore production physical testing alone cannot verify this branch's mobile input and hero fixes.
+- Homepage: headline and both acquisition CTAs visible above the fold; menu opened; no notch, safe-area, or horizontal-overflow defect observed in portrait.
+- Public opportunities: 149 published/verified results were visible; filter disclosure and native select worked; a public detail page showed organization, format/location, application-method labeling, and the authentication requirement.
+- Sign-up/OAuth: Clerk sign-up was usable; Google account chooser opened without popup blocking; the user completed authentication; the app returned to the authenticated student area.
+- Direct device checks: the user completed portrait-to-landscape rotation, soft-keyboard focus/type/dismiss and zoom/obstruction validation, and resume-picker open/cancel without reporting an additional blocker. The picker was canceled without choosing or uploading a file.
+- Profile flow: all four profile screens loaded. Existing values survived Back/forward. Save and continue worked on each screen, Save and finish returned to `/dashboard/student`, and the completed profile remained complete.
+- Production CSS evidence: the deployed profile's ordinary text controls were 14 px and approximately 38 px high. This directly confirms the iOS zoom/touch-target risk fixed in `5753513`; the branch itself was not deployed for physical verification.
+- Native controls: the iOS select menu opened and dismissed; the external-application date picker opened and selected a date locally without submitting the form.
+- Activation: the student opportunity board, a saved-opportunity round trip, Saved, Applications, and the external-application start form were usable. No external or internal application was submitted. The temporary save was removed after verification.
+- Session persistence: after Safari was backgrounded and after it was force-closed from the app switcher, a cold reopen returned to the authenticated student dashboard with 393×695 viewport, DPR 3, no horizontal overflow, and a complete document.
+- Diagnostics: normal navigations showed no application console error or failed document request. Sign-out completed and returned to the homepage. During that transition, Web Inspector reported one RSC fallback plus five same-origin RSC prefetch fetches blocked by WebKit access-control checks. A clean reload immediately produced an empty console and the homepage remained functional. Record this as a transient P2 diagnostic, not an authentication blocker.
+
+### Physical defect found and fixed on the branch
+
+On production, the public filter form reproduced a history-state desynchronization in the real Safari session: after submitting a search/filter and pressing Back, the URL and result count returned to the prior state while the input/select controls still showed the newer state. The same defect reproduced in automated Chromium, desktop WebKit, and iPhone WebKit. Commit `0a2f54e` adds a small client-side history/page-restore synchronizer and a three-engine regression; all three focused executions pass.
+
+### Direct-device and post-fix limits
+
+- Direct Google authentication was performed by the user; no credential was inspected or recorded.
+- Direct landscape, soft-keyboard obstruction/zoom, and file-picker-open/cancel checks were completed by the user and are labeled as direct-on-device user validation, not Mirroring or Web Inspector observations.
+- After direct Google account selection, Web Inspector confirmed `https://www.futurephysicians.org/dashboard/student`, `readyState: complete`, and no fresh console error.
+- The account already had a complete profile, so a true fresh incomplete-account OAuth return was not physically tested.
+- Validation failure, server failure, slow-network interruption, dark-mode contrast, reduced-motion behavior, and internal eligible application creation remain automated/source checks rather than physical production mutations.
+- The production URL still serves `8e1dc75`; therefore the branch's hero, 16 px control, 44 px target, and history-state fixes require a preview physical rerun before production promotion.
 
 ## 9. Authentication findings
 
@@ -228,9 +258,9 @@ The production URL still serves `8e1dc75`; therefore production physical testing
 - Return URLs are normalized and reject unsafe external destinations.
 - Incomplete students are returned to onboarding; complete students reach the student dashboard.
 
-**Production browser evidence:** the signed-out production suite passed public auth-page smoke coverage. Twenty-seven authenticated scenarios were intentionally skipped because no repository test storage states were provided. Google credentials were not automated.
+**Production browser evidence:** the signed-out production suite passed public auth-page smoke coverage. Twenty-seven authenticated scenarios were intentionally skipped because no repository test storage states were provided. On the physical iPhone, Google OAuth reached the provider, authentication was completed directly by the user, and Web Inspector confirmed return to `https://www.futurephysicians.org/dashboard/student` with `readyState: complete` and no fresh console error. No popup block or redirect loop occurred. Sign-out returned to the homepage. The already-authenticated account also survived a cold Safari restart.
 
-**Not measurable/tested:** a real new-account Google round trip, popup blocking, physical-iPhone OAuth return, and a real incomplete-account return on the current branch. No deterministic redirect loop or runtime error cluster was found in the available Vercel runtime logs.
+**Not measurable/tested:** a real new-account signup, a physical incomplete-account return, and the fixed branch's OAuth return because no preview was deployed. No deterministic redirect loop or runtime error cluster was found in the available Vercel runtime logs.
 
 ## 10. Onboarding findings
 
@@ -254,6 +284,8 @@ The production URL still serves `8e1dc75`; therefore production physical testing
 - Mobile controls used 14 px type and could trigger iOS zoom.
 - Global Enter suppression made keyboard submission nonstandard.
 - Current instrumentation cannot identify validation, network, session-expiry, or pre-save abandonment.
+
+The physical production flow independently confirmed four screens, persisted Back navigation, successful final completion, and dashboard redirect. It also measured the deployed text controls at 14 px/approximately 38 px, corroborating the branch's 16 px/44 px mobile fix. Because the dedicated account was already complete, this was an edit-and-recomplete pass, not a fresh-account onboarding start.
 
 ### Proposed progressive-profile model
 
@@ -351,7 +383,7 @@ These build-manifest sizes are prioritization signals, not network-transfer valu
 - Critical hero content is visible before hydration and with JavaScript delays.
 - Reduced-motion behavior keeps revealed content visible; the existing test was updated to verify below-fold animation rather than requiring the hero animation.
 - Enter now follows native form semantics, except the custom specialty chip input where Enter intentionally adds a chip.
-- Automated coverage does not replace VoiceOver, hardware keyboard, zoom, contrast-in-context, and physical safe-area/keyboard checks; those remain pending on a real iPhone.
+- Physical portrait inspection found no notch, safe-area, sticky-header, horizontal-overflow, hover-only, or tiny-primary-target blocker. Automated coverage still does not replace VoiceOver, hardware-keyboard, zoom/keyboard behavior, landscape, and contrast-in-context checks; the direct-device results are separated in Section 8.
 
 ## 14. Attribution findings and proposal
 
@@ -429,18 +461,20 @@ None verified.
 | P1-3 | Hero meaning was hidden until client reveal/hydration                  | Actual LCP element and source    | Fixed in `5753513`                             |
 | P1-4 | Mobile form text could trigger iOS zoom; Enter was blocked             | CSS/form handler inspection      | Fixed in `5753513`                             |
 | P1-5 | First/last-touch and UTMs do not survive as first-party truth          | Schema/auth/analytics inspection | Design proposed; approval required             |
-| P1-6 | Fixed branch has not completed a physical-iPhone authenticated pass    | Safari device not visible        | Blocked on device + preview                    |
+| P1-6 | Fixed branch lacks a physical post-fix pass                            | Production still serves baseline | Requires preview deployment approval           |
+| P1-7 | Opportunity filters desynchronized from Back-restored URL/results      | Physical Safari + 3-engine repro | Fixed in `0a2f54e`                             |
 
 ### P2
 
-| ID   | Finding                                                            | Evidence                                        | State                                  |
-| ---- | ------------------------------------------------------------------ | ----------------------------------------------- | -------------------------------------- |
-| P2-1 | Onboarding payoff/required/resume copy was ambiguous               | UI review                                       | Fixed in `5753513`                     |
-| P2-2 | CI had Chromium only                                               | Playwright/CI configuration                     | Fixed in `eb334d0`                     |
-| P2-3 | Local production CSP broke WebKit HTTP validation                  | Reproduced WebKit asset upgrades                | Fixed in `eb334d0`                     |
-| P2-4 | Authenticated client bundle is comparatively large                 | Build manifest: onboarding ~410 KB uncompressed | Backlog, measure before refactor       |
-| P2-5 | Third-party YouTube GPU warning can flake strict concurrent checks | One full run; 9/9 isolated passes               | Monitor; do not suppress broadly       |
-| P2-6 | Seven moderate transitive dev-tool advisories                      | `npm audit`                                     | Schedule controlled dependency upgrade |
+| ID   | Finding                                                             | Evidence                                        | State                                   |
+| ---- | ------------------------------------------------------------------- | ----------------------------------------------- | --------------------------------------- |
+| P2-1 | Onboarding payoff/required/resume copy was ambiguous                | UI review                                       | Fixed in `5753513`                      |
+| P2-2 | CI had Chromium only                                                | Playwright/CI configuration                     | Fixed in `eb334d0`                      |
+| P2-3 | Local production CSP broke WebKit HTTP validation                   | Reproduced WebKit asset upgrades                | Fixed in `eb334d0`                      |
+| P2-4 | Authenticated client bundle is comparatively large                  | Build manifest: onboarding ~410 KB uncompressed | Backlog, measure before refactor        |
+| P2-5 | Third-party YouTube GPU warning can flake strict concurrent checks  | One full run; 9/9 isolated passes               | Monitor; do not suppress broadly        |
+| P2-6 | Seven moderate transitive dev-tool advisories                       | `npm audit`                                     | Schedule controlled dependency upgrade  |
+| P2-7 | Sign-out logged transient WebKit RSC prefetch access-control errors | Physical Safari Web Inspector                   | Functional fallback; clean reload clean |
 
 ## 17. Fixes implemented
 
@@ -471,56 +505,63 @@ None verified.
 - Reports actual LCP element, FCP, LCP, CLS, TTFB, load timing, long-task duration, first-party/JS transfer, console errors, and failed requests.
 - Includes a documented iPhone 13 slow-network/CPU profile.
 
+### Commit `0a2f54e` — opportunity history-state synchronization
+
+- Reproduces the physical Safari defect in Chromium, desktop WebKit, and iPhone WebKit.
+- Resets uncontrolled public filter controls to the server/URL canonical values when an RSC state change or browser `pageshow` restoration occurs.
+- Keeps the larger filter UI server-rendered; only the small history synchronizer is a client component.
+
 ## 18. Tests added and changed
 
-- Six new browser scenarios execute in three projects: 18 new executions.
+- Seven new browser scenarios execute in three projects: 21 new executions.
 - Four portrait viewport checks: 320, 375, 390, and 430 px widths.
 - One landscape check at 844×390.
 - One back/forward route-history check.
+- One filter-form history-state regression verified in Chromium, desktop WebKit, and iPhone WebKit.
 - Three new unit cases across CSP and runtime cancellation policy.
 - Existing reveal coverage now asserts the hero is not hydration-hidden and below-fold reduced-motion behavior still works.
 - Unit count increased from 365 to 368.
-- Browser count increased from 89 to 107.
+- Browser count increased from 89 to 110.
 
 ## 19. Required test matrix
 
 The machine-readable form is `docs/audits/2026-07-25-funnel-mobile-performance-test-results.json`.
 
-| ID       | Surface                    | Device/browser                 | Auth                     | Preconditions/steps               | Expected                             | Actual                                        | Status  | Severity | Evidence                 | Mode   | Regression | Fix                  |
-| -------- | -------------------------- | ------------------------------ | ------------------------ | --------------------------------- | ------------------------------------ | --------------------------------------------- | ------- | -------- | ------------------------ | ------ | ---------- | -------------------- |
-| HP-D-01  | Homepage                   | Chromium desktop               | Anonymous                | Load home; inspect hero/CTAs      | Immediate useful hero                | Visible; no runtime error                     | PASS    | P1       | E2E + lab                | Auto   | Yes        | `5753513`            |
-| HP-I-01  | Homepage                   | iPhone WebKit emulation        | Anonymous                | 320/375/390/430 widths            | CTA above fold; no overflow          | 18 matrix executions pass                     | PASS    | P1       | `browser-matrix.spec.ts` | Auto   | Yes        | `eb334d0`            |
-| OD-D-01  | Opportunity discovery      | Chromium desktop               | Anonymous                | Browse, search, filter, detail    | Public discovery works               | Passed                                        | PASS    | P1       | E2E smoke                | Auto   | Existing   | —                    |
-| OD-I-01  | Opportunity discovery      | iPhone WebKit emulation        | Anonymous                | Open from home; history           | Route and history stable             | Passed                                        | PASS    | P1       | Browser matrix           | Auto   | Yes        | `eb334d0`            |
-| SU-D-01  | Sign-up                    | Chromium production            | Anonymous                | Load sign-up                      | Clerk UI/recovery surface loads      | Passed with allowed vendor notices            | PASS    | P1       | Production E2E           | Auto   | Existing   | —                    |
-| SU-P-01  | Sign-up                    | Physical iPhone Safari         | Anonymous                | Open and start signup             | Usable, no zoom/popup issue          | Device not visible                            | NOT_RUN | P1       | Safari inspection        | Manual | No         | —                    |
-| AU-O-01  | Google OAuth return        | Physical iPhone Safari         | Test account             | User completes Google auth        | State and intended return preserved  | Not run; credentials never automated          | NOT_RUN | P1       | Required manual pass     | Manual | No         | —                    |
-| AU-R-01  | Incomplete-account return  | Server/unit + physical pending | Student incomplete       | Reopen dashboard                  | Resume intended step                 | Source/unit behavior passes; physical pending | PARTIAL | P1       | Auth/onboarding tests    | Mixed  | Existing   | —                    |
-| ON-F-01  | Onboarding fresh start     | Unit/action                    | Student incomplete       | Load and save each step           | Four resumable steps                 | Passed                                        | PASS    | P1       | Unit/action suite        | Auto   | Existing   | —                    |
-| ON-R-01  | Onboarding refresh         | Unit/action                    | Partially complete       | Save, refresh                     | Resume saved step/data               | Passed at action/source level                 | PASS    | P1       | Unit tests               | Auto   | Existing   | —                    |
-| ON-B-01  | Onboarding back            | Unit/action                    | Partially complete       | Back then forward                 | Data/state preserved                 | Passed at action/source level                 | PASS    | P1       | Unit tests               | Auto   | Existing   | —                    |
-| ON-V-01  | Validation failure         | Unit/action                    | Invalid fields           | Submit                            | Clear field errors, values retained  | Passed                                        | PASS    | P1       | Unit tests               | Auto   | Existing   | —                    |
-| ON-S-01  | Server failure             | Unit/action                    | Forced transaction error | Submit/retry                      | No false completion; recoverable     | Passed                                        | PASS    | P0       | Unit tests               | Auto   | Existing   | —                    |
-| ON-PK-01 | Onboarding keyboard        | Physical iPhone Safari         | Test student             | Focus/type/Enter/dismiss keyboard | No zoom/obscured CTA; native submit  | CSS/automated fix verified; physical not run  | NOT_RUN | P1       | Source + pending device  | Manual | Yes        | `5753513`            |
-| ON-PF-01 | Resume/file upload         | Physical iPhone Safari         | Test student             | Upload harmless file later        | Picker clear; safe success/failure   | Not run                                       | NOT_RUN | P1       | Pending device           | Manual | No         | —                    |
-| ON-C-01  | Profile completion         | Unit/action                    | Valid final step         | Duplicate final submit            | One complete profile, idempotent     | Passed                                        | PASS    | P0       | Unit tests               | Auto   | Existing   | —                    |
-| ON-D-01  | Post-completion redirect   | Unit/auth                      | Complete student         | Finish onboarding                 | Intended dashboard                   | Passed at server/unit level                   | PASS    | P1       | Unit tests               | Auto   | Existing   | —                    |
-| AC-S-01  | Save opportunity           | Unit/action                    | Complete student         | Save twice                        | One saved state/idempotent           | Passed                                        | PASS    | P1       | Unit tests               | Auto   | Existing   | —                    |
-| AC-A-01  | Start application          | Unit/action                    | Eligible student         | Begin internal/external pathway   | Workspace starts; no external submit | Passed at action level                        | PASS    | P1       | Unit tests               | Auto   | Existing   | —                    |
-| AU-L-01  | Logout/login return        | Physical iPhone + source       | Test account             | Logout, login, close/reopen       | Correct destination/session behavior | Source checks pass; physical not run          | PARTIAL | P1       | Auth tests               | Mixed  | Existing   | —                    |
-| RB-S-01  | Student attempts admin     | Unit/auth                      | Student                  | Request admin route               | Redirect/deny                        | Passed                                        | PASS    | P0       | Role tests               | Auto   | Existing   | —                    |
-| RB-A-01  | Anonymous attempts student | Chromium + unit                | Anonymous                | Request dashboard                 | Sign-in with safe return             | Passed                                        | PASS    | P0       | E2E/unit                 | Auto   | Existing   | —                    |
-| PF-H-01  | Homepage performance       | Chromium slow profile          | Anonymous                | Five cold contexts                | LCP <2.5 s; real hero is LCP         | 764 ms; hero `h1`; CLS 0                      | PASS    | P1       | Audit harness            | Auto   | Yes        | `5753513`, `3d90bbb` |
-| RS-M-01  | Mobile overflow            | WebKit/Chromium emulation      | Anonymous                | Five viewport/orientation states  | No horizontal overflow               | Passed                                        | PASS    | P1       | Browser matrix           | Auto   | Yes        | `eb334d0`            |
-| PF-S-01  | Slow network               | Chromium iPhone profile        | Anonymous                | 1.6 Mbps/150 ms/4× CPU            | Useful content; no failures          | Passed; 0 console/request failures            | PASS    | P1       | Audit harness            | Auto   | Yes        | `3d90bbb`            |
-| AX-01    | Accessibility basics       | Chromium + axe                 | Anonymous                | Scan public routes                | No WCAG A/AA detectable issue        | 9/9 isolated pass                             | PASS    | P1       | axe E2E                  | Auto   | Existing   | —                    |
+| ID       | Surface                    | Device/browser                          | Auth                     | Preconditions/steps              | Expected                             | Actual                                          | Status  | Severity | Evidence                  | Mode   | Regression | Fix                  |
+| -------- | -------------------------- | --------------------------------------- | ------------------------ | -------------------------------- | ------------------------------------ | ----------------------------------------------- | ------- | -------- | ------------------------- | ------ | ---------- | -------------------- |
+| HP-D-01  | Homepage                   | Chromium desktop                        | Anonymous                | Load home; inspect hero/CTAs     | Immediate useful hero                | Visible; no runtime error                       | PASS    | P1       | E2E + lab                 | Auto   | Yes        | `5753513`            |
+| HP-I-01  | Homepage                   | Emulated + physical iPhone              | Anonymous                | Required widths + physical load  | CTA above fold; no overflow          | Automated matrix + physical portrait pass       | PASS    | P1       | E2E + Web Inspector       | Mixed  | Yes        | `eb334d0`            |
+| OD-D-01  | Opportunity discovery      | Chromium desktop                        | Anonymous                | Browse, search, filter, detail   | Public discovery works               | Passed                                          | PASS    | P1       | E2E smoke                 | Auto   | Existing   | —                    |
+| OD-I-01  | Opportunity discovery      | Emulated + physical iPhone              | Anonymous                | Browse/filter/detail/Back        | URL, results, and form stay in sync  | Production form desynced; fixed regression pass | PASS    | P1       | Physical + 3-engine E2E   | Mixed  | Yes        | `0a2f54e`            |
+| SU-D-01  | Sign-up                    | Chromium production                     | Anonymous                | Load sign-up                     | Clerk UI/recovery surface loads      | Passed with allowed vendor notices              | PASS    | P1       | Production E2E            | Auto   | Existing   | —                    |
+| SU-P-01  | Sign-up                    | Physical iPhone Safari                  | Anonymous                | Open and start signup            | Usable; Google transition works      | Clerk usable; provider chooser opened           | PASS    | P1       | Mirroring + Web Inspector | Manual | No         | —                    |
+| AU-O-01  | Google OAuth return        | Physical iPhone Safari                  | Test account             | User completes Google auth       | State and intended return preserved  | User authenticated; student area reached        | PASS    | P1       | Direct auth + inspector   | Manual | No         | —                    |
+| AU-R-01  | Incomplete-account return  | Server/unit + physical complete account | Student incomplete       | Reopen dashboard                 | Resume intended step                 | Source/unit pass; physical account was complete | PARTIAL | P1       | Auth/onboarding tests     | Mixed  | Existing   | —                    |
+| ON-F-01  | Onboarding fresh start     | Unit/action                             | Student incomplete       | Load and save each step          | Four resumable steps                 | Passed                                          | PASS    | P1       | Unit/action suite         | Auto   | Existing   | —                    |
+| ON-R-01  | Onboarding refresh         | Unit/action                             | Partially complete       | Save, refresh                    | Resume saved step/data               | Passed at action/source level                   | PASS    | P1       | Unit tests                | Auto   | Existing   | —                    |
+| ON-B-01  | Onboarding back            | Unit/action                             | Partially complete       | Back then forward                | Data/state preserved                 | Passed at action/source level                   | PASS    | P1       | Unit tests                | Auto   | Existing   | —                    |
+| ON-V-01  | Validation failure         | Unit/action                             | Invalid fields           | Submit                           | Clear field errors, values retained  | Passed                                          | PASS    | P1       | Unit tests                | Auto   | Existing   | —                    |
+| ON-S-01  | Server failure             | Unit/action                             | Forced transaction error | Submit/retry                     | No false completion; recoverable     | Passed                                          | PASS    | P0       | Unit tests                | Auto   | Existing   | —                    |
+| ON-PK-01 | Onboarding keyboard        | Physical iPhone Safari                  | Test student             | Focus/keyboard/dismiss           | No zoom or obscured action           | User completed; no added blocker reported       | PASS    | P1       | Direct check + DOM + E2E  | Mixed  | Yes        | `5753513`            |
+| ON-PF-01 | Resume/file upload         | Physical iPhone Safari                  | Test student             | Open picker; cancel safely       | Picker opens and is recoverable      | Opened/canceled; no file selected or uploaded   | PASS    | P1       | Direct-device check       | Manual | No         | —                    |
+| ON-C-01  | Profile completion         | Unit + physical iPhone                  | Valid final step         | Save existing valid final state  | Complete once; idempotent            | Completed and returned to dashboard             | PASS    | P0       | Unit + Web Inspector      | Mixed  | Existing   | —                    |
+| ON-D-01  | Post-completion redirect   | Unit + physical iPhone                  | Complete student         | Finish profile                   | Intended student dashboard           | `/dashboard/student` reached                    | PASS    | P1       | Unit + Web Inspector      | Mixed  | Existing   | —                    |
+| AC-S-01  | Save opportunity           | Unit + physical iPhone                  | Complete student         | Save; verify Saved; remove       | Saved round trip; cleanup            | Passed; temporary save removed                  | PASS    | P1       | Mirroring + unit tests    | Mixed  | Existing   | —                    |
+| AC-A-01  | Start application          | Unit + physical iPhone                  | Eligible student         | Open external start form         | Start surface; no external submit    | Form/date control opened; nothing submitted     | PASS    | P1       | Mirroring + unit tests    | Mixed  | Existing   | —                    |
+| AU-L-01  | Logout/login return        | Physical iPhone + source                | Test account             | Cold reopen, logout, login       | Correct destination/session behavior | All passed; login returned to student dashboard | PASS    | P1       | Inspector + auth tests    | Mixed  | Existing   | —                    |
+| RB-S-01  | Student attempts admin     | Unit/auth                               | Student                  | Request admin route              | Redirect/deny                        | Passed                                          | PASS    | P0       | Role tests                | Auto   | Existing   | —                    |
+| RB-A-01  | Anonymous attempts student | Chromium + unit                         | Anonymous                | Request dashboard                | Sign-in with safe return             | Passed                                          | PASS    | P0       | E2E/unit                  | Auto   | Existing   | —                    |
+| PF-H-01  | Homepage performance       | Chromium slow profile                   | Anonymous                | Five cold contexts               | LCP <2.5 s; real hero is LCP         | 764 ms; hero `h1`; CLS 0                        | PASS    | P1       | Audit harness             | Auto   | Yes        | `5753513`, `3d90bbb` |
+| RS-M-01  | Mobile overflow            | Emulation + physical iPhone             | Anonymous/authenticated  | Required sizes + physical rotate | No horizontal overflow               | Automated + physical portrait/landscape pass    | PASS    | P1       | E2E + direct device       | Mixed  | Yes        | `eb334d0`            |
+| PF-S-01  | Slow network               | Chromium iPhone profile                 | Anonymous                | 1.6 Mbps/150 ms/4× CPU           | Useful content; no failures          | Passed; 0 console/request failures              | PASS    | P1       | Audit harness             | Auto   | Yes        | `3d90bbb`            |
+| AX-01    | Accessibility basics       | Chromium + axe                          | Anonymous                | Scan public routes               | No WCAG A/AA detectable issue        | 9/9 isolated pass                               | PASS    | P1       | axe E2E                   | Auto   | Existing   | —                    |
 
 ## 20. Proposed changes requiring approval
 
 1. **Progressive onboarding redesign and completion semantics.** Reduce the initial match gate to grade, coarse location, interests, and opportunity type; collect other fields after showing potential matches. This changes product behavior and required-field policy.
 2. **First-party attribution/event persistence.** Add a minimal schema or approved reuse of an existing audit model, with opaque anonymous IDs, sanitized UTMs, source categories, dedupe keys, and retention enforcement.
 3. **Clerk acquisition handoff.** Persist the opaque acquisition ID safely through OAuth and link it server-side on account creation. This touches authentication integration and needs focused review.
-4. **Preview and production deployment.** A preview is needed for the physical post-fix authenticated iPhone pass. Production deployment requires explicit approval.
+4. **Preview and production deployment.** The production-baseline physical pass is complete; a preview is still needed for the physical post-fix iPhone pass. Production deployment requires explicit approval.
 5. **Dedicated non-production auth storage states.** Provision test Clerk users/storage state for complete, incomplete, admin, staff, and partner roles so the 27 authenticated E2E scenarios run in CI without production accounts.
 6. **Controlled dependency upgrade.** Resolve Hono/Valibot/Prisma transitive advisories in a separate branch with migration/build/regression validation; do not use `npm audit fix --force` blindly.
 7. **Authenticated bundle investigation.** Profile the ~410 KB uncompressed onboarding chunk inventory before choosing code-splitting changes.
@@ -532,20 +573,21 @@ No PostHog, paid Vercel event feature, or other vendor is recommended before exh
 - Revert `5753513` to restore the prior hero reveal and input behavior.
 - Revert `eb334d0` to remove WebKit projects and restore prior local CSP/test handling. Production CSP behavior is unchanged by this commit when `VERCEL` is present.
 - Revert `3d90bbb` to remove only the audit script/package command.
+- Revert `0a2f54e` to remove the public-filter history synchronizer and its regression.
 - No database rollback is required because there is no schema or data mutation.
 - No vendor/configuration rollback is required.
 - After any rollback, rerun format, type, lint, unit, build, Chromium smoke, and the relevant performance comparison.
 
 ## 22. Deployment checklist and order
 
-1. Review the three implementation commits and this report.
+1. Review the four implementation commits and this report.
 2. Create a Vercel preview from this branch; do not promote it.
 3. Run full signed-out Chromium/WebKit automation against the preview.
-4. Run the complete physical-iPhone Safari test against the preview with a dedicated test account.
+4. Repeat the physical-iPhone critical path against the preview, emphasizing the 16 px/44 px controls and Back-restored filter state.
 5. Confirm Clerk preview-domain and OAuth return configuration without changing production auth.
 6. Re-run the slow-profile audit against preview and compare the real LCP element.
 7. Obtain explicit production-deployment approval.
-8. Deploy the three code commits without any schema change.
+8. Deploy the four implementation commits without any schema change.
 9. Run production smoke: homepage, opportunity inventory/detail, sign-up, sign-in, safe protected redirect, and test-account onboarding.
 10. Monitor before considering the progressive-onboarding or analytics migration as a second release.
 
@@ -618,17 +660,26 @@ PLAYWRIGHT_BASE_URL=https://fp-dashboard-rosy.vercel.app npx playwright test
 npx playwright test tests/e2e/browser-matrix.spec.ts
 npx playwright test tests/e2e/accessibility.spec.ts --project=chromium --repeat-each=3
 CI=true GITHUB_ACTIONS=true E2E_PUBLIC_ONLY=true PLAYWRIGHT_WEB_SERVER_COMMAND="npm start" npm run test:e2e
+PLAYWRIGHT_BASE_URL=https://www.futurephysicians.org npx playwright test tests/e2e/browser-matrix.spec.ts --grep "opportunity filters stay synchronized"
+DATABASE_URL=<disposable-local-postgres> npx playwright test tests/e2e/browser-matrix.spec.ts --project=chromium --grep "opportunity filters stay synchronized"
+DATABASE_URL=<disposable-local-postgres> npx playwright test tests/e2e/browser-matrix.spec.ts --project=webkit --grep "opportunity filters stay synchronized"
+DATABASE_URL=<disposable-local-postgres> npx playwright test tests/e2e/browser-matrix.spec.ts --project=iphone-webkit --grep "opportunity filters stay synchronized"
+DATABASE_URL=<disposable-local-postgres> CI=true GITHUB_ACTIONS=true E2E_PUBLIC_ONLY=true PLAYWRIGHT_WEB_SERVER_COMMAND="npm start" npm run test:e2e
+npx playwright test tests/e2e/accessibility.spec.ts --project=chromium --workers=1
+npx playwright test tests/e2e/smoke.spec.ts --project=chromium --workers=1 --grep "key public pages avoid horizontal overflow"
 node scripts/audit-public-performance.mjs --base-url=https://fp-dashboard-rosy.vercel.app --profile=desktop --runs=3 --routes=/,/opportunities,/sign-up,/sign-in
 node scripts/audit-public-performance.mjs --base-url=https://fp-dashboard-rosy.vercel.app --profile=mobile-slow-4g --runs=3 --routes=/,/opportunities,/sign-up,/sign-in
 node scripts/audit-public-performance.mjs --base-url=http://127.0.0.1:3101 --profile=mobile-slow-4g --runs=5 --routes=/
 node scripts/audit-public-performance.mjs --base-url=http://127.0.0.1:3102 --profile=mobile-slow-4g --runs=5 --routes=/
 git diff --check
+xcrun devicectl list devices
+xcrun xcdevice list
 ```
 
 Environment values and credentials are intentionally omitted. Production cohort work used read-only aggregate database queries; no row-level output was retained in this report.
 
 ## 26. Final conclusion
 
-The code now makes the homepage's value proposition paint immediately, removes two concrete iPhone-form hazards, improves onboarding expectation-setting, and adds repeatable WebKit/performance coverage. Those are verified improvements with low rollback cost.
+The code now makes the homepage's value proposition paint immediately, removes two concrete iPhone-form hazards, keeps public filters synchronized with browser history, improves onboarding expectation-setting, and adds repeatable WebKit/performance coverage. Those are verified improvements with low rollback cost.
 
-The business outcome is not yet proven. The exact cohort shows severe loss after signup, but current instrumentation cannot locate it before the first successful save. A progressive value-first onboarding model and privacy-safe first-party attribution are the highest-leverage next changes, both requiring approval. A real post-fix physical-iPhone authenticated pass is also still required before claiming that a student can complete the entire flow reliably on the primary iOS platform.
+The business outcome is not yet proven. The exact cohort shows severe loss after signup, but current instrumentation cannot locate it before the first successful save. A progressive value-first onboarding model and privacy-safe first-party attribution are the highest-leverage next changes, both requiring approval. The real production iPhone pass completed the primary functional path and exposed one additional fix; a preview post-fix pass is still required before claiming the branch itself is validated on physical iOS.
