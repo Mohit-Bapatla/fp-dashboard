@@ -46,10 +46,31 @@ npm run test:e2e:reliability
 It refuses non-development Clerk keys, requires
 `DISPOSABLE_TEST_DATABASE_URL` to name a local reliability database, creates
 unique `+clerk_test_` development identities, seeds the matching database
-fixtures, and removes the Clerk identities in global teardown. CI reports an
-explicit `NOT RUN` result when the repository-scoped development credentials
-are unavailable; it never substitutes production credentials or a synthetic
-session cookie.
+fixtures, and removes the Clerk identities in global teardown. Failed identity
+deletions fail the suite with a sanitized count and status; partial setup also
+attempts the same cleanup before failing.
+
+CI reads these exact secrets only from the `ci-clerk-development` GitHub
+Environment:
+
+- `CLERK_E2E_SECRET_KEY`
+- `CLERK_E2E_PUBLISHABLE_KEY`
+
+An owner must create that environment in **Settings > Environments**, restrict
+deployment branches to the PR branch policy the repository uses, then add both
+values from a dedicated Clerk development instance. Enter values only in
+GitHub's secret form; do not paste them into an issue, PR, Actions variable,
+terminal transcript, or chat. No fixed test-user email or password secret is
+needed because each run creates unique disposable identities.
+
+The separately named `Authenticated reliability configuration` job reports
+`NOT CONFIGURED` when either secret is absent. In that state,
+`Authenticated reliability tests (Clerk development)` is natively skipped and
+must not be treated as coverage. A passing coverage check is possible only
+after the Playwright command executes successfully. Production Clerk keys fail
+configuration, remote or production database URLs fail global setup, fork PRs
+do not access the environment, and CI neither uploads nor retains authenticated
+browser artifacts.
 
 ## Accessibility smoke coverage
 

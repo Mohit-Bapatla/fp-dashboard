@@ -6,14 +6,16 @@ const databaseUrl = process.env.DISPOSABLE_TEST_DATABASE_URL;
 export default defineConfig({
   fullyParallel: false,
   globalSetup: "./tests/reliability-auth/global-setup.ts",
+  outputDir: "test-results/reliability-auth",
   testDir: "./tests/reliability-auth",
   timeout: 60_000,
   workers: 1,
   expect: { timeout: 10_000 },
   use: {
     baseURL,
-    screenshot: "only-on-failure",
-    trace: "retain-on-failure",
+    screenshot: process.env.CI ? "off" : "only-on-failure",
+    trace: process.env.CI ? "off" : "retain-on-failure",
+    video: "off",
   },
   webServer: {
     command: "npm run start -- --port 3100",

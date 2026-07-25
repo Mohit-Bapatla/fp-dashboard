@@ -1,46 +1,20 @@
 import { spawn } from "node:child_process";
-import * as crypto from "node:crypto";
 
 import { clerkSetup } from "@clerk/testing/playwright";
 import { config as loadDotenv } from "dotenv";
+
+import {
+  assertDevelopmentClerkKeys,
+  assertDisposableDatabase,
+  cleanupClerkUsers,
+  createReliabilityRunId,
+  redactReliabilityDiagnostic,
+} from "./safety";
 
 type FixtureRole = "ADMIN" | "PARTNER" | "STUDENT";
 type ClerkUser = { id: string };
 
 const createdUserIds: string[] = [];
-
-function assertDisposableDatabase(value: string | undefined) {
-  if (!value) {
-    throw new Error("DISPOSABLE_TEST_DATABASE_URL is required.");
-  }
-
-  const parsed = new URL(value);
-  const databaseName = parsed.pathname.replace(/^\//, "");
-  if (
-    !["127.0.0.1", "localhost"].includes(parsed.hostname) ||
-    !/^fp_(?:dashboard_)?reliability(?:_test)?$/.test(databaseName)
-  ) {
-    throw new Error(
-      "Authenticated reliability tests require a local disposable reliability database.",
-    );
-  }
-
-  return value;
-}
-
-function assertDevelopmentClerkKeys() {
-  const secretKey = process.env.CLERK_SECRET_KEY?.trim();
-  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim();
-  if (
-    !secretKey?.startsWith("sk_test_") ||
-    !publishableKey?.startsWith("pk_test_")
-  ) {
-    throw new Error(
-      "Authenticated reliability tests require Clerk development keys.",
-    );
-  }
-  return secretKey;
-}
 
 async function createClerkUser({
   email,
@@ -126,9 +100,9 @@ function runFixtureSeed(databaseUrl: string) {
       } else {
         reject(
           new Error(
-            `Disposable fixture seed failed (${code ?? "unknown"}): ${
-              errorOutput.trim().split(/\r?\n/).at(-1) ?? "no diagnostic"
-            }`,
+            `Disposable fixture seed failed (${code ?? "unknown"}): ${redactReliabilityDiagnostic(
+              errorOutput.trim().split(/\r?\n/).at(-1) ?? "no diagnostic",
+            )}`,
           ),
         );
       }
@@ -137,14 +111,10 @@ function runFixtureSeed(databaseUrl: string) {
 }
 
 async function removeCreatedUsers(secretKey: string) {
-  await Promise.allSettled(
-    createdUserIds.map((userId) =>
-      fetch(`https://api.clerk.com/v1/users/${encodeURIComponent(userId)}`, {
-        headers: { authorization: `Bearer ${secretKey}` },
-        method: "DELETE",
-      }),
-    ),
-  );
+  await cleanupClerkUsers({
+    secretKey,
+    userIds: createdUserIds,
+  });
 }
 
 export default async function globalSetup() {
@@ -152,13 +122,13 @@ export default async function globalSetup() {
   const databaseUrl = assertDisposableDatabase(
     process.env.DISPOSABLE_TEST_DATABASE_URL,
   );
-  const secretKey = assertDevelopmentClerkKeys();
+  const { secretKey } = assertDevelopmentClerkKeys({
+    publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    secretKey: process.env.CLERK_SECRET_KEY,
+  });
   await clerkSetup();
 
-  const runId = `${Date.now().toString(36)}${crypto
-    .randomUUID()
-    .replaceAll("-", "")
-    .slice(0, 6)}`;
+  const runId = createReliabilityRunId();
   const definitions = [
     ["STUDENT_A", "Reliability", "Student A", "STUDENT"],
     ["STUDENT_B", "Reliability", "Student B", "STUDENT"],
@@ -187,7 +157,14 @@ export default async function globalSetup() {
     process.env.DIRECT_URL = databaseUrl;
     await runFixtureSeed(databaseUrl);
   } catch (error) {
-    await removeCreatedUsers(secretKey);
+    try {
+      await removeCreatedUsers(secretKey);
+    } catch (cleanupError) {
+      throw new AggregateError(
+        [error, cleanupError],
+        "Authenticated reliability setup failed and disposable identity cleanup also failed.",
+      );
+    }
     throw error;
   }
 

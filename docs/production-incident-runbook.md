@@ -104,3 +104,14 @@ expected origin, cancellation returns to a usable form, an OAuth error offers
 recovery, and the verified email reconciles to one local user. Do not change
 Clerk production settings and do not claim Production OAuth coverage unless the
 canonical domain was exercised under separately explicit authorization.
+
+## Known public-browser test flake
+
+The homepage autoplay assertion at
+`tests/e2e/marketing-interactions.spec.ts:192` has produced a one-off Quality
+failure where the expected overview panel remained on discover. A same-SHA
+rerun passed without a product-code change, and PR #34 does not modify the
+homepage or that spec. Track any recurrence in a separate issue with the exact
+SHA, run URL, browser trace limited to public content, and timer/visibility
+state. Do not weaken the assertion or change homepage behavior as part of
+authenticated reliability work.
