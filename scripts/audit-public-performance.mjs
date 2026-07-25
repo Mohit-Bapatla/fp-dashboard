@@ -11,6 +11,7 @@ const baseUrl = args.get("--base-url") ?? "http://127.0.0.1:3000";
 const profile = args.get("--profile") ?? "desktop";
 const requestedRoutes = (args.get("--routes") ?? "/").split(",");
 const runs = Number(args.get("--runs") ?? "3");
+const storageState = args.get("--storage-state") || undefined;
 
 if (!["desktop", "mobile-slow-4g"].includes(profile)) {
   throw new Error("Use --profile=desktop or --profile=mobile-slow-4g.");
@@ -98,8 +99,8 @@ for (const route of requestedRoutes) {
   for (let run = 0; run < runs; run += 1) {
     const context = await browser.newContext(
       profile === "mobile-slow-4g"
-        ? { ...devices["iPhone 13"] }
-        : { viewport: { height: 900, width: 1440 } },
+        ? { ...devices["iPhone 13"], storageState }
+        : { storageState, viewport: { height: 900, width: 1440 } },
     );
     const page = await context.newPage();
     const consoleErrors = [];
