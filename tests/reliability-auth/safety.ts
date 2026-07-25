@@ -83,6 +83,19 @@ export function redactReliabilityDiagnostic(value: string) {
     .replace(
       /\b(postgres(?:ql)?:\/\/)[^@\s]+@/gi,
       "$1[REDACTED_DATABASE_CREDENTIALS]@",
+    )
+    .replace(
+      /\b(authorization\s*:\s*bearer)\s+[^\s,;]+/gi,
+      "$1 [REDACTED_TOKEN]",
+    )
+    .replace(/\b(set-cookie|cookie)\s*:\s*[^\r\n]+/gi, "$1: [REDACTED_COOKIE]")
+    .replace(
+      /\b(access_token|refresh_token|session_token|token)\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;]+)/gi,
+      "$1=[REDACTED_TOKEN]",
+    )
+    .replace(
+      /\b(password|passwd|pwd)\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,;]+)/gi,
+      "$1=[REDACTED_PASSWORD]",
     );
 }
 

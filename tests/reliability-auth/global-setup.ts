@@ -126,7 +126,17 @@ export default async function globalSetup() {
     publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     secretKey: process.env.CLERK_SECRET_KEY,
   });
-  await clerkSetup();
+  try {
+    await clerkSetup();
+  } catch (error) {
+    const diagnostic =
+      error instanceof Error ? error.message : "unknown setup failure";
+    throw new Error(
+      `Clerk development test harness setup failed: ${redactReliabilityDiagnostic(
+        diagnostic,
+      )}`,
+    );
+  }
 
   const runId = createReliabilityRunId();
   const definitions = [

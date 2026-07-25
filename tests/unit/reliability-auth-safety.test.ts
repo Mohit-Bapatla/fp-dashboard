@@ -62,14 +62,28 @@ describe("authenticated reliability safety", () => {
     expect(first).toMatch(/^[a-z0-9]+$/);
   });
 
-  it("redacts Clerk keys and database credentials from diagnostics", () => {
+  it("redacts keys, cookies, tokens, and passwords from diagnostics", () => {
     const diagnostic = redactReliabilityDiagnostic(
-      "sk_test_secret pk_live_public postgresql://user:password@localhost:5432/db",
+      [
+        "sk_test_secret pk_live_public",
+        "postgresql://user:database-password@localhost:5432/db",
+        "Authorization: Bearer clerk-session-token",
+        "Cookie: __session=session-cookie-value",
+        "access_token=oauth-token-value",
+        "password=plaintext-password",
+      ].join("\n"),
     );
     expect(diagnostic).not.toContain("secret");
-    expect(diagnostic).not.toContain("password");
+    expect(diagnostic).not.toContain("database-password");
+    expect(diagnostic).not.toContain("clerk-session-token");
+    expect(diagnostic).not.toContain("session-cookie-value");
+    expect(diagnostic).not.toContain("oauth-token-value");
+    expect(diagnostic).not.toContain("plaintext-password");
     expect(diagnostic).toContain("[REDACTED_CLERK_KEY]");
     expect(diagnostic).toContain("[REDACTED_DATABASE_CREDENTIALS]");
+    expect(diagnostic).toContain("[REDACTED_TOKEN]");
+    expect(diagnostic).toContain("[REDACTED_COOKIE]");
+    expect(diagnostic).toContain("[REDACTED_PASSWORD]");
   });
 
   it("accepts successful or already-absent identity cleanup", async () => {
