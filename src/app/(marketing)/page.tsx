@@ -88,12 +88,7 @@ export default function HomePage() {
           className="absolute right-[8%] top-[12%] size-60 rounded-full bg-cyan-300/20 blur-3xl sm:size-96"
         />
         <MarketingContainer className="relative">
-          <MarketingReveal
-            className="grid min-w-0 items-center gap-10 sm:gap-12 lg:grid-cols-[0.88fr_1.12fr] lg:gap-14"
-            distance={14}
-            durationMs={340}
-            staggerMs={50}
-          >
+          <div className="grid min-w-0 items-center gap-10 sm:gap-12 lg:grid-cols-[0.88fr_1.12fr] lg:gap-14">
             <div className="min-w-0 max-w-2xl">
               <div
                 className="inline-flex max-w-full items-center gap-2 rounded-2xl border border-primary/15 bg-white/85 px-3 py-1.5 text-[11px] font-bold leading-5 text-primary shadow-sm backdrop-blur min-[360px]:rounded-full min-[360px]:text-xs"
@@ -159,7 +154,7 @@ export default function HomePage() {
             >
               <DashboardPreview />
             </div>
-          </MarketingReveal>
+          </div>
           <p className="mt-6 max-w-4xl text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-6">
             {impactMethodologyNote}
           </p>

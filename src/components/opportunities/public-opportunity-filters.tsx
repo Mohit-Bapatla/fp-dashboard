@@ -27,7 +27,7 @@ export type PublicOpportunityFilterValues = {
 };
 
 const inputClass =
-  "min-h-11 w-full rounded-xl border border-border bg-white px-3 text-sm text-brand-navy outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15";
+  "min-h-11 w-full rounded-xl border border-border bg-white px-3 text-base text-brand-navy outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15 sm:text-sm";
 
 function FilterFields({
   filters,

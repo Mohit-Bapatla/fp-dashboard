@@ -143,7 +143,8 @@ export default async function StudentOnboardingPage({
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
             Share your goals, availability, location preferences, and interests
             so Future Physicians can match you with the right healthcare
-            opportunities later.
+            opportunities as soon as you finish. Fields marked with an asterisk
+            are required; you can add a resume later from your dashboard.
           </p>
         </section>
 
