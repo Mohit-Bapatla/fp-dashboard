@@ -1,10 +1,13 @@
 "use client";
 
-import { useClerk } from "@clerk/nextjs";
+import { useAuth } from "@clerk/nextjs";
+import * as Sentry from "@sentry/nextjs";
 import { ChevronDown, LogOut, UserRound } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createDashboardSignOutController } from "@/lib/auth/dashboard-sign-out";
+import { DASHBOARD_SUPPORT_ACTION } from "@/lib/support-contact";
 
 export function getAccountInitials(displayName: string) {
   const parts = displayName
@@ -23,14 +26,28 @@ export function getAccountInitials(displayName: string) {
 }
 
 export function DashboardAccountMenu({ displayName }: { displayName: string }) {
-  const { signOut } = useClerk();
+  const { signOut } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const isMounted = useRef(true);
-  const [controller] = useState(() =>
-    createDashboardSignOutController(signOut, () => {
-      window.location.replace("/");
-    }),
+  const controller = useMemo(
+    () =>
+      createDashboardSignOutController(
+        signOut,
+        () => {
+          window.location.replace("/");
+        },
+        (signOutError, referenceId) => {
+          Sentry.captureException(signOutError, {
+            tags: {
+              route: "/dashboard",
+              supportReference: referenceId,
+              workflowCategory: "SIGNOUT",
+            },
+          });
+        },
+      ),
+    [signOut],
   );
 
   useEffect(() => {
@@ -90,12 +107,18 @@ export function DashboardAccountMenu({ displayName }: { displayName: string }) {
           {isSigningOut ? "Signing out..." : "Sign out"}
         </button>
         {error ? (
-          <p
+          <div
             className="mt-2 rounded-lg bg-error/10 px-3 py-2 text-xs leading-5 text-error"
             role="alert"
           >
-            {error}
-          </p>
+            <p>{error}</p>
+            <Link
+              className="mt-1 inline-flex min-h-11 items-center font-semibold underline"
+              href={DASHBOARD_SUPPORT_ACTION.href}
+            >
+              {DASHBOARD_SUPPORT_ACTION.label}
+            </Link>
+          </div>
         ) : null}
       </div>
     </details>

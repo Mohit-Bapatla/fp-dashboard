@@ -13,7 +13,6 @@ const mocks = vi.hoisted(() => ({
   getRole: vi.fn(),
   profileUpsert: vi.fn(),
   redirect: vi.fn(),
-  redirectToSignIn: vi.fn(),
   transaction: vi.fn(),
   userFindUnique: vi.fn(),
   userUpdate: vi.fn(),
@@ -73,7 +72,6 @@ describe("student onboarding action", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.auth.mockResolvedValue({
-      redirectToSignIn: mocks.redirectToSignIn,
       sessionClaims: {},
       userId: "clerk-a",
     });
@@ -130,11 +128,9 @@ describe("student onboarding action", () => {
 
   it("rejects unauthenticated writes before touching the database", async () => {
     mocks.auth.mockResolvedValue({
-      redirectToSignIn: mocks.redirectToSignIn,
       sessionClaims: null,
       userId: null,
     });
-    mocks.redirectToSignIn.mockReturnValue("redirected");
 
     await saveStudentProfile(
       initialStudentOnboardingActionState,
@@ -143,7 +139,9 @@ describe("student onboarding action", () => {
 
     expect(mocks.getCurrentUser).not.toHaveBeenCalled();
     expect(mocks.transaction).not.toHaveBeenCalled();
-    expect(mocks.redirectToSignIn).toHaveBeenCalledOnce();
+    expect(mocks.redirect).toHaveBeenCalledWith(
+      "/sign-in?redirect_url=%2Fdashboard%2Fstudent%2Fonboarding",
+    );
   });
 
   it("scopes Student A's partial save to Student A despite a forged profile ID", async () => {
@@ -258,20 +256,18 @@ describe("student onboarding action", () => {
     mocks.transactionAuditFindFirst
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ id: "completion-audit" });
-    mocks.redirect.mockImplementation(() => {
-      throw new Error("NEXT_REDIRECT");
-    });
-
     const form = new FormData();
     form.set("step", "3");
     form.set("careerGoals", "Explore clinical care");
 
-    await expect(
-      saveStudentProfile(initialStudentOnboardingActionState, form),
-    ).rejects.toThrow("NEXT_REDIRECT");
-    await expect(
-      saveStudentProfile(initialStudentOnboardingActionState, form),
-    ).rejects.toThrow("NEXT_REDIRECT");
+    const firstCompletion = await saveStudentProfile(
+      initialStudentOnboardingActionState,
+      form,
+    );
+    const repeatedCompletion = await saveStudentProfile(
+      initialStudentOnboardingActionState,
+      form,
+    );
 
     const completionWrites = mocks.auditCreate.mock.calls.filter(
       ([argument]) => argument.data.action === "STUDENT_ONBOARDING_COMPLETED",
@@ -286,5 +282,7 @@ describe("student onboarding action", () => {
       }),
     });
     expect(mocks.profileUpsert).toHaveBeenCalledTimes(2);
+    expect(firstCompletion.saveStatus).toBe("completed");
+    expect(repeatedCompletion.saveStatus).toBe("completed");
   });
 });

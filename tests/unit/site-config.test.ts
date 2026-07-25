@@ -13,6 +13,13 @@ import {
 } from "@/lib/site-config";
 
 describe("public site configuration", () => {
+  it("uses only the canonical www production origin", () => {
+    expect(siteConfig.url).toBe("https://www.futurephysicians.org");
+    expect(JSON.stringify(siteConfig)).not.toContain(
+      "fp-dashboard-rosy.vercel.app",
+    );
+  });
+
   it("keeps the approved contact and program links exact", () => {
     expect(siteConfig.emails.partnerships).toBe(
       "outreach@futurephysicians.org",

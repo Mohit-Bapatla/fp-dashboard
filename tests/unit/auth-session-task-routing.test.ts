@@ -18,6 +18,17 @@ describe("pending Clerk session task routing", () => {
     );
   });
 
+  it("keeps signed-out dashboard redirects on the application origin", () => {
+    const proxySource = source("src/proxy.ts");
+
+    expect(proxySource).toContain('signInUrl.pathname = "/sign-in"');
+    expect(proxySource).toContain('signInUrl.search = ""');
+    expect(proxySource).toContain(
+      'signInUrl.searchParams.set("redirect_url", req.url)',
+    );
+    expect(proxySource).not.toContain("returnBackUrl: req.url");
+  });
+
   it("renders Clerk's task redirect control in auth and dashboard layouts", () => {
     const authLayout = source("src/app/(auth)/layout.tsx");
     const dashboardLayout = source("src/app/dashboard/layout.tsx");

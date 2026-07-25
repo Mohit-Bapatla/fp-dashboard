@@ -2,8 +2,9 @@
 
 import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
+import { createWorkflowSupportReference } from "@/lib/reliability/workflow-references";
 import { DASHBOARD_SUPPORT_ACTION } from "@/lib/support-contact";
 
 export default function DashboardError({
@@ -13,9 +14,19 @@ export default function DashboardError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [supportReference] = useState(() =>
+    createWorkflowSupportReference("DASH"),
+  );
+
   useEffect(() => {
-    Sentry.captureException(error);
-  }, [error]);
+    Sentry.captureException(error, {
+      tags: {
+        route: "/dashboard",
+        supportReference,
+        workflowCategory: "DASH",
+      },
+    });
+  }, [error, supportReference]);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-page px-4 py-12 text-foreground">
@@ -39,7 +50,8 @@ export default function DashboardError({
           id="dashboard-error-description"
         >
           Try loading the dashboard again. If the problem continues, return to
-          the public site and contact support.
+          the public site and contact support. Include reference{" "}
+          {supportReference}.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <button

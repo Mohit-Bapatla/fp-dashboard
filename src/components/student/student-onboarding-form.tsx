@@ -414,6 +414,9 @@ export function StudentOnboardingForm({
     initialGradeYear.selectedValue,
   );
   const handledSaveSequence = useRef(initialState.saveSequence);
+  const submissionInFlight = useRef(false);
+  const lastSubmittedStep = useRef<number | null>(null);
+  const lastSubmissionStartedAt = useRef(0);
   const errorSummaryRef = useRef<HTMLDivElement>(null);
   const progress = useMemo(
     () => Math.round(((step + 1) / steps.length) * 100),
@@ -427,6 +430,18 @@ export function StudentOnboardingForm({
   useEffect(() => {
     if (hasErrors) errorSummaryRef.current?.focus();
   }, [hasErrors, state.fieldErrors, state.formError]);
+
+  useEffect(() => {
+    if (!isPending) {
+      submissionInFlight.current = false;
+    }
+  }, [isPending, state.saveSequence, state.saveStatus]);
+
+  useEffect(() => {
+    if (state.saveStatus === "completed") {
+      window.location.replace(returnTo);
+    }
+  }, [returnTo, state.saveStatus]);
 
   useEffect(() => {
     if (
@@ -458,6 +473,20 @@ export function StudentOnboardingForm({
         ) {
           event.preventDefault();
         }
+      }}
+      onSubmit={(event) => {
+        const now = Date.now();
+        if (
+          submissionInFlight.current ||
+          (lastSubmittedStep.current === step &&
+            now - lastSubmissionStartedAt.current < 1_000)
+        ) {
+          event.preventDefault();
+          return;
+        }
+        lastSubmittedStep.current = step;
+        lastSubmissionStartedAt.current = now;
+        submissionInFlight.current = true;
       }}
     >
       <input name="returnTo" type="hidden" value={returnTo} />
@@ -530,11 +559,13 @@ export function StudentOnboardingForm({
         >
           {isSaving
             ? "Saving this step…"
-            : state.saveStatus === "saved"
-              ? "Saved. You can safely refresh or come back later."
-              : state.saveStatus === "error"
-                ? "This step was not saved. Earlier saved steps remain available."
-                : "Progress is saved when you continue from each step."}
+            : state.saveStatus === "completed"
+              ? "Profile saved. Opening your dashboard…"
+              : state.saveStatus === "saved"
+                ? "Saved. You can safely refresh or come back later."
+                : state.saveStatus === "error"
+                  ? "This step was not saved. Earlier saved steps remain available."
+                  : "Progress is saved when you continue from each step."}
         </p>
       </div>
 

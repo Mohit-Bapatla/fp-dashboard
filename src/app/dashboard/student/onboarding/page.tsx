@@ -53,10 +53,12 @@ export default async function StudentOnboardingPage({
 }: {
   searchParams: Promise<{ returnTo?: string | string[] }>;
 }) {
-  const { redirectToSignIn, sessionClaims, userId } = await auth();
+  const { sessionClaims, userId } = await auth();
 
   if (!userId) {
-    return redirectToSignIn();
+    return redirect(
+      "/sign-in?redirect_url=%2Fdashboard%2Fstudent%2Fonboarding",
+    );
   }
 
   if (getRoleFromSessionClaims(sessionClaims) !== "STUDENT") {

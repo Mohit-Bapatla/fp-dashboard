@@ -91,6 +91,7 @@ export default async function PartnerDashboardPage() {
   const statLoad = (action: string, load: () => Promise<number>) =>
     loadOptionalWorkflowData({
       action,
+      category: "PARTNER",
       fallback: 0,
       load,
       route: "/dashboard/partner",

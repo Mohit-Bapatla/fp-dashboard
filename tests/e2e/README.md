@@ -36,11 +36,20 @@ the corresponding `metadata.role`, and whose user/database relationships exist
 in the disposable E2E database. Keep state files outside the repository and do
 not reuse production sessions.
 
-The repository does not currently include `@clerk/testing`, test-user
-provisioning, or disposable role fixtures. Consequently, missing storage states
-are reported as skipped authenticated tests rather than weakening authentication
-or inventing session cookies. A future credentialed CI setup should use Clerk
-testing tokens and create isolated test users before generating these states.
+The focused reliability suite uses `@clerk/testing` separately from these
+storage-state routing checks:
+
+```text
+npm run test:e2e:reliability
+```
+
+It refuses non-development Clerk keys, requires
+`DISPOSABLE_TEST_DATABASE_URL` to name a local reliability database, creates
+unique `+clerk_test_` development identities, seeds the matching database
+fixtures, and removes the Clerk identities in global teardown. CI reports an
+explicit `NOT RUN` result when the repository-scoped development credentials
+are unavailable; it never substitutes production credentials or a synthetic
+session cookie.
 
 ## Accessibility smoke coverage
 
