@@ -1,9 +1,9 @@
 # Future Physicians funnel, mobile, and performance audit
 
-Audit date: 2026-07-25 CDT  
-Production URL: https://fp-dashboard-rosy.vercel.app  
-Production deployment commit tested: `8e1dc75c0fc7a6e568526857c375043789124d7b`  
-Audit branch: `codex/funnel-mobile-performance-audit`  
+Audit date: 2026-07-25 CDT
+Production URL: https://fp-dashboard-rosy.vercel.app
+Production deployment commit tested: `8e1dc75c0fc7a6e568526857c375043789124d7b`
+Audit branch: `codex/funnel-mobile-performance-audit`
 Implementation commits: `5753513`, `eb334d0`, `3d90bbb`, `0a2f54e`
 Status vocabulary: **Verified fact**, **Strong inference**, **Hypothesis**, and **Not measurable**
 
@@ -159,7 +159,7 @@ The upper funnel and database cohort have incompatible end times and identity mo
 | Application starter            | 3 unique period users | Verified, not restricted to signup cohort                |
 | Application submitter          |        0 period users | Verified                                                 |
 
-**Strong inference:** the largest measurable loss is between account creation and the first persisted onboarding save.  
+**Strong inference:** the largest measurable loss is between account creation and the first persisted onboarding save.
 **Not measurable:** whether those 39 users saw onboarding, which field they abandoned on, whether OAuth lost acquisition context, and whether a client/server error occurred before persistence.
 
 ## 6. Limitations of current analytics
@@ -209,7 +209,7 @@ After the physical finding added a seventh browser-matrix scenario, the CI-shape
 
 ### Device and evidence
 
-- Finder: `Mohit’s iPhone` visible.
+- Finder: the connected iPhone was visible; the device name is intentionally omitted.
 - macOS device tools: paired and available over wired USB.
 - Device: iPhone 14 Pro (`iPhone15,2`), iOS 26.5.2 build 23F84.
 - Safari: the active tab was visible in Safari Apps and Devices Inspection and inspectable with Web Inspector.

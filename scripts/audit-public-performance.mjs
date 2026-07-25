@@ -7,8 +7,7 @@ const args = new Map(
     return [key, value.join("=")];
   }),
 );
-const baseUrl =
-  args.get("--base-url") ?? "https://fp-dashboard-rosy.vercel.app";
+const baseUrl = args.get("--base-url") ?? "http://127.0.0.1:3000";
 const profile = args.get("--profile") ?? "desktop";
 const requestedRoutes = (args.get("--routes") ?? "/").split(",");
 const runs = Number(args.get("--runs") ?? "3");
