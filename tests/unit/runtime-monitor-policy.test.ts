@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  isBrowserNavigationCancellation,
   isExpectedSupersededChunkCancellation,
   toPageErrorIssue,
   type RequestFailureSignal,
@@ -19,6 +20,22 @@ describe("browser runtime monitor policy", () => {
     expect(isExpectedSupersededChunkCancellation(expectedCancellation)).toBe(
       true,
     );
+  });
+
+  it("recognizes Chromium and WebKit navigation cancellation signals", () => {
+    expect(isBrowserNavigationCancellation("net::ERR_ABORTED")).toBe(true);
+    expect(isBrowserNavigationCancellation("cancelled")).toBe(true);
+    expect(isBrowserNavigationCancellation("net::ERR_FAILED")).toBe(false);
+    expect(isBrowserNavigationCancellation(null)).toBe(false);
+  });
+
+  it("recognizes the same expected superseded chunk cancellation in WebKit", () => {
+    expect(
+      isExpectedSupersededChunkCancellation({
+        ...expectedCancellation,
+        errorText: "cancelled",
+      }),
+    ).toBe(true);
   });
 
   it.each([

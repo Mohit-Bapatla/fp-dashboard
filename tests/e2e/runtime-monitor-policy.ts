@@ -6,6 +6,10 @@ export type RequestFailureSignal = {
   url: string;
 };
 
+export function isBrowserNavigationCancellation(errorText: string | null) {
+  return errorText === "net::ERR_ABORTED" || errorText === "cancelled";
+}
+
 export function isExpectedSupersededChunkCancellation({
   errorText,
   hasSupersedingMainFrameNavigation,
@@ -17,7 +21,7 @@ export function isExpectedSupersededChunkCancellation({
     !hasSupersedingMainFrameNavigation ||
     method !== "GET" ||
     resourceType !== "script" ||
-    errorText !== "net::ERR_ABORTED"
+    !isBrowserNavigationCancellation(errorText)
   ) {
     return false;
   }

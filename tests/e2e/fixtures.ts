@@ -9,6 +9,7 @@ import {
 } from "@playwright/test";
 
 import {
+  isBrowserNavigationCancellation,
   isExpectedSupersededChunkCancellation,
   toPageErrorIssue,
 } from "./runtime-monitor-policy";
@@ -123,7 +124,7 @@ function isAllowedRequestCancellation(
 ) {
   if (
     request.method() !== "GET" ||
-    request.failure()?.errorText !== "net::ERR_ABORTED"
+    !isBrowserNavigationCancellation(request.failure()?.errorText ?? null)
   ) {
     return false;
   }
