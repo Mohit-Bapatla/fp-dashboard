@@ -25,6 +25,9 @@ describe("browser runtime monitor policy", () => {
   it("recognizes Chromium and WebKit navigation cancellation signals", () => {
     expect(isBrowserNavigationCancellation("net::ERR_ABORTED")).toBe(true);
     expect(isBrowserNavigationCancellation("cancelled")).toBe(true);
+    expect(isBrowserNavigationCancellation("Load request cancelled")).toBe(
+      true,
+    );
     expect(isBrowserNavigationCancellation("net::ERR_FAILED")).toBe(false);
     expect(isBrowserNavigationCancellation(null)).toBe(false);
   });

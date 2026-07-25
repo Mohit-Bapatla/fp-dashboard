@@ -7,7 +7,11 @@ export type RequestFailureSignal = {
 };
 
 export function isBrowserNavigationCancellation(errorText: string | null) {
-  return errorText === "net::ERR_ABORTED" || errorText === "cancelled";
+  return (
+    errorText === "net::ERR_ABORTED" ||
+    errorText === "cancelled" ||
+    errorText === "Load request cancelled"
+  );
 }
 
 export function isExpectedSupersededChunkCancellation({
