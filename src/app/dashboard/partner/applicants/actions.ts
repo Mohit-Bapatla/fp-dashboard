@@ -162,6 +162,7 @@ export async function updatePartnerApplicationStatus(formData: FormData) {
     } catch (error) {
       logWorkflowFailure({
         action: "send_partner_application_status_email",
+        category: "PARTNER",
         error,
         route: "/dashboard/partner/applicants",
         userId: context.user.id,
@@ -177,6 +178,7 @@ export async function updatePartnerApplicationStatus(formData: FormData) {
     } catch (error) {
       logWorkflowFailure({
         action: "create_partner_application_status_notification",
+        category: "PARTNER",
         error,
         route: "/dashboard/partner/applicants",
         userId: context.user.id,
@@ -190,6 +192,7 @@ export async function updatePartnerApplicationStatus(formData: FormData) {
       } catch (error) {
         logWorkflowFailure({
           action: "ensure_application_onboarding_items",
+          category: "PARTNER",
           error,
           route: "/dashboard/partner/applicants",
           userId: context.user.id,
@@ -217,6 +220,7 @@ export async function updatePartnerApplicationStatus(formData: FormData) {
     } catch (error) {
       logWorkflowFailure({
         action: "audit_partner_application_status_update",
+        category: "PARTNER",
         error,
         route: "/dashboard/partner/applicants",
         userId: context.user.id,

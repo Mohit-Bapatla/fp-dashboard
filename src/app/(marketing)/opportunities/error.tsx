@@ -1,16 +1,34 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
+import { createWorkflowSupportReference } from "@/lib/reliability/workflow-references";
 import { siteConfig } from "@/lib/site-config";
 
 export default function PublicOpportunitiesError({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [supportReference] = useState(() =>
+    createWorkflowSupportReference("PUBLIC"),
+  );
+
+  useEffect(() => {
+    Sentry.captureException(error, {
+      tags: {
+        route: "/opportunities",
+        supportReference,
+        workflowCategory: "PUBLIC",
+      },
+    });
+  }, [error, supportReference]);
+
   return (
     <section className="mx-auto flex min-h-[55vh] w-full max-w-2xl items-center px-5 py-16 text-center sm:px-8">
       <div className="w-full rounded-3xl border border-border bg-white p-8 shadow-sm sm:p-12">
@@ -23,7 +41,7 @@ export default function PublicOpportunitiesError({
         </h1>
         <p className="mx-auto mt-4 max-w-lg text-sm leading-6 text-muted-foreground">
           Please check back shortly. You can try again, contact the support
-          team, or return to the homepage.
+          team, or return to the homepage. Include reference {supportReference}.
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
           <button

@@ -122,9 +122,9 @@ export function isSafeInternalPath(value: string | null | undefined) {
   }
 
   try {
-    const url = new URL(value, "https://futurephysicians.org");
+    const url = new URL(value, "https://www.futurephysicians.org");
     return (
-      url.origin === "https://futurephysicians.org" &&
+      url.origin === "https://www.futurephysicians.org" &&
       !url.username &&
       !url.password
     );
@@ -162,6 +162,9 @@ export function safeInternalPath(
 
     const allowedOrigins = new Set(
       [
+        "https://www.futurephysicians.org",
+        // Preserve inbound links issued before the www origin became
+        // canonical. The returned value is always a relative internal path.
         "https://futurephysicians.org",
         process.env.NEXT_PUBLIC_APP_URL,
         ...additionalAllowedOrigins,

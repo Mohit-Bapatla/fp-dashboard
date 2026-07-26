@@ -19,7 +19,10 @@ const isPartnerOnboardingRoute = createRouteMatcher(["/partner-onboarding"]);
 
 function secureRequest(req: NextRequest) {
   const nonce = crypto.randomUUID().replaceAll("-", "");
-  const contentSecurityPolicy = buildContentSecurityPolicy(nonce);
+  const contentSecurityPolicy = buildContentSecurityPolicy(
+    nonce,
+    new URL(req.url).protocol === "https:",
+  );
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
@@ -47,18 +50,21 @@ const authenticatedProxy = clerkMiddleware(async (auth, req) => {
     return nextResponse();
   }
 
-  const { redirectToSignIn, sessionClaims, sessionStatus, userId } =
-    await auth();
+  const { sessionClaims, sessionStatus, userId } = await auth();
 
   if (sessionStatus === "pending") {
-    const pendingTaskUrl = req.nextUrl.clone();
+    const pendingTaskUrl = new URL(req.url);
     pendingTaskUrl.pathname = "/sign-in";
     pendingTaskUrl.searchParams.set("redirect_url", req.url);
     return secureResponse(NextResponse.redirect(pendingTaskUrl));
   }
 
   if (!userId) {
-    return secureResponse(redirectToSignIn({ returnBackUrl: req.url }));
+    const signInUrl = new URL(req.url);
+    signInUrl.pathname = "/sign-in";
+    signInUrl.search = "";
+    signInUrl.searchParams.set("redirect_url", req.url);
+    return secureResponse(NextResponse.redirect(signInUrl));
   }
 
   // Partner onboarding has its own server-side eligibility checks. It must be

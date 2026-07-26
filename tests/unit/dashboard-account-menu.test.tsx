@@ -7,7 +7,10 @@ const clerkMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@clerk/nextjs", () => ({
-  useClerk: () => ({ signOut: clerkMocks.signOut }),
+  useAuth: () => ({ signOut: clerkMocks.signOut }),
+}));
+vi.mock("@sentry/nextjs", () => ({
+  captureException: vi.fn(),
 }));
 
 import {
@@ -73,7 +76,13 @@ describe("dashboard account menu", () => {
     await expect(controller.run({ setError, setPending })).resolves.toBe(false);
     expect(setPending).toHaveBeenNthCalledWith(1, true);
     expect(setPending).toHaveBeenNthCalledWith(2, false);
-    expect(setError).toHaveBeenLastCalledWith(DASHBOARD_SIGN_OUT_ERROR);
+    expect(setError).toHaveBeenLastCalledWith(
+      expect.stringMatching(
+        new RegExp(
+          `^${DASHBOARD_SIGN_OUT_ERROR.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}.*FP-SIGNOUT-\\d{8}-[A-Z0-9]{6}\\.$`,
+        ),
+      ),
+    );
     expect(controller.isPending()).toBe(false);
     expect(onSignedOut).not.toHaveBeenCalled();
 

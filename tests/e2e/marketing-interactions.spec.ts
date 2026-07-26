@@ -189,74 +189,82 @@ test("homepage opportunity explorer searches, filters, opens details, and saves 
   expect(mutationRequests).toEqual([]);
 });
 
-test("hero dashboard preview completes one automatic sequence and manual input ends autoplay", async ({
-  page,
-}) => {
-  test.setTimeout(45_000);
-  await page.clock.install();
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/");
+for (const { name, viewport } of [
+  { name: "desktop", viewport: { width: 1440, height: 900 } },
+  { name: "mobile", viewport: { width: 390, height: 844 } },
+] as const) {
+  test(`hero dashboard preview completes one automatic sequence and manual input ends autoplay (${name})`, async ({
+    page,
+  }) => {
+    test.setTimeout(45_000);
+    const testTime = new Date("2026-01-01T00:00:00.000Z");
+    await page.clock.install({ time: testTime });
+    // Clock installation alone lets time advance naturally.
+    await page.clock.pauseAt(testTime);
+    await page.setViewportSize(viewport);
+    await page.goto("/");
 
-  const preview = page.locator(
-    'figure[aria-label="Interactive student dashboard preview"]',
-  );
-  await preview.scrollIntoViewIfNeeded();
-  await expect(preview).toHaveAttribute("data-active-tab", "overview");
-  await expect(preview).toHaveAttribute("data-autoplay-status", "running");
+    const preview = page.locator(
+      'figure[aria-label="Interactive student dashboard preview"]',
+    );
+    await preview.scrollIntoViewIfNeeded();
+    await expect(preview).toHaveAttribute("data-active-tab", "overview");
+    await expect(preview).toHaveAttribute("data-autoplay-status", "running");
 
-  const pause = preview.getByRole("button", {
-    name: "Pause dashboard preview",
+    const pause = preview.getByRole("button", {
+      name: "Pause dashboard preview",
+    });
+    await pause.click();
+    await expect(preview).toHaveAttribute("data-autoplay-status", "paused");
+    await page.clock.fastForward(3_000);
+    await expect(preview).toHaveAttribute("data-active-tab", "overview");
+    await preview
+      .getByRole("button", { name: "Resume dashboard preview" })
+      .click();
+    await expect(preview).toHaveAttribute("data-autoplay-status", "running");
+
+    const automaticSequence = [
+      { delay: 850, tab: "discover" },
+      { delay: 1_600, tab: "saved" },
+      { delay: 1_600, tab: "applications" },
+      { delay: 1_600, tab: "events" },
+      { delay: 1_600, tab: "profile" },
+      { delay: 1_600, tab: "overview" },
+    ] as const;
+
+    for (const { delay, tab } of automaticSequence) {
+      await page.clock.fastForward(delay);
+      await expect(preview).toHaveAttribute("data-active-tab", tab);
+    }
+    await expect(preview).toHaveAttribute("data-autoplay-status", "complete");
+    await expect(
+      preview.getByRole("button", { name: "Replay dashboard preview" }),
+    ).toBeVisible();
+    await expect(preview.locator('[aria-live="polite"]')).not.toContainText(
+      "Showing Profile",
+    );
+    await page.clock.fastForward(5_000);
+    await expect(preview).toHaveAttribute("data-active-tab", "overview");
+
+    await page.reload();
+    await preview.scrollIntoViewIfNeeded();
+    await expect(preview).toHaveAttribute("data-autoplay-status", "running");
+    const saved = preview.getByRole("button", { name: "Saved", exact: true });
+    await saved.click();
+    await expect(saved).toHaveAttribute("aria-pressed", "true");
+    await expect(preview).toHaveAttribute("data-active-tab", "saved");
+    await expect(preview).toHaveAttribute("data-autoplay-status", "manual");
+    await expect(preview.locator('[aria-live="polite"]')).toContainText(
+      "Showing Saved",
+    );
+
+    await saved.focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(preview).toHaveAttribute("data-active-tab", "applications");
+    await page.clock.fastForward(10_000);
+    await expect(preview).toHaveAttribute("data-active-tab", "applications");
   });
-  await pause.click();
-  await expect(preview).toHaveAttribute("data-autoplay-status", "paused");
-  await page.clock.fastForward(3_000);
-  await expect(preview).toHaveAttribute("data-active-tab", "overview");
-  await preview
-    .getByRole("button", { name: "Resume dashboard preview" })
-    .click();
-  await expect(preview).toHaveAttribute("data-autoplay-status", "running");
-
-  const automaticSequence = [
-    { delay: 850, tab: "discover" },
-    { delay: 1_600, tab: "saved" },
-    { delay: 1_600, tab: "applications" },
-    { delay: 1_600, tab: "events" },
-    { delay: 1_600, tab: "profile" },
-    { delay: 1_600, tab: "overview" },
-  ] as const;
-
-  for (const { delay, tab } of automaticSequence) {
-    await page.clock.fastForward(delay);
-    await expect(preview).toHaveAttribute("data-active-tab", tab);
-  }
-  await expect(preview).toHaveAttribute("data-autoplay-status", "complete");
-  await expect(
-    preview.getByRole("button", { name: "Replay dashboard preview" }),
-  ).toBeVisible();
-  await expect(preview.locator('[aria-live="polite"]')).not.toContainText(
-    "Showing Profile",
-  );
-  await page.clock.fastForward(5_000);
-  await expect(preview).toHaveAttribute("data-active-tab", "overview");
-
-  await page.reload();
-  await preview.scrollIntoViewIfNeeded();
-  await expect(preview).toHaveAttribute("data-autoplay-status", "running");
-  const saved = preview.getByRole("button", { name: "Saved", exact: true });
-  await saved.click();
-  await expect(saved).toHaveAttribute("aria-pressed", "true");
-  await expect(preview).toHaveAttribute("data-active-tab", "saved");
-  await expect(preview).toHaveAttribute("data-autoplay-status", "manual");
-  await expect(preview.locator('[aria-live="polite"]')).toContainText(
-    "Showing Saved",
-  );
-
-  await saved.focus();
-  await page.keyboard.press("ArrowRight");
-  await expect(preview).toHaveAttribute("data-active-tab", "applications");
-  await page.clock.fastForward(10_000);
-  await expect(preview).toHaveAttribute("data-active-tab", "applications");
-});
+}
 
 test("hero dashboard preview disables autoplay for reduced motion while keeping controls usable", async ({
   page,

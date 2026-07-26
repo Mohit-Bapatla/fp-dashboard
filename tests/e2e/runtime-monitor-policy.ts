@@ -6,6 +6,58 @@ export type RequestFailureSignal = {
   url: string;
 };
 
+export function isExpectedServerActionRedirectCancellation({
+  errorText,
+  hasNextActionHeader,
+  method,
+  resourceType,
+}: {
+  errorText: string | null;
+  hasNextActionHeader: boolean;
+  method: string;
+  resourceType: string;
+}) {
+  return (
+    errorText === "net::ERR_ABORTED" &&
+    hasNextActionHeader &&
+    method === "POST" &&
+    ["fetch", "xhr"].includes(resourceType)
+  );
+}
+
+export function isExpectedProtectedPrefetchSignInCancellation({
+  errorText,
+  method,
+  resourceType,
+  url,
+}: Pick<
+  RequestFailureSignal,
+  "errorText" | "method" | "resourceType" | "url"
+>) {
+  if (
+    errorText !== "net::ERR_ABORTED" ||
+    method !== "GET" ||
+    !["fetch", "xhr"].includes(resourceType)
+  ) {
+    return false;
+  }
+
+  try {
+    const signInUrl = new URL(url);
+    const returnTo = new URL(
+      signInUrl.searchParams.get("redirect_url") ?? "",
+      signInUrl.origin,
+    );
+    return (
+      signInUrl.pathname === "/sign-in" &&
+      returnTo.origin === signInUrl.origin &&
+      returnTo.pathname.startsWith("/dashboard/")
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function isExpectedSupersededChunkCancellation({
   errorText,
   hasSupersedingMainFrameNavigation,

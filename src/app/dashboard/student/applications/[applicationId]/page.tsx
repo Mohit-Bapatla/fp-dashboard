@@ -9,9 +9,11 @@ import {
   StudentApplicationTaskList,
   type StudentApplicationTaskListItem,
 } from "@/components/student/student-application-task-list";
+import { WorkspacePrivateNotesField } from "@/components/student/workspace-private-notes-field";
 import { prisma } from "@/lib/db/prisma";
 import { isStudentOpportunitySubmittable } from "@/lib/opportunities/student-visibility";
 import { loadOptionalWorkflowData } from "@/lib/reliability/workflow-errors";
+import { isWorkflowSupportReference } from "@/lib/reliability/workflow-references";
 import { isSafeExternalUrl } from "@/lib/security/safe-url";
 import {
   getApplicationNextAction,
@@ -80,6 +82,7 @@ export default async function ApplicationWorkspacePage({
   const [resumeResult, notificationPreferenceResult] = await Promise.all([
     loadOptionalWorkflowData({
       action: "load_application_resumes",
+      category: "APP",
       fallback: [],
       load: () =>
         prisma.resume.findMany({
@@ -92,6 +95,7 @@ export default async function ApplicationWorkspacePage({
     }),
     loadOptionalWorkflowData({
       action: "load_application_notification_preference",
+      category: "APP",
       fallback: resolveStudentNotificationPreference(null),
       load: () => getStudentNotificationPreference(profile.id),
       route: "/dashboard/student/applications/[applicationId]",
@@ -106,7 +110,7 @@ export default async function ApplicationWorkspacePage({
   const workspaceStatus = workspaceParams.workspace;
   const reference = workspaceParams.reference;
   const safeReference =
-    reference && /^[A-F0-9]{8}$/.test(reference) ? reference : null;
+    reference && isWorkflowSupportReference(reference) ? reference : null;
 
   const now = new Date();
   const opportunitySubmissionAllowed = isStudentOpportunitySubmittable(
@@ -319,6 +323,7 @@ export default async function ApplicationWorkspacePage({
           action={updateApplicationWorkspace}
           className="rounded-xl border border-border bg-background p-6"
           id="workspace-plan"
+          key={application.updatedAt.toISOString()}
         >
           <input name="applicationId" type="hidden" value={application.id} />
           <input
@@ -367,12 +372,9 @@ export default async function ApplicationWorkspacePage({
           </div>
           <label className="mt-4 block text-sm font-medium">
             Private notes
-            <textarea
-              className="mt-2 w-full rounded-lg border border-border bg-background p-3"
-              defaultValue={application.privateNotes ?? ""}
-              maxLength={10000}
-              name="privateNotes"
-              rows={5}
+            <WorkspacePrivateNotesField
+              initialValue={application.privateNotes ?? ""}
+              key={application.updatedAt.toISOString()}
             />
           </label>
           <button

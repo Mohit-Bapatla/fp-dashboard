@@ -18,15 +18,23 @@ describe("security headers", () => {
     expect(csp).toContain(
       "connect-src 'self' https://clerk.futurephysicians.org",
     );
+    expect(csp).toContain("script-src-elem 'self' 'nonce-test-nonce'");
     expect(csp).not.toContain("https://*.futurephysicians.org");
     expect(csp).not.toContain("script-src 'self' 'unsafe-inline'");
     expect(csp).not.toContain("'unsafe-eval'");
+    expect(csp).toContain("upgrade-insecure-requests");
     expect(headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect(headers.get("X-Frame-Options")).toBe("DENY");
     expect(headers.get("Referrer-Policy")).toBe(
       "strict-origin-when-cross-origin",
     );
     expect(headers.get("Permissions-Policy")).toContain("camera=()");
+  });
+
+  it("does not upgrade local HTTP reliability requests to HTTPS", () => {
+    expect(buildContentSecurityPolicy("local-nonce", false)).not.toContain(
+      "upgrade-insecure-requests",
+    );
   });
 
   it("permits React development diagnostics without weakening production", () => {

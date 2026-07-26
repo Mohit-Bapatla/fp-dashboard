@@ -10,7 +10,7 @@ export type StudentOnboardingActionState = {
   resumeStep: number | null;
   savedStep: number | null;
   saveSequence: number;
-  saveStatus: "idle" | "saved" | "error";
+  saveStatus: "idle" | "saved" | "completed" | "error";
   supportReference: string | null;
   values: StudentProfileFormValues;
 };

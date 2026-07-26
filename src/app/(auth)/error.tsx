@@ -2,8 +2,10 @@
 
 import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
+import { createWorkflowSupportReference } from "@/lib/reliability/workflow-references";
+import { DASHBOARD_SUPPORT_ACTION } from "@/lib/support-contact";
 export default function AuthError({
   error,
   reset,
@@ -11,11 +13,19 @@ export default function AuthError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    Sentry.captureException(error);
-  }, [error]);
+  const [supportReference] = useState(() =>
+    createWorkflowSupportReference("AUTH"),
+  );
 
-  const supportReference = error.digest?.slice(0, 8).toUpperCase();
+  useEffect(() => {
+    Sentry.captureException(error, {
+      tags: {
+        route: "/(auth)",
+        supportReference,
+        workflowCategory: "AUTH",
+      },
+    });
+  }, [error, supportReference]);
 
   return (
     <main
@@ -37,9 +47,8 @@ export default function AuthError({
           We couldn&apos;t load the secure account form
         </h1>
         <p className="mt-4 text-sm leading-6 text-muted-foreground">
-          Try loading it again. If the problem continues, contact support
-          {supportReference ? ` and include reference ${supportReference}` : ""}
-          .
+          Try loading it again. If the problem continues, contact support and
+          include reference {supportReference}.
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
           <button
@@ -49,6 +58,12 @@ export default function AuthError({
           >
             Try again
           </button>
+          <Link
+            className="inline-flex min-h-11 items-center rounded-xl border border-border px-5 text-sm font-semibold text-brand-navy"
+            href={DASHBOARD_SUPPORT_ACTION.href}
+          >
+            {DASHBOARD_SUPPORT_ACTION.label}
+          </Link>
           <Link
             className="inline-flex min-h-11 items-center rounded-xl border border-border px-5 text-sm font-semibold text-brand-navy"
             href="/"
