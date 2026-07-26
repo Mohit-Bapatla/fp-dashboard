@@ -5,10 +5,10 @@ import { getRoleFromSessionClaims } from "@/lib/auth/roles";
 import { syncCurrentUserFromClerk } from "@/lib/auth/user-sync";
 
 export async function assertStudentAccess() {
-  const { sessionClaims, userId } = await auth();
+  const { redirectToSignIn, sessionClaims, userId } = await auth();
 
   if (!userId) {
-    return redirect("/sign-in?redirect_url=%2Fdashboard%2Fstudent");
+    return redirectToSignIn();
   }
 
   const role = getRoleFromSessionClaims(sessionClaims);

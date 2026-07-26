@@ -1,7 +1,7 @@
 export const siteConfig = {
   name: "Future Physicians",
   shortName: "FP",
-  url: "https://www.futurephysicians.org",
+  url: "https://futurephysicians.org",
   description:
     "Future Physicians helps students discover, apply to, and manage verified healthcare opportunities from one profile.",
   emails: {

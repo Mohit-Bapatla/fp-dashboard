@@ -18,7 +18,6 @@ import {
   loadOptionalWorkflowData,
   logWorkflowFailure,
 } from "@/lib/reliability/workflow-errors";
-import { isWorkflowSupportReference } from "@/lib/reliability/workflow-references";
 
 type PartnerApplicantsPageProps = {
   searchParams: Promise<{
@@ -153,7 +152,6 @@ export default async function PartnerApplicantsPage({
   const statLoad = (action: string, load: () => Promise<number>) =>
     loadOptionalWorkflowData({
       action,
-      category: "PARTNER",
       fallback: 0,
       load,
       route: "/dashboard/partner/applicants",
@@ -170,7 +168,6 @@ export default async function PartnerApplicantsPage({
   ] = await Promise.all([
     loadOptionalWorkflowData({
       action: "load_partner_applicant_optional_details",
-      category: "PARTNER",
       fallback: [],
       load: () =>
         prisma.application.findMany({
@@ -472,7 +469,6 @@ export default async function PartnerApplicantsPage({
     } catch (error) {
       logWorkflowFailure({
         action: "load_partner_applicant_core_data",
-        category: "PARTNER",
         error,
         route: "/dashboard/partner/applicants",
         userId: context.user.id,
@@ -497,7 +493,6 @@ export default async function PartnerApplicantsPage({
   const redirectTo = buildRedirectTo(status, opportunityId);
   const feedbackResult = await loadOptionalWorkflowData({
     action: "load_partner_applicant_feedback",
-    category: "PARTNER",
     fallback: [],
     load: () =>
       prisma.feedback.findMany({
@@ -557,7 +552,6 @@ export default async function PartnerApplicantsPage({
         commentThread: (
           await loadOptionalWorkflowData({
             action: "load_partner_applicant_comments",
-            category: "PARTNER",
             fallback: { allowedVisibilities: [], comments: [] },
             load: () =>
               getRecordCommentThread({
@@ -603,20 +597,6 @@ export default async function PartnerApplicantsPage({
             role="alert"
           >
             Too many updates were attempted. Wait a moment and try again.
-          </p>
-        ) : null}
-        {params.error === "operation_failed" ? (
-          <p
-            className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"
-            role="alert"
-          >
-            We could not save that partner update. Previously saved review data
-            remains available. Try again. If the problem continues, contact
-            support
-            {params.reference && isWorkflowSupportReference(params.reference)
-              ? ` with reference ${params.reference}`
-              : ""}
-            .
           </p>
         ) : null}
         {params.notice ? (

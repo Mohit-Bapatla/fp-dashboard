@@ -9,8 +9,6 @@ import {
 } from "@playwright/test";
 
 import {
-  isExpectedProtectedPrefetchSignInCancellation,
-  isExpectedServerActionRedirectCancellation,
   isExpectedSupersededChunkCancellation,
   toPageErrorIssue,
 } from "./runtime-monitor-policy";
@@ -123,28 +121,6 @@ function isAllowedRequestCancellation(
   request: Request,
   hasSupersedingMainFrameNavigation: boolean,
 ) {
-  if (
-    isExpectedServerActionRedirectCancellation({
-      errorText: request.failure()?.errorText ?? null,
-      hasNextActionHeader: Boolean(request.headers()["next-action"]),
-      method: request.method(),
-      resourceType: request.resourceType(),
-    })
-  ) {
-    return true;
-  }
-
-  if (
-    isExpectedProtectedPrefetchSignInCancellation({
-      errorText: request.failure()?.errorText ?? null,
-      method: request.method(),
-      resourceType: request.resourceType(),
-      url: request.url(),
-    })
-  ) {
-    return true;
-  }
-
   if (
     request.method() !== "GET" ||
     request.failure()?.errorText !== "net::ERR_ABORTED"

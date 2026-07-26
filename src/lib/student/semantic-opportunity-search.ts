@@ -81,21 +81,15 @@ export function buildSemanticOpportunityWhere(
 
   return {
     OR: tokens.flatMap((token) => [
-      { title: { contains: token, mode: "insensitive" } },
-      { description: { contains: token, mode: "insensitive" } },
-      { specialty: { contains: token, mode: "insensitive" } },
-      { location: { contains: token, mode: "insensitive" } },
-      { remoteType: { contains: token, mode: "insensitive" } },
-      { paidStatus: { contains: token, mode: "insensitive" } },
-      {
-        eligibilityRequirements: { contains: token, mode: "insensitive" },
-      },
-      { applicationInstructions: { contains: token, mode: "insensitive" } },
-      {
-        organization: {
-          name: { contains: token, mode: "insensitive" },
-        },
-      },
+      { title: { contains: token } },
+      { description: { contains: token } },
+      { specialty: { contains: token } },
+      { location: { contains: token } },
+      { remoteType: { contains: token } },
+      { paidStatus: { contains: token } },
+      { eligibilityRequirements: { contains: token } },
+      { applicationInstructions: { contains: token } },
+      { organization: { name: { contains: token } } },
     ]),
   };
 }

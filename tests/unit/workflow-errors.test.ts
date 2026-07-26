@@ -17,7 +17,6 @@ describe("workflow reliability errors", () => {
       .mockImplementation(() => {});
     const result = await loadOptionalWorkflowData({
       action: "load_optional_resumes",
-      category: "APP",
       fallback: [],
       load: async () => {
         throw new Error("private note: do not log this");
@@ -28,7 +27,7 @@ describe("workflow reliability errors", () => {
 
     expect(result.available).toBe(false);
     expect(result.value).toEqual([]);
-    expect(result.referenceId).toMatch(/^FP-APP-\d{8}-[A-Z0-9]{6}$/);
+    expect(result.referenceId).toMatch(/^[A-F0-9]{8}$/);
     expect(JSON.stringify(consoleError.mock.calls)).not.toContain(
       "private note",
     );
@@ -39,8 +38,7 @@ describe("workflow reliability errors", () => {
       "[workflow-reliability] operation failed",
       expect.objectContaining({
         action: "load_optional_resumes",
-        category: "APP",
-        errorClassification: "UNKNOWN",
+        errorCategory: "UNKNOWN",
         route: "/dashboard/student/applications/[applicationId]",
         userIdHash: expect.stringMatching(/^[a-f0-9]{12}$/),
       }),
@@ -53,7 +51,6 @@ describe("workflow reliability errors", () => {
       .mockImplementation(() => {});
     const result = await loadOptionalWorkflowData({
       action: "load_optional_data",
-      category: "PARTNER",
       fallback: 0,
       load: async () => 3,
       route: "/dashboard/partner",
@@ -72,7 +69,6 @@ describe("workflow reliability errors", () => {
     const primaryRows = [{ id: "application-a", status: "SUBMITTED" }];
     const result = await loadOptionalWorkflowData({
       action: "load_partner_applicant_optional_details",
-      category: "PARTNER",
       fallback: primaryRows,
       load: async () => {
         throw new Error("malformed optional relation");
@@ -94,9 +90,8 @@ describe("workflow reliability errors", () => {
     expect(classifyWorkflowError(error)).toBe("EXTERNAL_DEPENDENCY");
     logWorkflowFailure({
       action: "load_partner_summary",
-      category: "PARTNER",
       error,
-      referenceId: "FP-PARTNER-20260724-ABC123",
+      referenceId: "ABCDEF12",
       route: "/dashboard/partner/applicants",
     });
 

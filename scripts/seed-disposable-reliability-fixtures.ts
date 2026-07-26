@@ -14,23 +14,6 @@ const clerkIds = {
   studentA: process.env.DISPOSABLE_STUDENT_A_CLERK_ID?.trim(),
   studentB: process.env.DISPOSABLE_STUDENT_B_CLERK_ID?.trim(),
 };
-const fixtureEmails = {
-  admin:
-    process.env.DISPOSABLE_ADMIN_EMAIL?.trim() ??
-    "admin+clerk_test_20260724r1@example.com",
-  partnerA:
-    process.env.DISPOSABLE_PARTNER_A_EMAIL?.trim() ??
-    "partner-a+clerk_test_20260724r1@example.com",
-  partnerB:
-    process.env.DISPOSABLE_PARTNER_B_EMAIL?.trim() ??
-    "partner-b+clerk_test_20260724r1@example.com",
-  studentA:
-    process.env.DISPOSABLE_STUDENT_A_EMAIL?.trim() ??
-    "student-a+clerk_test_20260724r1@example.com",
-  studentB:
-    process.env.DISPOSABLE_STUDENT_B_EMAIL?.trim() ??
-    "student-b+clerk_test_20260724r1@example.com",
-};
 
 if (process.env.NODE_ENV !== "test" || !databaseUrl) {
   throw new Error(
@@ -61,31 +44,31 @@ const prisma = new PrismaClient({
 const fixtureUsers = [
   {
     clerkUserId: clerkIds.studentA!,
-    email: fixtureEmails.studentA,
+    email: "student-a+clerk_test_20260724r1@example.com",
     id: "reliability_student_a",
     role: "STUDENT" as const,
   },
   {
     clerkUserId: clerkIds.studentB!,
-    email: fixtureEmails.studentB,
+    email: "student-b+clerk_test_20260724r1@example.com",
     id: "reliability_student_b",
     role: "STUDENT" as const,
   },
   {
     clerkUserId: clerkIds.partnerA!,
-    email: fixtureEmails.partnerA,
+    email: "partner-a+clerk_test_20260724r1@example.com",
     id: "reliability_partner_a",
     role: "PARTNER" as const,
   },
   {
     clerkUserId: clerkIds.partnerB!,
-    email: fixtureEmails.partnerB,
+    email: "partner-b+clerk_test_20260724r1@example.com",
     id: "reliability_partner_b",
     role: "PARTNER" as const,
   },
   {
     clerkUserId: clerkIds.admin!,
-    email: fixtureEmails.admin,
+    email: "admin+clerk_test_20260724r1@example.com",
     id: "reliability_admin",
     role: "ADMIN" as const,
   },
@@ -97,9 +80,8 @@ async function main() {
       await Promise.all(
         fixtureUsers.map(async (fixture) => {
           const user = await prisma.user.upsert({
-            where: { id: fixture.id },
+            where: { clerkUserId: fixture.clerkUserId },
             update: {
-              clerkUserId: fixture.clerkUserId,
               email: fixture.email,
               role: fixture.role,
             },
@@ -110,38 +92,9 @@ async function main() {
       ),
     );
     const studentB = users.get("reliability_student_b")!;
-    const studentA = users.get("reliability_student_a")!;
     const partnerA = users.get("reliability_partner_a")!;
     const partnerB = users.get("reliability_partner_b")!;
     const admin = users.get("reliability_admin")!;
-
-    await prisma.$transaction([
-      prisma.actionRateLimit.deleteMany(),
-      prisma.recordComment.deleteMany({
-        where: {
-          entityType: "APPLICATION",
-          entityId: {
-            in: ["reliability_application_a", "reliability_application_b"],
-          },
-        },
-      }),
-      prisma.auditLog.deleteMany({
-        where: {
-          actorId: studentA.id,
-          action: {
-            in: [
-              "STUDENT_ONBOARDING_AGE_AFFIRMED",
-              "STUDENT_ONBOARDING_COMPLETED",
-              "STUDENT_PROFILE_CREATED",
-              "STUDENT_PROFILE_UPDATED",
-            ],
-          },
-        },
-      }),
-      prisma.studentProfile.deleteMany({
-        where: { userId: studentA.id },
-      }),
-    ]);
 
     const studentBProfile = await prisma.studentProfile.upsert({
       where: { userId: studentB.id },
@@ -237,7 +190,7 @@ async function main() {
       }),
     ]);
 
-    const opportunityA = await prisma.opportunity.upsert({
+    await prisma.opportunity.upsert({
       where: { id: "reliability_opportunity_a" },
       update: {},
       create: {
@@ -295,42 +248,8 @@ async function main() {
         submittedAt: new Date("2026-07-24T13:00:00.000Z"),
       },
     });
-    const applicationA = await prisma.application.upsert({
-      where: {
-        studentProfileId_opportunityId: {
-          opportunityId: opportunityA.id,
-          studentProfileId: studentBProfile.id,
-        },
-      },
-      update: { privateNotes: null, reviewedAt: null, status: "PREPARING" },
-      create: {
-        id: "reliability_application_a",
-        applicationMethod: "EXTERNAL_PORTAL",
-        opportunityId: opportunityA.id,
-        status: "PREPARING",
-        statement: "Synthetic reliability application A.",
-        studentProfileId: studentBProfile.id,
-        submittedAt: new Date("2026-07-24T13:00:00.000Z"),
-      },
-    });
 
     await Promise.all([
-      prisma.applicationTask.upsert({
-        where: {
-          applicationId_taskKey: {
-            applicationId: applicationA.id,
-            taskKey: "SYSTEM:REVIEW_ELIGIBILITY",
-          },
-        },
-        update: {},
-        create: {
-          id: "reliability_task_a",
-          applicationId: applicationA.id,
-          taskKey: "SYSTEM:REVIEW_ELIGIBILITY",
-          title: "Review eligibility",
-          type: "REVIEW_ELIGIBILITY",
-        },
-      }),
       prisma.applicationTask.upsert({
         where: {
           applicationId_taskKey: {
@@ -365,7 +284,7 @@ async function main() {
 
     console.log(
       JSON.stringify({
-        applications: 2,
+        applications: 1,
         organizations: 2,
         opportunities: 2,
         users: fixtureUsers.length,
