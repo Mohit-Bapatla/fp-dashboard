@@ -1,5 +1,3 @@
-import { createWorkflowSupportReference } from "@/lib/reliability/workflow-references";
-
 export const DASHBOARD_SIGN_OUT_ERROR =
   "We could not sign you out. Please try again.";
 
@@ -19,7 +17,6 @@ export type DashboardSignOutController = {
 export function createDashboardSignOutController(
   signOut: ClerkSignOut,
   onSignedOut: () => void = () => undefined,
-  onFailure: (error: unknown, referenceId: string) => void = () => undefined,
 ): DashboardSignOutController {
   let pending = false;
 
@@ -36,15 +33,11 @@ export function createDashboardSignOutController(
 
       try {
         await signOut({ redirectUrl: "/" });
-      } catch (error) {
+      } catch {
         pending = false;
-        const referenceId = createWorkflowSupportReference("SIGNOUT");
-        onFailure(error, referenceId);
         if (isActive?.() ?? true) {
           setPending(false);
-          setError(
-            `${DASHBOARD_SIGN_OUT_ERROR} If the problem continues, contact support and include reference ${referenceId}.`,
-          );
+          setError(DASHBOARD_SIGN_OUT_ERROR);
         }
         return false;
       }

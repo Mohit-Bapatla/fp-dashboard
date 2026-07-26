@@ -1,7 +1,4 @@
-export function buildContentSecurityPolicy(
-  nonce: string,
-  upgradeInsecureRequests = true,
-) {
+export function buildContentSecurityPolicy(nonce: string) {
   const developmentEval =
     process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
 
@@ -12,7 +9,6 @@ export function buildContentSecurityPolicy(
     "frame-ancestors 'none'",
     "form-action 'self' https://*.accounts.dev https://*.clerk.accounts.dev https://*.clerk.com",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${developmentEval} https://*.accounts.dev https://*.clerk.accounts.dev https://*.clerk.com https://*.clerk.dev https://challenges.cloudflare.com https://va.vercel-scripts.com`,
-    `script-src-elem 'self' 'nonce-${nonce}' https://*.accounts.dev https://*.clerk.accounts.dev https://*.clerk.com https://*.clerk.dev https://challenges.cloudflare.com https://va.vercel-scripts.com`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
@@ -21,10 +17,8 @@ export function buildContentSecurityPolicy(
     "worker-src 'self' blob:",
     "manifest-src 'self'",
     "media-src 'self' https:",
-    upgradeInsecureRequests ? "upgrade-insecure-requests" : null,
-  ]
-    .filter(Boolean)
-    .join("; ");
+    "upgrade-insecure-requests",
+  ].join("; ");
 }
 
 export const securityHeaders = [

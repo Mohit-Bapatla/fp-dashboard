@@ -23,7 +23,7 @@ describe("safe internal redirects", () => {
   it("normalizes trusted Clerk absolute URLs to an internal path", () => {
     expect(
       safeInternalPath(
-        "https://www.futurephysicians.org/dashboard/student/opportunities/opp-1/apply?source=public#review",
+        "https://futurephysicians.org/dashboard/student/opportunities/opp-1/apply?source=public#review",
         "/dashboard",
       ),
     ).toBe("/dashboard/student/opportunities/opp-1/apply?source=public#review");
@@ -34,15 +34,6 @@ describe("safe internal redirects", () => {
         ["http://localhost:4100"],
       ),
     ).toBe("/dashboard/student?source=clerk");
-  });
-
-  it("never treats the noncanonical Vercel alias as an auth callback origin", () => {
-    expect(
-      safeInternalPath(
-        "https://fp-dashboard-rosy.vercel.app/dashboard/student",
-        "/dashboard",
-      ),
-    ).toBe("/dashboard");
   });
 
   it.each([

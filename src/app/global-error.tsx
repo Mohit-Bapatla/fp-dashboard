@@ -2,10 +2,7 @@
 
 import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-
-import { createWorkflowSupportReference } from "@/lib/reliability/workflow-references";
-import { DASHBOARD_SUPPORT_ACTION } from "@/lib/support-contact";
+import { useEffect } from "react";
 
 export default function GlobalError({
   error,
@@ -14,19 +11,9 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const [supportReference] = useState(() =>
-    createWorkflowSupportReference("PUBLIC"),
-  );
-
   useEffect(() => {
-    Sentry.captureException(error, {
-      tags: {
-        route: "/",
-        supportReference,
-        workflowCategory: "PUBLIC",
-      },
-    });
-  }, [error, supportReference]);
+    Sentry.captureException(error);
+  }, [error]);
 
   return (
     <html lang="en">
@@ -51,8 +38,8 @@ export default function GlobalError({
               className="mt-4 text-sm leading-6 text-muted-foreground"
               id="global-error-description"
             >
-              Try again. If the problem continues, contact support and include
-              reference {supportReference}.
+              The team can review this through configured logs or Sentry once
+              monitoring is enabled.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <button
@@ -62,12 +49,6 @@ export default function GlobalError({
               >
                 Try again
               </button>
-              <Link
-                className="inline-flex min-h-11 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                href={DASHBOARD_SUPPORT_ACTION.href}
-              >
-                {DASHBOARD_SUPPORT_ACTION.label}
-              </Link>
               <Link
                 className="inline-flex min-h-11 items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 href="/"

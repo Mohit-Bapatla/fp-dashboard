@@ -273,15 +273,15 @@ test("support metadata includes canonical social sharing images", async ({
 
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     "href",
-    "https://www.futurephysicians.org/support",
+    "https://futurephysicians.org/support",
   );
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     "content",
-    "https://www.futurephysicians.org/og.png",
+    "https://futurephysicians.org/og.png",
   );
   await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute(
     "content",
-    "https://www.futurephysicians.org/og.png",
+    "https://futurephysicians.org/og.png",
   );
 });
 

@@ -28,9 +28,9 @@ describe("student onboarding errors", () => {
       values,
     });
 
-    expect(result.formError).toMatch(/reference FP-ONB-\d{8}-[A-Z0-9]{6}/);
+    expect(result.formError).toMatch(/reference [A-F0-9]{8}/);
     expect(result.formError).toMatch(/previously saved progress/i);
-    expect(result.supportReference).toMatch(/^FP-ONB-\d{8}-[A-Z0-9]{6}$/);
+    expect(result.supportReference).toMatch(/^[A-F0-9]{8}$/);
     expect(errorLog).toHaveBeenCalledOnce();
 
     const logged = JSON.stringify(errorLog.mock.calls[0]);

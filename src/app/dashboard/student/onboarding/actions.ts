@@ -14,6 +14,7 @@ import {
   enforceRateLimit,
   formatRateLimitMessage,
 } from "@/lib/security/rate-limit";
+import { safeInternalPath } from "@/lib/security/safe-url";
 import { createStudentOnboardingFailure } from "@/lib/student/onboarding-errors";
 import { getStudentOnboardingProgress } from "@/lib/student/onboarding-progress";
 import type { StudentOnboardingActionState } from "@/lib/student/onboarding-state";
@@ -86,12 +87,10 @@ export async function saveStudentProfile(
   previousState: StudentOnboardingActionState,
   formData: FormData,
 ): Promise<StudentOnboardingActionState> {
-  const { sessionClaims, userId } = await auth();
+  const { redirectToSignIn, sessionClaims, userId } = await auth();
 
   if (!userId) {
-    return redirect(
-      "/sign-in?redirect_url=%2Fdashboard%2Fstudent%2Fonboarding",
-    );
+    return redirectToSignIn();
   }
 
   if (getRoleFromSessionClaims(sessionClaims) !== "STUDENT") {
@@ -363,16 +362,13 @@ export async function saveStudentProfile(
   }
 
   if (step === finalOnboardingStep) {
-    return {
-      fieldErrors: {},
-      formError: null,
-      resumeStep: finalOnboardingStep,
-      savedStep: finalOnboardingStep,
-      saveSequence: previousState.saveSequence + 1,
-      saveStatus: "completed",
-      supportReference: null,
-      values: validation.values,
-    };
+    const rawReturnTo = formData.get("returnTo");
+    const returnTo = safeInternalPath(
+      typeof rawReturnTo === "string" ? rawReturnTo : null,
+      "/dashboard/student",
+    );
+
+    redirect(returnTo);
   }
 
   return {

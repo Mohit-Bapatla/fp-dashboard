@@ -15,8 +15,10 @@ import {
   getEffectiveApplicationMethod,
   parseApplicationTargetDate,
 } from "@/lib/student/application-workspace";
-import { logWorkflowFailure } from "@/lib/reliability/workflow-errors";
-import { createWorkflowSupportReference } from "@/lib/reliability/workflow-references";
+import {
+  createWorkflowSupportReference,
+  logWorkflowFailure,
+} from "@/lib/reliability/workflow-errors";
 import {
   isStudentOpportunitySubmittable,
   studentAccessiblePreparationOpportunityWhere,
@@ -334,10 +336,9 @@ export async function updateApplicationWorkspace(formData: FormData) {
       return true;
     });
   } catch (error) {
-    failureReference = createWorkflowSupportReference("APP");
+    failureReference = createWorkflowSupportReference();
     logWorkflowFailure({
       action: "update_application_workspace",
-      category: "APP",
       error,
       referenceId: failureReference,
       route: "/dashboard/student/applications/[applicationId]",
@@ -377,7 +378,6 @@ export async function updateApplicationWorkspace(formData: FormData) {
   } catch (error) {
     logWorkflowFailure({
       action: "audit_application_workspace_update",
-      category: "APP",
       error,
       route: "/dashboard/student/applications/[applicationId]",
       userId: user.id,

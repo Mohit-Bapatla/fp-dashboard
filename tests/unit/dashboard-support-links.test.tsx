@@ -58,8 +58,7 @@ describe("dashboard support navigation", () => {
 
     expect(markup).toContain(">Try again</button>");
     expect(markup).toContain('href="/contact"');
-    expect(markup).toMatch(/Support reference: FP-APP-\d{8}-[A-Z0-9]{6}/);
-    expect(markup).not.toContain("SAFE1234");
+    expect(markup).toContain("Support reference: SAFE1234");
     expect(markup).not.toContain("Error: test");
   });
 });

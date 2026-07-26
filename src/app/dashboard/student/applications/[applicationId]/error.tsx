@@ -2,9 +2,7 @@
 
 import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-
-import { createWorkflowSupportReference } from "@/lib/reliability/workflow-references";
+import { useEffect } from "react";
 
 export default function ApplicationWorkspaceError({
   error,
@@ -13,19 +11,9 @@ export default function ApplicationWorkspaceError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const [supportReference] = useState(() =>
-    createWorkflowSupportReference("APP"),
-  );
-
   useEffect(() => {
-    Sentry.captureException(error, {
-      tags: {
-        route: "/dashboard/student/applications/[applicationId]",
-        supportReference,
-        workflowCategory: "APP",
-      },
-    });
-  }, [error, supportReference]);
+    Sentry.captureException(error);
+  }, [error]);
 
   return (
     <main className="flex min-h-[60vh] items-center justify-center px-4 py-12">
@@ -47,9 +35,11 @@ export default function ApplicationWorkspaceError({
           Your saved application data has not been removed. Try again, or
           contact support if the problem continues.
         </p>
-        <p className="mt-3 text-xs text-muted-foreground">
-          Support reference: {supportReference}
-        </p>
+        {error.digest ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Support reference: {error.digest}
+          </p>
+        ) : null}
         <div className="mt-7 flex flex-wrap justify-center gap-3">
           <button
             className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground"
