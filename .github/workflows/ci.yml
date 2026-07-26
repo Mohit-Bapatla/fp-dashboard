@@ -137,3 +137,140 @@ jobs:
 
       - name: Apply and verify migration history
         run: npm run db:migrate:validate
+
+  authenticated-reliability-config:
+    name: Authenticated reliability configuration
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: ci-clerk-development
+    outputs:
+      configured: ${{ steps.clerk.outputs.configured }}
+    env:
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_E2E_SECRET_KEY }}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_E2E_PUBLISHABLE_KEY }}
+    steps:
+      - name: Classify Clerk development test credentials
+        id: clerk
+        shell: bash
+        run: |
+          if [[ "$CLERK_SECRET_KEY" == sk_live_* || "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" == pk_live_* ]]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "## Authenticated reliability configuration: REJECTED"
+              echo
+              echo "A Clerk Production key was supplied. The authenticated reliability suite accepts development keys only."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          if [[ "$CLERK_SECRET_KEY" == sk_test_* && "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" == pk_test_* ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "## Authenticated reliability configuration: CONFIGURED"
+              echo
+              echo "Both required Clerk development secrets are present. This configuration result is not test coverage."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "## Authenticated reliability configuration: NOT CONFIGURED"
+              echo
+              echo "The authenticated suite will be skipped because both required Clerk development secrets are not available."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  authenticated-reliability:
+    name: Authenticated reliability tests (Clerk development)
+    needs: authenticated-reliability-config
+    if: >-
+      needs.authenticated-reliability-config.result == 'success' &&
+      needs.authenticated-reliability-config.outputs.configured == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    environment: ci-clerk-development
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: fp_dashboard_reliability_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres -d fp_dashboard_reliability_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 5432:5432
+    env:
+      CI: "true"
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_E2E_SECRET_KEY }}
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/fp_dashboard_reliability_test?schema=public
+      DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/fp_dashboard_reliability_test?schema=public
+      DISPOSABLE_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/fp_dashboard_reliability_test?schema=public
+      NEXT_PUBLIC_APP_NAME: FP Dashboard
+      NEXT_PUBLIC_APP_URL: http://localhost:3100
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_E2E_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_CLERK_SIGN_IN_URL: /sign-in
+      NEXT_PUBLIC_CLERK_SIGN_UP_URL: /sign-up
+      NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL: /dashboard
+      NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL: /dashboard/student/onboarding
+      NEXT_PUBLIC_CLERK_SIGN_UP_FORCE_REDIRECT_URL: /dashboard/student/onboarding
+      NEXT_PUBLIC_CLERK_SIGN_OUT_FALLBACK_REDIRECT_URL: /sign-in
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply disposable migrations
+        run: npx prisma migrate deploy
+
+      - name: Build local production application
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run authenticated core reliability suite
+        id: reliability-suite
+        run: npm run test:e2e:reliability
+
+      - name: Remove ephemeral authenticated browser output
+        if: always()
+        shell: bash
+        run: |
+          artifact_directory="$GITHUB_WORKSPACE/test-results/reliability-auth"
+          if [[ "$artifact_directory" != "$GITHUB_WORKSPACE/test-results/reliability-auth" ]]; then
+            echo "Refusing to clean an unexpected artifact directory." >&2
+            exit 1
+          fi
+          rm -rf -- "$artifact_directory"
+
+      - name: Report executed authenticated coverage
+        if: success()
+        run: |
+          {
+            echo "## Authenticated reliability tests: PASSED"
+            echo
+            echo "The authenticated Playwright suite executed successfully against Clerk development and disposable PostgreSQL 16 fixtures."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report authenticated suite failure
+        if: failure() && steps.reliability-suite.outcome == 'failure'
+        run: |
+          {
+            echo "## Authenticated reliability tests: FAILED"
+            echo
+            echo "The authenticated Playwright suite executed and failed. No passing coverage result was reported."
+          } >> "$GITHUB_STEP_SUMMARY"

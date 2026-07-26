@@ -23,6 +23,9 @@ describe("semantic opportunity search", () => {
     const where = buildSemanticOpportunityWhere("remote cardiology");
 
     expect(where?.OR?.length).toBeGreaterThan(0);
+    expect(where?.OR).toContainEqual({
+      title: { contains: "remote", mode: "insensitive" },
+    });
   });
 
   it("weights title and specialty matches strongly", () => {

@@ -6,6 +6,7 @@ import { Prisma } from "@/generated/prisma/client";
 import type { AppRole } from "@/lib/auth/roles";
 import { getVerifiedClerkEmailAddress } from "@/lib/auth/clerk-email";
 import { prisma } from "@/lib/db/prisma";
+import { logWorkflowFailure } from "@/lib/reliability/workflow-errors";
 
 const syncedUserSelect = {
   clerkUserId: true,
@@ -113,6 +114,12 @@ export async function syncCurrentUserFromClerk({
       !(error instanceof Prisma.PrismaClientKnownRequestError) ||
       error.code !== "P2002"
     ) {
+      logWorkflowFailure({
+        action: "sync_current_user_from_clerk",
+        category: "AUTH",
+        error,
+        route: "/dashboard",
+      });
       throw error;
     }
 
@@ -122,6 +129,12 @@ export async function syncCurrentUserFromClerk({
     const racedUser = await findExistingUser(clerkUserId, verifiedEmail);
 
     if (!racedUser) {
+      logWorkflowFailure({
+        action: "recover_concurrent_user_sync",
+        category: "AUTH",
+        error,
+        route: "/dashboard",
+      });
       throw error;
     }
 
