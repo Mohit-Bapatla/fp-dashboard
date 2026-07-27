@@ -65,6 +65,14 @@ function isSupabasePoolerHost(hostname: string) {
   return hostname.endsWith(SUPABASE_POOLER_SUFFIX);
 }
 
+function createPreviewTransactionUrl(sourceUrl: URL) {
+  const transactionUrl = new URL(sourceUrl);
+  transactionUrl.port = "6543";
+  transactionUrl.searchParams.set("pgbouncer", "true");
+
+  return transactionUrl;
+}
+
 function previewProjectRefFromSupabaseUrl(rawValue: string | undefined) {
   if (!rawValue?.trim()) {
     refusePreviewConfiguration(
@@ -151,8 +159,9 @@ export function validatePreviewDatabaseIsolation(
   );
 
   const directUrl = parsePostgresUrl(environment.DIRECT_URL, "DIRECT_URL");
+  const effectiveRuntimeUrl = createPreviewTransactionUrl(runtimeUrl);
 
-  if (directUrl.toString() === runtimeUrl.toString()) {
+  if (directUrl.toString() === effectiveRuntimeUrl.toString()) {
     refusePreviewConfiguration(
       "DIRECT_URL must be separate from the transaction-pooled runtime URL.",
     );
@@ -192,11 +201,7 @@ export function resolveRuntimeDatabaseUrl(
 
   validatePreviewDatabaseIsolation(environment);
 
-  const transactionUrl = new URL(sourceUrl);
-  transactionUrl.port = "6543";
-  transactionUrl.searchParams.set("pgbouncer", "true");
-
-  return transactionUrl.toString();
+  return createPreviewTransactionUrl(new URL(sourceUrl)).toString();
 }
 
 export function createRuntimePoolConfig(connectionString: string): PoolConfig {

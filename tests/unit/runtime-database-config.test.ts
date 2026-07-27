@@ -66,7 +66,7 @@ describe("runtime database configuration", () => {
     expect(() =>
       validatePreviewDatabaseIsolation({
         ...previewEnvironment,
-        DIRECT_URL: `postgresql://postgres.${previewProjectRef}:secret@aws-0-ca-central-1.pooler.supabase.com:5432/postgres?sslmode=require&connect_timeout=10`,
+        DIRECT_URL: previewEnvironment.DATABASE_URL,
       }),
     ).not.toThrow();
   });
