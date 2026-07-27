@@ -930,6 +930,436 @@
       "production data mutation"
     ]
   },
+  "serverlessPoolingReleaseGateResolution": {
+    "date": "2026-07-27",
+    "pullRequest": 35,
+    "branch": "codex/funnel-mobile-performance-audit",
+    "supersedes": "isolatedPreviewReleaseGateReopen.connection-exhaustion evidence",
+    "recommendation": "BLOCK",
+    "pullRequestState": "DRAFT",
+    "actionsExcluded": [
+      "mark ready for review",
+      "merge",
+      "production promotion",
+      "production schema mutation",
+      "production data mutation",
+      "production environment mutation"
+    ],
+    "commitClassification": {
+      "runtimeCode": [
+        {
+          "sha": "01666222",
+          "summary": "Bound the serverless Preview runtime pool and reuse one Pool/Prisma pair per warm isolate."
+        },
+        {
+          "sha": "49c8ee75",
+          "summary": "Derive the effective Preview transaction-pooler endpoint."
+        },
+        {
+          "sha": "26473467",
+          "summary": "Validate the effective Preview runtime endpoint and migration/runtime separation."
+        },
+        {
+          "sha": "0d1678f0",
+          "summary": "Keep recommendation telemetry through navigation."
+        },
+        {
+          "sha": "998866a57e2254d50e14a3700252db9e820eb03a",
+          "summary": "Persist same-origin recommendation telemetry with sendBeacon and a keepalive fallback."
+        }
+      ],
+      "testsAndConfiguration": [
+        {
+          "sha": "720aa0f0",
+          "summary": "Add the authenticated connection-stability audit."
+        },
+        {
+          "sha": "9bbf211b8cb2a3fdd9d33d465c8ad8506a928e46",
+          "summary": "Isolate authenticated high-concurrency request sessions from Clerk CDN/browser-context saturation."
+        }
+      ],
+      "documentationAndArtifacts": [
+        {
+          "summary": "Append this chronological release-gate report and machine-readable result.",
+          "runtimeDelta": false
+        }
+      ]
+    },
+    "exactRuntime": {
+      "sha": "998866a57e2254d50e14a3700252db9e820eb03a",
+      "deploymentId": "dpl_6Ww1iTTc2PUU5GPvYYnoNvyvcTNz",
+      "url": "https://fp-dashboard-m9byb8eus-bapatlamohitwork-2162s-projects.vercel.app",
+      "state": "READY",
+      "vercelMetadataMatchesSha": true,
+      "laterTestOnlyHead": "9bbf211b8cb2a3fdd9d33d465c8ad8506a928e46",
+      "laterHeadRuntimeDelta": false,
+      "laterHeadChecks": {
+        "ci": "PASS",
+        "codeql": "PASS",
+        "vercel": "PASS",
+        "previewDeployment": "READY"
+      }
+    },
+    "rootCause": {
+      "failedPath": {
+        "destination": "isolated staging Supabase project",
+        "hostCategory": "Supavisor pooler",
+        "port": 5432,
+        "mode": "session",
+        "runtimeClientPoolMaximum": 10,
+        "preparedStatements": "No explicit named-statement policy.",
+        "reuse": "The prior initializer did not guarantee one reused Pool/Prisma pair across every warm Preview module evaluation."
+      },
+      "proof": [
+        "One hard reload recreated 10 idle runtime sessions.",
+        "A second isolated runtime could exceed the 15-client Supavisor session allowance.",
+        "The resulting application failure was EMAXCONNSESSION and displayed Dashboard unavailable.",
+        "No long-running query or checked-out transaction explained the persistent idle-session growth."
+      ],
+      "classification": "Serverless instances used a session pool and an implicit pg maximum of 10, mapping idle client sessions to persistent database backends."
+    },
+    "correctedTopology": {
+      "runtime": {
+        "destination": "isolated staging Supabase project",
+        "hostCategory": "Supavisor pooler",
+        "port": 6543,
+        "mode": "transaction",
+        "pgbouncerParameter": true,
+        "preparedStatements": "No statementNameGenerator; no named prepared-statement cache.",
+        "pool": {
+          "max": 1,
+          "min": 0,
+          "connectionTimeoutMillis": 5000,
+          "idleTimeoutMillis": 10000,
+          "maxLifetimeSeconds": 300,
+          "allowExitOnIdle": true,
+          "applicationName": "fp-dashboard-runtime"
+        },
+        "reuse": "One global pg Pool and PrismaClient pair per warm isolate in every environment."
+      },
+      "migrations": {
+        "variable": "DIRECT_URL",
+        "destination": "same isolated staging project",
+        "port": 5432,
+        "mode": "direct or session",
+        "runtimeUse": false
+      },
+      "previewValidation": [
+        "SUPABASE_URL must identify the approved non-production Preview project.",
+        "DATABASE_URL must use a supported staging Supabase pooler credential.",
+        "The effective runtime URL is forced to port 6543 with pgbouncer=true.",
+        "DIRECT_URL must be separate and use the approved staging direct/session path on port 5432.",
+        "Validation errors never print credentials."
+      ],
+      "productionBehaviorChanged": false
+    },
+    "connectionVariableInventory": [
+      {
+        "name": "DATABASE_URL",
+        "scope": "Vercel Preview",
+        "destination": "staging",
+        "hostCategory": "Supabase pooler",
+        "configuredPort": "5432 or 6543 credential",
+        "effectivePort": 6543,
+        "mode": "transaction",
+        "use": "runtime",
+        "preparedStatements": "not named or cached",
+        "poolMaximum": 1,
+        "connectionTimeoutMillis": 5000,
+        "idleTimeoutMillis": 10000
+      },
+      {
+        "name": "DIRECT_URL",
+        "scope": "Vercel Preview",
+        "destination": "staging",
+        "hostCategory": "Supabase direct or session pooler",
+        "port": 5432,
+        "mode": "direct or session",
+        "use": "Prisma CLI and migrations",
+        "runtimeUse": false
+      },
+      {
+        "name": "SUPABASE_URL",
+        "scope": "Vercel Preview",
+        "destination": "staging",
+        "hostCategory": "Supabase HTTPS API",
+        "use": "Preview project identity and storage endpoint identity",
+        "databaseConnection": false
+      },
+      {
+        "name": "MIGRATION_VALIDATION_DATABASE_URL",
+        "scope": "CI and local only",
+        "destination": "disposable PostgreSQL 16",
+        "port": 5432,
+        "mode": "direct",
+        "use": "all-21-migration validation",
+        "deployedRuntimeUse": false
+      },
+      {
+        "name": "DISPOSABLE_TEST_DATABASE_URL",
+        "scope": "local test only",
+        "destination": "disposable PostgreSQL",
+        "use": "reliability fixture/reset scripts",
+        "deployedRuntimeUse": false
+      },
+      {
+        "name": "SUPABASE_SERVICE_ROLE_KEY",
+        "scope": "Vercel Preview",
+        "destination": "staging storage API",
+        "use": "storage administration",
+        "databaseConnection": false
+      }
+    ],
+    "unusedConnectionFallbacks": [
+      "MIGRATION_DATABASE_URL",
+      "POSTGRES_URL variants"
+    ],
+    "observability": {
+      "privacySafe": true,
+      "captured": [
+        "aggregate Supavisor backend counts and states",
+        "HTTP status distribution",
+        "request latency",
+        "Vercel error signatures",
+        "browser console/page/request failures"
+      ],
+      "excluded": [
+        "authentication tokens",
+        "database credentials",
+        "query parameters containing user data",
+        "student profile values",
+        "complete SQL containing personal values"
+      ],
+      "baselineSupavisorBackendWorkers": 2,
+      "maximumObservedSupavisorBackendWorkers": 14,
+      "fiveMinuteSoakSample": 8,
+      "tenMinuteSoakSample": 1,
+      "finalSupavisorBackendWorkers": 1,
+      "manualSessionTerminationRequired": false,
+      "limitation": "Transaction-pooler backend workers appear as Supavisor in pg_stat_activity, so per-client application names and exact application-side pool wait time are not directly observable there."
+    },
+    "authenticatedConnectionMatrix": {
+      "startUtc": "2026-07-27T07:28:44.382Z",
+      "finishUtc": "2026-07-27T07:32:07.157Z",
+      "sessionModel": "Isolated authenticated request sessions for server-rendered routes.",
+      "routes": [
+        "/dashboard/student",
+        "/dashboard/student/opportunities",
+        "/dashboard/student/saved",
+        "/dashboard/student/applications",
+        "/dashboard/student"
+      ],
+      "wavesPerConcurrency": 3,
+      "results": [
+        {
+          "concurrency": 1,
+          "successful": 15,
+          "total": 15,
+          "medianOfWaveMediansMs": 632.7,
+          "worstWaveP95Ms": 961.6,
+          "maximumMs": 961.6
+        },
+        {
+          "concurrency": 5,
+          "successful": 75,
+          "total": 75,
+          "medianOfWaveMediansMs": 716.5,
+          "worstWaveP95Ms": 2076.7,
+          "maximumMs": 2243.9
+        },
+        {
+          "concurrency": 10,
+          "successful": 150,
+          "total": 150,
+          "medianOfWaveMediansMs": 711.6,
+          "worstWaveP95Ms": 3389.1,
+          "maximumMs": 3802.2
+        },
+        {
+          "concurrency": 15,
+          "successful": 225,
+          "total": 225,
+          "medianOfWaveMediansMs": 810.6,
+          "worstWaveP95Ms": 3932.1,
+          "maximumMs": 4233.5
+        },
+        {
+          "concurrency": 20,
+          "successful": 300,
+          "total": 300,
+          "medianOfWaveMediansMs": 480,
+          "worstWaveP95Ms": 3905.1,
+          "maximumMs": 4240.5
+        },
+        {
+          "concurrency": 30,
+          "successful": 450,
+          "total": 450,
+          "medianOfWaveMediansMs": 654.5,
+          "worstWaveP95Ms": 2910.2,
+          "maximumMs": 3070.6
+        }
+      ],
+      "totalSuccessful": 1215,
+      "totalRequests": 1215,
+      "statusDistribution": {
+        "200": 1215
+      },
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "httpFailures": 0,
+      "requestFailures": 0,
+      "poolExhaustionErrors": 0,
+      "dashboardUnavailableOccurrences": 0,
+      "manualRecoveryRequired": false
+    },
+    "soak": {
+      "startUtc": "2026-07-27T07:32:32.930Z",
+      "finishUtc": "2026-07-27T07:48:06.340Z",
+      "durationMinutes": 15,
+      "intervalSeconds": 5,
+      "isolatedRealChromiumContexts": 3,
+      "successfulNavigations": 125,
+      "totalNavigations": 125,
+      "statusDistribution": {
+        "200": 125
+      },
+      "medianMs": 722.1,
+      "p95Ms": 961.5,
+      "maximumMs": 1212.5,
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "httpFailures": 0,
+      "requestFailures": 0,
+      "connectionsAccumulated": false
+    },
+    "acceptedVercelLogWindow": {
+      "fromUtc": "2026-07-27T07:28:44Z",
+      "toUtc": "2026-07-27T07:48:07Z",
+      "http4xx": 0,
+      "http5xx": 0,
+      "searches": {
+        "EMAXCONNSESSION": 0,
+        "P2024": 0,
+        "too many clients": 0,
+        "Dashboard unavailable": 0,
+        "pool timeout": 0
+      },
+      "rejectedHarnessDiagnostics": "Earlier shared browser-context diagnostics produced Clerk CDN load failures and pending-session telemetry responses. Those waves were rejected, the harness was isolated, and they are not counted as database-capacity evidence."
+    },
+    "quality": {
+      "formatting": "PASS",
+      "typecheck": "PASS",
+      "lint": "PASS",
+      "unitTests": {
+        "status": "PASS",
+        "files": 82,
+        "tests": 393
+      },
+      "prismaSchemaValidation": "PASS",
+      "all21Migrations": "PASS_POSTGRESQL_16_SCHEMA_PARITY_AND_LEGACY_UPGRADE",
+      "productionBuild": "PASS",
+      "secretScan": "PASS",
+      "highThresholdDependencyAudit": "PASS",
+      "focusedHistoryPolicy": "PASS_30_OF_30_CHROMIUM_DESKTOP_WEBKIT_IPHONE_WEBKIT",
+      "fullBrowserSuite": {
+        "passed": 81,
+        "expectedAuthenticatedStateSkips": 29,
+        "failed": 0
+      },
+      "accessibility": "PASS",
+      "performance": {
+        "status": "PASS",
+        "lcpGateMs": 2500,
+        "consoleErrors": 0,
+        "failedRequests": 0,
+        "maximumMobileCls": 0.15295
+      },
+      "codeql": "PASS",
+      "ci": "PASS",
+      "vercel": "PASS"
+    },
+    "physicalIPhone": {
+      "device": "Mohit’s iPhone",
+      "model": "iPhone 14 Pro",
+      "hardwareIdentifier": "iPhone15,2",
+      "iosVersion": "26.5.2",
+      "directDeviceDetection": "DETECTED_BUT_CURRENTLY_UNAVAILABLE_TO_DEVICECONTROL",
+      "xctraceEnumeration": "PASS",
+      "mirroring": {
+        "status": "FAIL_INCOMPLETE",
+        "visibleMessage": "Timed Out — iPhone Mirroring timed out due to iPhone use while connecting. Lock your iPhone before connecting."
+      },
+      "directAuthenticatedFlow": "NOT_COMPLETED_ON_EXACT_RUNTIME",
+      "automatedIPhoneWebKit": "PASS",
+      "safariWebInspector": "UNAVAILABLE_CONNECTING",
+      "webInspectorIndependentBlocker": false,
+      "checksNotCompleted": [
+        "all four onboarding screens",
+        "direct 16-pixel input sizing",
+        "direct approximately 44-pixel control sizing",
+        "focus zoom",
+        "keyboard obstruction",
+        "native Enter form action",
+        "specialty-chip Enter",
+        "Back/Forward/refresh persistence",
+        "validation value retention",
+        "save and remove",
+        "application-start surface",
+        "logout and login return",
+        "Safari force-close and reopen"
+      ]
+    },
+    "cleanup": {
+      "status": "PASS",
+      "clerkDevelopmentUser": "release-pool+clerk_test_20260727a@example.com",
+      "clerkDevelopmentUserDeleted": true,
+      "stagingFinalCounts": {
+        "fictionalOpportunitiesRetained": 3,
+        "fictionalPartnerOrganizationsRetained": 1,
+        "users": 0,
+        "studentProfiles": 0,
+        "savedOpportunities": 0,
+        "applications": 0,
+        "auditLogs": 0,
+        "recommendationEvents": 0,
+        "resumeMetadata": 0,
+        "resumeObjects": 0
+      },
+      "browserAuthenticationStateRemoved": true,
+      "identifierBearingTracesAndScreenshotsRemoved": true,
+      "temporaryPostgresqlContainersRemoved": true,
+      "idleTestSessionsNaturallyReturnedToExpectedLevel": true
+    },
+    "productionNonMutation": {
+      "status": "PASS",
+      "opportunities": 157,
+      "users": 62,
+      "savedOpportunities": 4,
+      "applications": 13,
+      "previewSentinelMatches": 0,
+      "schemaMutated": false,
+      "dataMutated": false,
+      "storageMutated": false,
+      "environmentMutated": false
+    },
+    "criteria": {
+      "serverlessSafePreviewTransactionPooling": "PASS",
+      "exactRuntimeTested": "PASS",
+      "noPoolExhaustionThroughThirtyConcurrentSessions": "PASS",
+      "noConnectionAccumulationDuringFifteenMinuteSoak": "PASS",
+      "completeAuthenticatedPhysicalIPhoneFlow": "FAIL_NOT_COMPLETED",
+      "requiredAutomatedChecksGreen": "PASS",
+      "previewCleanup": "PASS",
+      "productionUnchanged": "PASS"
+    },
+    "blocker": "The complete authenticated physical-iPhone flow is an explicit approval requirement and was not completed because iPhone Mirroring could not connect while the device remained in use.",
+    "requiredNextEvidence": "Run the entire direct physical-iPhone onboarding, mobile-input, save/remove, logout/login, and cold-Safari checklist against the exact runtime candidate, then repeat cleanup and inspect the same deployment logs.",
+    "remainingLimitations": [
+      "Safari Web Inspector remains at Connecting and supplies no direct console/request diagnostics.",
+      "Transaction-pooler pg_stat_activity samples expose Supavisor backend workers rather than exact client application names or application-side pool wait time."
+    ]
+  },
   "tests": [
     {
       "id": "HP-D-01",

@@ -1044,3 +1044,147 @@ To reopen the gate again:
 3. Restore reliable iPhone interaction (or enable the device automation prerequisite) and complete all four onboarding screens plus keyboard/zoom/Enter, save/remove, and logout/login checks on the physical iPhone.
 4. Repeat cleanup and production non-mutation proof.
 5. Keep every required check green; only then mark PR #35 ready for review. Do not merge or promote without separate authorization.
+
+## Serverless-pooling blocker resolution — 2026-07-27
+
+This section records the follow-up gate requested after the isolated-Preview audit. It supersedes the earlier connection-pooling evidence, but it does not replace the still-incomplete physical-iPhone evidence.
+
+### Commit and deployment scope
+
+| Classification              | Commits                                                         | Result                                                                                                      |
+| --------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Runtime code                | `0166622`, `49c8ee7`, `2647346`, `0d1678f`, `998866a`           | Bounded Preview pooling, fail-closed topology validation, and reliable same-origin recommendation telemetry |
+| Tests and configuration     | `720aa0`, `9bbf211`                                             | Authenticated connection matrix/soak harness and isolated request-session load model                        |
+| Documentation and artifacts | This chronological section and its machine-readable counterpart | Evidence only; no runtime delta                                                                             |
+
+The exact runtime exercised by the accepted connection matrix, soak, performance pass, and Preview log review was:
+
+- Commit: `998866a57e2254d50e14a3700252db9e820eb03a`
+- Deployment: `dpl_6Ww1iTTc2PUU5GPvYYnoNvyvcTNz`
+- URL: `https://fp-dashboard-m9byb8eus-bapatlamohitwork-2162s-projects.vercel.app`
+- Vercel state: `READY`
+- Vercel commit metadata: exact match to `998866a57e2254d50e14a3700252db9e820eb03a`
+
+The later head `9bbf211b8cb2a3fdd9d33d465c8ad8506a928e46` changes only the load-test isolation model. Its own Preview deployment, CI workflow, CodeQL workflow, and Vercel check completed successfully. It does not alter the runtime bundle tested at `998866a`.
+
+### Proven root cause
+
+The failed Preview used the staging Supavisor **session pooler on port 5432** for serverless runtime traffic. `@prisma/adapter-pg` received a `pg` pool whose implicit maximum was 10, and the prior initializer did not guarantee one reused pool/Prisma pair across every warm Preview module evaluation. Supavisor session mode mapped those idle client sessions to persistent database backends.
+
+This was reproduced rather than inferred from the 15-client cap: one hard reload recreated 10 idle runtime sessions, and a second isolated runtime was sufficient to exceed the 15-client staging allowance and produce `EMAXCONNSESSION`. No long-running application query or checked-out transaction explained the growth.
+
+The corrected architecture is:
+
+- Preview runtime: approved staging Supavisor transaction pooler, effective port 6543, `pgbouncer=true`.
+- Runtime client pool: `max=1`, `min=0`, 5-second acquisition timeout, 10-second idle timeout, 300-second maximum lifetime, exit allowed when idle, and privacy-safe application name `fp-dashboard-runtime`.
+- Runtime construction: one global `pg` Pool and one Prisma client per warm isolate in every environment.
+- Prepared statements: no statement-name generator is configured, so the adapter does not create a named prepared-statement cache that is unsafe for transaction pooling.
+- Migrations and Prisma CLI: separate `DIRECT_URL` on staging direct/session port 5432.
+- Preview guard: validates the staging project identity from `SUPABASE_URL`, rejects the Production project, rejects an unsupported runtime host/port, rejects an unsafe or mismatched migration URL, and never prints a credential.
+- Production: non-Preview URL resolution and Production-scoped environment variables were not changed.
+
+### Connection-variable inventory
+
+No secret value was printed or retained.
+
+| Variable                            | Scope and destination                              | Mode/use                                                                                                         | Prepared statements and client-pool settings                                         |
+| ----------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `DATABASE_URL`                      | Vercel Preview; staging Supabase pooler credential | Source credential is accepted on 5432/6543, then the effective runtime URL is forced to transaction mode on 6543 | No named statement cache; runtime pool max 1, acquire 5 s, idle 10 s, lifetime 300 s |
+| `DIRECT_URL`                        | Vercel Preview; same staging project, port 5432    | Prisma CLI, migrations, and administrative schema work; never application runtime                                | Driver/runtime pool settings not applicable                                          |
+| `SUPABASE_URL`                      | Vercel Preview; staging project HTTPS identity     | Fail-closed identity check and storage endpoint identity; not a PostgreSQL connection                            | Not applicable                                                                       |
+| `MIGRATION_VALIDATION_DATABASE_URL` | CI/local only; disposable PostgreSQL 16, port 5432 | All-21-migration validation                                                                                      | Disposable direct connection; not used by deployed runtime                           |
+| `DISPOSABLE_TEST_DATABASE_URL`      | Local test only; disposable database               | Reliability fixture/reset scripts                                                                                | Refuses normal runtime credentials                                                   |
+| `SUPABASE_SERVICE_ROLE_KEY`         | Vercel Preview storage administration only         | Storage API; not a database connection                                                                           | Not applicable                                                                       |
+
+`MIGRATION_DATABASE_URL` and `POSTGRES_URL` variants are not runtime fallbacks in this repository. `prisma.config.ts` selects `DIRECT_URL` before `DATABASE_URL`; server components, server actions, route handlers, and recommendation-event writes all import the same runtime Prisma singleton. No deployed cron/background route creates another Pool.
+
+### Authenticated connection-stability matrix
+
+The accepted test used isolated authenticated request sessions for the high-concurrency server-rendered dashboard routes and isolated real Chromium contexts for the soak. This avoids conflating staging database capacity with Clerk CDN saturation. Earlier diagnostic browser waves that produced Clerk script-load failures or shared-session pending states were rejected, corrected in the harness, and are not counted below.
+
+Every session exercised `/dashboard/student`, `/dashboard/student/opportunities`, `/dashboard/student/saved`, `/dashboard/student/applications`, and a return to the dashboard. No application was created and no resume was uploaded.
+
+| Concurrent authenticated sessions |  Waves | Successful/total requests | Median of wave medians | Worst wave p95 |    Maximum |
+| --------------------------------: | -----: | ------------------------: | ---------------------: | -------------: | ---------: |
+|                                 1 |      3 |                     15/15 |               632.7 ms |       961.6 ms |   961.6 ms |
+|                                 5 |      3 |                     75/75 |               716.5 ms |     2,076.7 ms | 2,243.9 ms |
+|                                10 |      3 |                   150/150 |               711.6 ms |     3,389.1 ms | 3,802.2 ms |
+|                                15 |      3 |                   225/225 |               810.6 ms |     3,932.1 ms | 4,233.5 ms |
+|                                20 |      3 |                   300/300 |               480.0 ms |     3,905.1 ms | 4,240.5 ms |
+|                                30 |      3 |                   450/450 |               654.5 ms |     2,910.2 ms | 3,070.6 ms |
+|                         **Total** | **18** |           **1,215/1,215** |                      — |              — |          — |
+
+Accepted-window results:
+
+- HTTP statuses: 1,215 responses with status 200; zero failed requests.
+- Browser/runtime diagnostics: zero console errors, page errors, HTTP failures, or request failures.
+- Vercel log window: `2026-07-27T07:28:44Z` through `2026-07-27T07:48:07Z`.
+- Vercel failures in that window: zero 4xx and zero 5xx.
+- Error searches in that window: zero `EMAXCONNSESSION`, `P2024`, `too many clients`, `Dashboard unavailable`, or pool-timeout matches.
+- Recovery: no session termination, manual reset, or reload was required.
+
+Postgres aggregate sampling observed two idle Supavisor backend workers before the matrix, a maximum of 14 during the largest waves, eight after five soak minutes, one after ten minutes, and one at the final sample. The count therefore returned toward baseline and did not grow monotonically.
+
+Transaction pooling exposes backend workers in `pg_stat_activity` as `Supavisor`, so per-client application names and exact application-side wait time are not directly observable there. That platform limitation is recorded; it does not change the zero-rejection and return-to-baseline results.
+
+### Fifteen-minute soak
+
+- Window: `2026-07-27T07:32:32.930Z` through `2026-07-27T07:48:06.340Z`
+- Duration: 15 minutes
+- Contexts: three isolated authenticated real Chromium contexts
+- Navigation interval: five seconds
+- Result: 125/125 successful navigations, all status 200
+- Latency: median 722.1 ms, p95 961.5 ms, maximum 1,212.5 ms
+- Diagnostics: zero console, page, HTTP, or request failures
+- Database recovery: observed backend workers fell from 14 to 8 to 1 while the soak continued
+
+### Regression, quality, security, and performance
+
+- Formatting, typecheck, lint, Prisma validation, secret scan, and high-threshold dependency audit: PASS.
+- Unit suite: 82 files and 393 tests passed.
+- Focused runtime-monitor and database-config coverage: PASS.
+- PostgreSQL 16 migration validation: all 21 migrations, schema parity, and representative legacy upgrade passed in a disposable database.
+- Production build: PASS.
+- Repeated history policy: 30/30 across Chromium, desktop WebKit, and iPhone WebKit.
+- Full browser suite: 81 passed and 29 expected authenticated-state skips; zero failures.
+- Final test-policy head: CI, CodeQL, and Vercel checks passed.
+- Exact-runtime public performance: all tested pages remained below the 2.5-second LCP gate with zero console or failed-request events; mobile sign-up/sign-in CLS remained below 0.16.
+
+The first local repeated-history attempt was invalid because its CI-only Clerk markers were absent; all 30 cases failed at the placeholder Clerk host rather than the application. The environment was corrected and the complete 30/30 rerun passed. The invalid attempt is not concealed or counted as product evidence.
+
+### Physical-iPhone evidence layers
+
+| Evidence layer                   | Result                                                                                                                                                                                                             |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Direct physical-device detection | The Mac identifies Mohit’s iPhone as `iPhone15,2` (iPhone 14 Pro) running iOS 26.5.2. `devicectl` currently reports the paired device unavailable while `xctrace` still enumerates it.                             |
+| iPhone Mirroring                 | FAIL/INCOMPLETE. The final connection attempt displayed “Timed Out — iPhone Mirroring timed out due to iPhone use while connecting. Lock your iPhone before connecting.” No taps or navigation could be performed. |
+| Automated iPhone WebKit          | PASS. Focused history/policy coverage and the full browser regression suite completed without an application failure.                                                                                              |
+| Vercel/runtime logs              | PASS for the accepted exact-runtime matrix and soak window: no 4xx, 5xx, pool rejection, dashboard-unavailable, console, or request failure.                                                                       |
+| Staging database aggregates      | PASS for pooling stability: maximum 14 observed Supavisor workers, returning to one without manual termination.                                                                                                    |
+
+Because the real-device interaction channel remained unavailable, this gate did **not** complete the required four onboarding screens, direct 16-pixel/44-pixel measurements, focus zoom, keyboard obstruction, native Enter, specialty-chip Enter, Back/Forward/refresh persistence, validation retention, save/remove, application-start, logout/login, or Safari force-close/reopen checks on this exact runtime. Safari Web Inspector remains at `Connecting…`; that limitation is not independently blocking, but it also supplies no console/network evidence for the missing direct flow.
+
+### Cleanup and non-mutation proof
+
+The exact disposable Clerk Development user `release-pool+clerk_test_20260727a@example.com` was permanently deleted. Its staging audit logs and recommendation events were deleted before its staging user row, and the profile cascade was verified.
+
+Final staging state is three fictional opportunities, one fictional partner organization, and zero users, student profiles, saves, applications, audit logs, recommendation events, resume metadata, or resume objects. Browser authentication state, Playwright traces, screenshots containing identifiers, and disposable PostgreSQL containers were removed. Supavisor workers returned naturally to the expected idle level; no database session was manually terminated.
+
+Production remained at 157 opportunities, 62 users, four saved opportunities, and 13 applications, with zero `PREVIEW ONLY —` sentinels. Production schema, data, storage, and environment variables were not modified.
+
+### Final gate
+
+| Criterion                                             | Result                                            |
+| ----------------------------------------------------- | ------------------------------------------------- |
+| Serverless-safe Preview transaction pooling           | PASS                                              |
+| Exact runtime tested                                  | PASS — `998866a57e2254d50e14a3700252db9e820eb03a` |
+| No exhaustion through 30-concurrent/three-wave matrix | PASS                                              |
+| No accumulation during 15-minute soak                 | PASS                                              |
+| Complete authenticated physical-iPhone flow           | **FAIL — not completed**                          |
+| Required automated checks                             | PASS                                              |
+| Preview cleanup                                       | PASS                                              |
+| Production unchanged                                  | PASS                                              |
+
+**Release recommendation: BLOCK.**
+
+The database blocker is resolved, but the explicit approval criteria require the complete authenticated flow on the physical iPhone. Keep PR #35 in draft. Do not merge and do not promote any deployment. Reopen only after the real iPhone completes the listed onboarding, mobile-input, save/remove, logout/login, and cold-Safari checks against the exact runtime candidate, followed by the same cleanup and a clean log review.
