@@ -835,3 +835,212 @@ To reopen the gate:
 3. Redeploy and prove the exact deployment reads the isolated target without exposing a credential or mutating production.
 4. Run the complete disposable Clerk Development account flow on the physical iPhone, including onboarding, persistence/history/validation, save/remove, logout/login return, and safe account/data cleanup.
 5. Reconfirm automated diagnostics and all GitHub/Vercel checks at the resulting release head, then issue a new release decision.
+
+## 28. Isolated Preview release-gate reopening for PR #35
+
+Reopened-gate date: 2026-07-26–27 CDT
+
+This chronological entry does not replace section 27. The earlier production-data isolation block was remediated, but the reopened gate found two new release blockers. The final recommendation remains **BLOCK**. PR #35 remains a draft; nothing was merged or promoted.
+
+### Preview dependency inventory
+
+No secret values were printed or committed. The inventory below records only code usage, scope, and value category.
+
+| Variable or configuration                                    | Used by                                                   | Production value category                | PR Preview value category                         | Isolation risk                                                                                   | Required/resulting action                                                                                               |
+| ------------------------------------------------------------ | --------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                               | Prisma runtime through `@prisma/adapter-pg`               | Production Supabase database             | Branch-scoped staging Supabase session-pooler URL | Critical read/write path; a missing branch override would inherit the older global Preview value | Branch override bound to staging; exact runtime proved staging data, but session-mode pool exhaustion remains a blocker |
+| `DIRECT_URL`                                                 | Prisma CLI and migrations                                 | Production direct database               | Branch-scoped staging direct database             | Production schema mutation if inherited                                                          | Branch override bound to staging; 21 migrations applied only to staging                                                 |
+| `SUPABASE_URL`                                               | Private resume storage client                             | Production Supabase project              | Branch-scoped staging project                     | Wrong project could expose production storage                                                    | Branch override supersedes the older combined Production/Preview value                                                  |
+| `SUPABASE_SERVICE_ROLE_KEY`                                  | Server-side resume storage client                         | Production-only secret                   | Absent from Preview                               | A shared server key would permit production storage mutation                                     | Production value retained as Production-only; Preview storage writes fail closed                                        |
+| `SUPABASE_RESUME_BUCKET`                                     | Resume storage namespace                                  | Production bucket                        | Branch-scoped `fp-preview-student-resumes`        | Shared bucket could mix files                                                                    | Separate private staging bucket created; zero objects before and after testing                                          |
+| Supabase anon/public key                                     | No repository runtime variable or direct-client use found | Not used by this app                     | Not configured                                    | Accidental browser-side data access                                                              | No action; staging anon/authenticated/Public access was revoked and a REST probe returned 401                           |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`                          | Clerk browser UI                                          | Production Clerk instance                | Inherited global Preview Clerk Development key    | Production authentication leakage                                                                | Confirmed Development mode on the exact Preview and real iPhone                                                         |
+| `CLERK_SECRET_KEY`                                           | Clerk server authentication                               | Production Clerk instance                | Inherited global Preview Clerk Development key    | Production user/session mutation                                                                 | Preview test user existed only in the Development instance and was deleted                                              |
+| Clerk webhook secret                                         | No Clerk webhook route or variable found                  | Not configured in repository             | Not configured                                    | Production mutation by webhook                                                                   | No action; no application webhook path exists                                                                           |
+| Clerk route/return variables                                 | Clerk sign-in, sign-up, sign-out, and fallback routes     | Production deployment routing            | Branch-scoped relative paths                      | Absolute production URL could leak the session                                                   | All route values are relative; sign-up, sign-out, and sign-in remained on the exact Preview origin                      |
+| `NEXT_PUBLIC_APP_URL`                                        | Canonical application links                               | Production origin                        | Branch-scoped stable Preview branch alias         | Production-link leakage                                                                          | Bound to the Preview branch alias                                                                                       |
+| `EMAIL_NOTIFICATIONS_ENABLED`                                | Resend wrapper                                            | Production policy                        | Branch-scoped `false`                             | Real email side effect                                                                           | Disabled; the wrapper fails closed                                                                                      |
+| `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO`             | Email provider                                            | Optional production credentials/identity | Not configured for this branch                    | Real email or production sender use                                                              | No send path was enabled                                                                                                |
+| `CRON_SECRET`                                                | Three scheduled-job routes                                | Production job bearer secret             | Absent from Preview                               | Scheduled production-like work                                                                   | Removed/absent; no Preview cron was configured                                                                          |
+| `OPENAI_API_KEY`, `OPENAI_MODEL`                             | Optional resume analysis                                  | Optional production integration          | Absent from Preview                               | External processing of test content                                                              | No resume was uploaded and AI integration remained unavailable                                                          |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`         | Optional rate limiting                                    | Optional production integration          | Absent from Preview                               | Shared rate-limit state                                                                          | Preview used the isolated database fallback                                                                             |
+| `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_ENVIRONMENT` | Error monitoring                                          | Optional production monitoring           | Absent from Preview                               | Test events contaminating production telemetry                                                   | No Preview Sentry destination was configured                                                                            |
+| External application URLs                                    | Opportunity data and application-start UI                 | Production records                       | Three fictional staging records only              | Real external submission                                                                         | Only the start surface was opened; no application was created or submitted                                              |
+
+Vercel still has older global Preview values for `DATABASE_URL`/`DIRECT_URL` and combined Production/Preview values for `SUPABASE_URL`/bucket. For this branch, the explicit `codex/funnel-mobile-performance-audit` overrides take precedence. The Clerk Development keys remain intentionally global Preview values. `SUPABASE_SERVICE_ROLE_KEY` is Production-only.
+
+During scope correction, a Vercel CLI removal of the previously combined Production/Preview service-role variable removed the combined entry rather than only its Preview target. The existing production secret was immediately restored as a Production-only variable; the secret was never printed or committed. No production deployment was promoted or rebuilt, and production data/schema counts remained unchanged. Preview no longer inherits that key.
+
+### Chosen isolated-database strategy
+
+| Option                                  | Finding                                                                                                                                                                                                                    | Decision                                                                                                                             |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Existing `fp-dashboard-staging` project | Separate project reference, database host, region, credentials, and storage. It had been platform-paused; after restoration it contained zero public application rows, zero Supabase Auth users, and zero storage objects. | **Chosen.** Its empty state was inspected before migrations or auth; it was not trusted merely because its name contained “staging.” |
+| Supabase development branch             | Production had only its default `main` branch; no existing isolated development branch was available. Creating one added provisioning/cost uncertainty without improving on the proven-empty staging project.              | Not selected.                                                                                                                        |
+| Fresh dedicated project                 | Would also isolate data but duplicate an already separate, empty, recoverable project and could add recurring cost.                                                                                                        | Not selected.                                                                                                                        |
+
+The selected environment is:
+
+- Label: `fp-dashboard-staging`
+- Project reference: `fjagysinaodnpxcdgogp`
+- Direct database host: `db.fjagysinaodnpxcdgogp.supabase.co`
+- Database: `postgres`
+- Region: `ca-central-1`
+- Status after restoration: `ACTIVE_HEALTHY`
+- Runtime role: dedicated login role `fp_preview_runtime`
+- Storage bucket: private `fp-preview-student-resumes`
+
+Production is project `ksuzzfzufotrwrxdrynl`, host `db.ksuzzfzufotrwrxdrynl.supabase.co`, region `us-east-2`. None of those identifiers equals staging.
+
+All 21 repository migrations were applied to staging. `_prisma_migrations` reports 21 finished entries, zero incomplete or rolled-back entries, from `20260517214323_stage_3_core_schema` through `20260718093000_resume_review_require_reanalysis`. Repository Prisma validation, a clean PostgreSQL 16 migration installation, representative migration-history validation, and the production build passed in the final Quality/migration jobs.
+
+The seed contains one clearly fictional organization and three published opportunities whose titles begin `PREVIEW ONLY —`. Their UUIDs are reserved synthetic values under `10000000-0000-4000-8000-…`. No production dump, real person, email, resume, application, or student record was copied.
+
+Three server-owned tables had RLS enabled with no policy for the dedicated runtime login: `SavedOpportunity`, `ApplicationChecklistItem`, and `OpportunityCorrectionReport`. A staging-only migration added `FOR ALL` policies restricted to `fp_preview_runtime`; no anon/authenticated/Public grants were added. This mirrors the app's trusted server-only Prisma access without weakening browser authorization.
+
+### Pre-authentication and post-fix isolation proof
+
+Authentication started only after this table passed. The proof was repeated against the final exact deployment after the WebKit test fix.
+
+| Check                                             | Production fingerprint                                | Preview fingerprint                                 | Expected difference    | Result |
+| ------------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------- | ---------------------- | ------ |
+| Supabase project                                  | `ksuzzfzufotrwrxdrynl`                                | `fjagysinaodnpxcdgogp`                              | Different              | PASS   |
+| Direct database host                              | `db.ksuzzfzufotrwrxdrynl.supabase.co`                 | `db.fjagysinaodnpxcdgogp.supabase.co`               | Different              | PASS   |
+| Region                                            | `us-east-2`                                           | `ca-central-1`                                      | Different              | PASS   |
+| Storage project/bucket                            | Production project/bucket                             | Staging project / `fp-preview-student-resumes`      | Different              | PASS   |
+| Opportunity count                                 | 157                                                   | 3                                                   | Different              | PASS   |
+| First sorted opportunity UUID                     | `0747324b-d433-4775-bb63-0215a010d287`                | `10000000-0000-4000-8000-000000000001`              | Different              | PASS   |
+| Preview sentinel count                            | 0                                                     | 3                                                   | Preview only           | PASS   |
+| Production first-UUID fingerprint in Preview      | Present in production                                 | 0 matches                                           | Absent from Preview    | PASS   |
+| Initial Preview users/profiles/saves/applications | Not applicable                                        | 0 / 0 / 0 / 0                                       | Empty before auth      | PASS   |
+| Preview direct REST access                        | Production not probed                                 | HTTP 401 after grant revocation                     | No anonymous data path | PASS   |
+| Production tracked counts before/after            | 157 opportunities, 62 users, 4 saves, 13 applications | Unchanged after Preview test                        | No mutation            | PASS   |
+| Production disposable/sentinel matches            | 0 disposable-email users; 0 Preview opportunities     | Test records existed only in staging during the run | No leakage             | PASS   |
+
+The exact Preview showed only the three fictional records. No production fingerprint appeared in its rendered opportunity inventory.
+
+### WebKit Quality failure
+
+The reproduced failure was a WebKit-only same-origin localhost React Server Component navigation request whose `_rsc` Fetch API request was canceled with the exact access-control cancellation text during a superseded history navigation. It was not a failed document request, cross-origin CORS allowance, CSP relaxation, or production API failure.
+
+Commit `deab04cc950434cdbda81c76e43143723b5fa36b` (`test: ignore WebKit RSC navigation cancellation`) narrows the runtime monitor to that exact combination:
+
+- WebKit only
+- same origin
+- `_rsc` request
+- Fetch resource type
+- exact access-control cancellation signature
+
+Chromium, cross-origin, non-RSC, document, API, and differently worded failures still fail. The policy suite increased to 15 focused cases, and the full unit suite passed 80 files / 374 tests. Formatting, typecheck, lint, and full Quality passed. The change is test policy only; it does not change application runtime behavior.
+
+### Exact release candidate
+
+- Commit: `deab04cc950434cdbda81c76e43143723b5fa36b`
+- Deployment ID: `dpl_DBPnrUAYJSn5H4scof65VDhH3VYz`
+- Exact URL: `https://fp-dashboard-r7gx7c26k-bapatlamohitwork-2162s-projects.vercel.app`
+- Vercel state: READY
+- Vercel metadata SHA: `deab04cc950434cdbda81c76e43143723b5fa36b`
+- PR head: same SHA
+
+GitHub/Vercel checks at that head were green: Quality, PostgreSQL migration validation, CodeQL, JavaScript/TypeScript analysis, Vercel, and Vercel Preview Comments. Supabase Preview remained an expected skip. The PR was mergeable but intentionally remained a draft.
+
+### Authenticated Preview evidence layers
+
+The disposable Clerk Development account used the non-real address `fp-gate+clerk_test_20260726b@example.com`. No password, key, OTP secret, or token is retained in this report.
+
+#### Real iPhone 14 Pro
+
+- Device: Mohit’s iPhone, `iPhone15,2`, physical iPhone 14 Pro
+- iOS: 26.5.2 build 23F84
+- Connection: paired, available, USB
+- Exact Preview authentication: PASS
+- Clerk surface: Development mode
+- Return origin: exact Preview; no production redirect or production account
+- Authenticated student route: PASS
+- Onboarding Step 1 render: PASS
+
+iPhone Mirroring displayed the real device and enabled the authentication path, but its pointer/scroll channel then failed repeatedly with `noWindowsAvailable`. Direct `devicectl` app automation was unavailable because Developer Mode is disabled. The complete four-screen physical interaction, software-keyboard obstruction check, focus zoom check, native Enter check, direct control-size check, save/remove, and logout/login round trip were therefore **NOT COMPLETED ON THE PHYSICAL DEVICE**.
+
+Safari Web Inspector remained at `Connecting…`. That limitation is documented but is not the release blocker.
+
+#### Automated authenticated exact-Preview browser
+
+The same isolated Clerk Development account and exact deployment completed the functional flow:
+
+- Signup returned to Preview onboarding with no production-origin leakage.
+- Step 1 validation showed summary and field errors while retaining `Maya`.
+- Four fictional onboarding screens completed.
+- Refresh resumed Step 2.
+- Back/forward preserved the Step 1 values and returned to Step 2.
+- Specialty Enter added and normalized the `Pediatric Cardiology` chip.
+- The completed profile redirected to `/dashboard/student`.
+- The dashboard rendered only three fictional staging recommendations.
+- One fictional opportunity was saved, appeared in Saved, and was removed.
+- The application-start surface was opened; no application was created.
+- No resume was uploaded.
+- Sign-out returned to the exact Preview.
+- Email-code sign-in returned the completed student to `/dashboard/student`, not onboarding.
+
+Synthetic Enter on the filled School field did not submit in this automation and required clicking the primary action. Because the physical keyboard channel was unavailable, native iPhone Enter behavior is **NOT CONFIRMED** rather than classified as an application defect.
+
+#### Automated and server-side diagnostics
+
+Two real Preview failures were discovered:
+
+1. At 04:12:30 UTC, the first save returned HTTP 500 because the staging runtime role lacked an RLS policy on `SavedOpportunity` (`42501`). The staging-only role policy described above fixed it; the save/remove retry passed.
+2. At 04:22:39 UTC, the first post-login dashboard render showed “Dashboard unavailable.” Vercel recorded `EMAXCONNSESSION`: all 15 Supavisor session-mode clients were occupied. Releasing the idle staging sessions and hard reloading rendered the completed dashboard and all three fictional recommendations. One hard reload recreated ten idle runtime sessions, confirming that the session-pooler configuration is not release-safe for this serverless runtime.
+
+No additional error/fatal/warning log was recorded between 04:24:45 and 04:27:07 UTC after the successful hard reload. That clean tail does not erase the deterministic pool-exhaustion evidence.
+
+### Cleanup and production non-mutation
+
+The disposable Clerk Development user was permanently deleted through the Clerk Development dashboard. Its exact staging audit logs and recommendation events were deleted, then the staging `User` row was deleted and the `StudentProfile` cascade verified.
+
+Final staging state:
+
+- Fictional opportunities: 3, intentionally retained as environment fixtures
+- Fictional partner organizations: 1, intentionally retained as an environment fixture
+- Users: 0
+- Student profiles: 0
+- Saved opportunities: 0
+- Applications: 0
+- Audit logs: 0
+- Recommendation events: 0
+- Resume objects: 0
+- Disposable-email matches: 0
+
+Final production proof remained 157 opportunities, 62 users, 4 saved opportunities, and 13 applications. Production contained zero `PREVIEW ONLY —` opportunities, zero reserved Preview opportunity UUIDs, and zero disposable-email matches. Production schema and data were not mutated.
+
+### Final validation and decision
+
+| Release criterion                                     | Result                                                                        | Evidence                                                                                                                                        |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fully isolated Preview database and storage           | PASS                                                                          | Separate project/host/region/bucket, 157-vs-3 inventory, distinct UUIDs, sentinels, and no production match                                     |
+| Exact final Preview SHA                               | PASS                                                                          | READY deployment and PR head both report `deab04c`                                                                                              |
+| Required repository/GitHub/Vercel checks              | PASS                                                                          | Quality, build, Prisma, migrations, formatting, typecheck, lint, 374 unit tests, public browser suite, security scans, CodeQL, and Vercel green |
+| Preview authentication isolated from production       | PASS                                                                          | Clerk Development mode; exact Preview origin throughout; staging-only user/rows                                                                 |
+| Incomplete student completes onboarding               | PASS in automated exact-Preview browser; **NOT COMPLETED on physical iPhone** | Four automated steps passed; Mirroring interaction channel failed after physical Step 1                                                         |
+| Completed student returns after logout/login          | PASS in automated exact-Preview browser; **NOT COMPLETED on physical iPhone** | Returned to `/dashboard/student`; physical round trip unavailable                                                                               |
+| Mobile font/control/zoom/keyboard/native Enter checks | **NOT COMPLETED on authenticated physical flow**                              | Physical pointer/keyboard channel unavailable; synthetic Enter did not submit                                                                   |
+| No production-domain or production-data leakage       | PASS                                                                          | Exact origin and database/storage fingerprints remained isolated                                                                                |
+| No new console/request/runtime failure                | **FAIL**                                                                      | Save initially failed with RLS 42501; later dashboard hit deterministic Supavisor session limit                                                 |
+| Temporary records cleaned up                          | PASS                                                                          | Clerk user and all staging user/profile/save/application/audit/resume state removed                                                             |
+| Production counts unchanged                           | PASS                                                                          | Tracked counts and Preview sentinels unchanged                                                                                                  |
+
+**Release recommendation: BLOCK.**
+
+The isolation remediation succeeded, and the automated authenticated funnel is substantially proven. Approval is still unavailable because:
+
+1. The required end-to-end authenticated interaction was not completed on the physical iPhone after Mirroring lost its input channel.
+2. The exact Preview exhausted the 15-client Supavisor session pool and temporarily made the completed-student dashboard unavailable.
+3. Native iPhone Enter, focus zoom, keyboard obstruction, and authenticated control sizing remain unverified on this release candidate.
+
+Keep PR #35 in draft. Do not merge it and do not promote this deployment.
+
+To reopen the gate again:
+
+1. Replace the branch Preview `DATABASE_URL` session-pooler configuration with a serverless-safe transaction-pooler configuration, or make an evidence-backed runtime pooling change; redeploy the same final code head or the resulting fix head.
+2. Stress the authenticated dashboard and mutations enough to prove no session exhaustion, RLS error, console failure, or failed request.
+3. Restore reliable iPhone interaction (or enable the device automation prerequisite) and complete all four onboarding screens plus keyboard/zoom/Enter, save/remove, and logout/login checks on the physical iPhone.
+4. Repeat cleanup and production non-mutation proof.
+5. Keep every required check green; only then mark PR #35 ready for review. Do not merge or promote without separate authorization.
