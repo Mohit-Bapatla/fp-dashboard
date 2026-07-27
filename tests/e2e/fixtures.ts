@@ -12,6 +12,7 @@ import {
   isBrowserNavigationCancellation,
   isExpectedSupersededChunkCancellation,
   isExpectedVercelSecurityScriptCancellation,
+  isExpectedWebKitRscFetchCancellation,
   toPageErrorIssue,
 } from "./runtime-monitor-policy";
 
@@ -240,6 +241,7 @@ async function findApplicationErrorBoundary(page: Page) {
 function installRuntimeErrorMonitor(
   page: Page,
   baseURL: string | undefined,
+  browserName: string,
   issues: RuntimeIssue[],
 ) {
   let supersedingMainFrameNavigation: {
@@ -265,6 +267,16 @@ function installRuntimeErrorMonitor(
     supersedingMainFrameNavigation = null;
   };
   const onPageError = (error: Error) => {
+    if (
+      isExpectedWebKitRscFetchCancellation({
+        browserName,
+        error,
+        pageUrl: page.url(),
+      })
+    ) {
+      return;
+    }
+
     issues.push(toPageErrorIssue(error, page.url()));
   };
   const onConsole = (message: ConsoleMessage) => {
@@ -366,11 +378,12 @@ type ErrorMonitorFixtures = {
  */
 export const test = base.extend<ErrorMonitorFixtures>({
   runtimeErrorMonitor: [
-    async ({ page }, use, testInfo) => {
+    async ({ browserName, page }, use, testInfo) => {
       const issues: RuntimeIssue[] = [];
       const removeListeners = installRuntimeErrorMonitor(
         page,
         testInfo.project.use.baseURL,
+        browserName,
         issues,
       );
 

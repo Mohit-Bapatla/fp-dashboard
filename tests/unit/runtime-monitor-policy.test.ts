@@ -4,6 +4,7 @@ import {
   isBrowserNavigationCancellation,
   isExpectedSupersededChunkCancellation,
   isExpectedVercelSecurityScriptCancellation,
+  isExpectedWebKitRscFetchCancellation,
   toPageErrorIssue,
   type RequestFailureSignal,
 } from "../e2e/runtime-monitor-policy";
@@ -40,6 +41,56 @@ describe("browser runtime monitor policy", () => {
         errorText: "cancelled",
       }),
     ).toBe(true);
+  });
+
+  it("ignores only WebKit's same-origin Next RSC cancellation page error", () => {
+    expect(
+      isExpectedWebKitRscFetchCancellation({
+        browserName: "webkit",
+        error: new Error(
+          "Fetch API cannot load http://127.0.0.1:3000/opportunities?q=history-two&_rsc=abc123 due to access control checks.",
+        ),
+        pageUrl: "http://127.0.0.1:3000/opportunities?q=history-one",
+      }),
+    ).toBe(true);
+  });
+
+  it.each([
+    {
+      browserName: "chromium",
+      message:
+        "Fetch API cannot load http://127.0.0.1:3000/?_rsc=abc123 due to access control checks.",
+      name: "a non-WebKit browser",
+      pageUrl: "http://127.0.0.1:3000/opportunities",
+    },
+    {
+      browserName: "webkit",
+      message:
+        "Fetch API cannot load https://third-party.example/?_rsc=abc123 due to access control checks.",
+      name: "a cross-origin fetch",
+      pageUrl: "http://127.0.0.1:3000/opportunities",
+    },
+    {
+      browserName: "webkit",
+      message:
+        "Fetch API cannot load http://127.0.0.1:3000/api/opportunities due to access control checks.",
+      name: "a non-RSC fetch",
+      pageUrl: "http://127.0.0.1:3000/opportunities",
+    },
+    {
+      browserName: "webkit",
+      message: "client render failed",
+      name: "a genuine page exception",
+      pageUrl: "http://127.0.0.1:3000/opportunities",
+    },
+  ])("records $name", ({ browserName, message, pageUrl }) => {
+    expect(
+      isExpectedWebKitRscFetchCancellation({
+        browserName,
+        error: new Error(message),
+        pageUrl,
+      }),
+    ).toBe(false);
   });
 
   it("recognizes only the exact cancelled Vercel security script shape", () => {
