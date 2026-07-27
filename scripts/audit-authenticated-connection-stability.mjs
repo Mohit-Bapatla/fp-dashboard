@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { performance } from "node:perf_hooks";
 
-import { chromium } from "@playwright/test";
+import { chromium, request as playwrightRequest } from "@playwright/test";
 
 const args = new Map();
 
@@ -223,10 +223,7 @@ const authenticate = async () => {
   await context.close();
 };
 
-const createTestPage = async () => {
-  const context = await browser.newContext({
-    storageState: storageStatePath,
-  });
+const createTestPage = async (context) => {
   const page = await context.newPage();
   let monitoring = true;
   const allowedRequestCancellations = [];
@@ -303,6 +300,10 @@ const createTestPage = async () => {
     }
 
     requestFailures.push({
+      hasNextRouterPrefetchHeader:
+        request.headers()["next-router-prefetch"] === "1",
+      hasRscHeader: request.headers().rsc === "1",
+      hasRscSearchParam: new URL(request.url()).searchParams.has("_rsc"),
       method: request.method(),
       resourceType: request.resourceType(),
       url: new URL(request.url()).pathname,
@@ -417,72 +418,107 @@ const navigate = async (testPage, route) => {
   };
 };
 
+const navigateRequestSession = async (requestContext, route) => {
+  const navigationStartedAt = performance.now();
+  let response = null;
+  let responseText = "";
+  let error = null;
+
+  try {
+    response = await requestContext.get(route, {
+      headers: {
+        accept: "text/html,application/xhtml+xml",
+      },
+      timeout: 45_000,
+    });
+    responseText = await response.text();
+
+    const finalUrl = new URL(response.url());
+
+    if (
+      finalUrl.origin !== parsedBaseUrl.origin ||
+      finalUrl.pathname !== route
+    ) {
+      throw new Error(
+        `Authenticated request ended at unexpected route ${finalUrl.pathname}.`,
+      );
+    }
+  } catch (caughtError) {
+    error =
+      caughtError instanceof Error
+        ? caughtError.message.slice(0, 500)
+        : "unknown navigation error";
+  }
+
+  return {
+    route,
+    status: response?.status() ?? null,
+    durationMs: Number((performance.now() - navigationStartedAt).toFixed(1)),
+    dashboardUnavailable: responseText.includes("Dashboard unavailable"),
+    error,
+  };
+};
+
 const runWave = async (concurrency, wave) => {
-  const pages = await Promise.all(
-    Array.from({ length: concurrency }, () => createTestPage()),
+  const requestContexts = await Promise.all(
+    Array.from({ length: concurrency }, () =>
+      playwrightRequest.newContext({
+        baseURL: parsedBaseUrl.origin,
+        storageState: storageStatePath,
+      }),
+    ),
   );
   const navigations = [];
 
   try {
     for (const route of routes) {
       const routeResults = await Promise.all(
-        pages.map((testPage) => navigate(testPage, route)),
+        requestContexts.map((requestContext) =>
+          navigateRequestSession(requestContext, route),
+        ),
       );
       navigations.push(...routeResults);
     }
   } finally {
-    pages.forEach(({ stopMonitoring }) => stopMonitoring());
-    await Promise.all(pages.map(({ context }) => context.close()));
+    await Promise.all(
+      requestContexts.map((requestContext) => requestContext.dispose()),
+    );
   }
 
-  const consoleErrors = pages.flatMap(({ consoleErrors }) => consoleErrors);
-  const pageErrors = pages.flatMap(({ pageErrors }) => pageErrors);
-  const httpFailures = pages.flatMap(({ httpFailures }) => httpFailures);
-  const requestFailures = pages.flatMap(
-    ({ requestFailures }) => requestFailures,
-  );
-  const allowedRequestCancellations = pages.flatMap(
-    ({ allowedRequestCancellations }) => allowedRequestCancellations,
-  );
-  const firstPostTimestamp = Math.min(
-    ...pages.flatMap(({ requestActivity }) =>
-      requestActivity.events.map(({ timestamp }) => timestamp),
-    ),
-  );
-  const postLifecycle = pages
-    .flatMap(({ requestActivity }, pageIndex) =>
-      requestActivity.events.map(({ timestamp, ...event }) => ({
-        pageIndex,
-        ...event,
-        elapsedMs: Number.isFinite(firstPostTimestamp)
-          ? timestamp - firstPostTimestamp
-          : null,
-      })),
-    )
-    .slice(0, 100);
   const summary = summarizeNavigations(navigations);
+  const navigationFailures = navigations.filter(
+    (navigation) =>
+      navigation.error !== null ||
+      navigation.status === null ||
+      navigation.status >= 400 ||
+      navigation.dashboardUnavailable,
+  );
 
   return {
     concurrency,
     wave,
+    transport: "isolated-authenticated-request-sessions",
+    isolatedSessionCount: requestContexts.length,
     ...summary,
-    consoleErrorCount: consoleErrors.length,
-    consoleErrors: [...new Set(consoleErrors)].slice(0, 20),
-    pageErrorCount: pageErrors.length,
-    pageErrors: [...new Set(pageErrors)].slice(0, 20),
-    httpFailureCount: httpFailures.length,
-    httpFailures: httpFailures.slice(0, 30),
-    requestFailureCount: requestFailures.length,
-    requestFailures: requestFailures.slice(0, 30),
-    allowedRscCancellationCount: allowedRequestCancellations.length,
-    navigationFailures: navigations.filter(
-      (navigation) =>
-        navigation.error !== null ||
-        navigation.status === null ||
-        navigation.status >= 400 ||
-        navigation.dashboardUnavailable,
-    ),
-    postLifecycle,
+    consoleErrorCount: 0,
+    consoleErrors: [],
+    pageErrorCount: 0,
+    pageErrors: [],
+    httpFailureCount: navigationFailures.filter(
+      ({ status }) => status !== null && status >= 500,
+    ).length,
+    httpFailures: navigationFailures
+      .filter(({ status }) => status !== null && status >= 500)
+      .slice(0, 30),
+    requestFailureCount: navigationFailures.filter(
+      ({ error, status }) => error !== null || status === null,
+    ).length,
+    requestFailures: navigationFailures
+      .filter(({ error, status }) => error !== null || status === null)
+      .slice(0, 30),
+    allowedRscCancellationCount: 0,
+    navigationFailures,
+    postLifecycle: [],
   };
 };
 
@@ -552,8 +588,15 @@ const runSoak = async () => {
     throw new Error("Unsafe soak parameters.");
   }
 
+  const contexts = await Promise.all(
+    Array.from({ length: contextCount }, () =>
+      browser.newContext({
+        storageState: storageStatePath,
+      }),
+    ),
+  );
   const pages = await Promise.all(
-    Array.from({ length: contextCount }, () => createTestPage()),
+    contexts.map((context) => createTestPage(context)),
   );
   const navigations = [];
   const soakStartedAt = Date.now();
@@ -616,7 +659,7 @@ const runSoak = async () => {
     }
   } finally {
     pages.forEach(({ stopMonitoring }) => stopMonitoring());
-    await Promise.all(pages.map(({ context }) => context.close()));
+    await Promise.all(contexts.map((context) => context.close()));
   }
 
   results.soak = {
