@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   createRuntimePoolConfig,
   PRODUCTION_SUPABASE_PROJECT_REF,
+  resolveRuntimeDatabaseUrl,
   RUNTIME_DATABASE_POOL_CONFIG,
   validatePreviewDatabaseIsolation,
 } from "@/lib/db/runtime-database-config";
@@ -10,8 +11,8 @@ import {
 const previewProjectRef = "fjagysinaodnpxcdgogp";
 const previewEnvironment = {
   VERCEL_ENV: "preview",
-  PREVIEW_DATABASE_PROJECT_REF: previewProjectRef,
-  DATABASE_URL: `postgresql://postgres.${previewProjectRef}:secret@aws-0-ca-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require`,
+  SUPABASE_URL: `https://${previewProjectRef}.supabase.co`,
+  DATABASE_URL: `postgresql://postgres.${previewProjectRef}:secret@aws-0-ca-central-1.pooler.supabase.com:5432/postgres?sslmode=require`,
   DIRECT_URL: `postgresql://postgres:secret@db.${previewProjectRef}.supabase.co:5432/postgres?sslmode=require`,
 } as const;
 
@@ -45,35 +46,51 @@ describe("runtime database configuration", () => {
     ).not.toThrow();
   });
 
+  it("derives a transaction-pooled runtime URL from the protected pooler credential", () => {
+    const resolved = new URL(
+      resolveRuntimeDatabaseUrl(
+        previewEnvironment,
+        "postgresql://fallback.invalid/database",
+      ),
+    );
+
+    expect(resolved.port).toBe("6543");
+    expect(resolved.searchParams.get("pgbouncer")).toBe("true");
+    expect(resolved.hostname).toBe("aws-0-ca-central-1.pooler.supabase.com");
+    expect(decodeURIComponent(resolved.username)).toBe(
+      `postgres.${previewProjectRef}`,
+    );
+  });
+
   it("accepts a session-pooled migration path for the same project", () => {
     expect(() =>
       validatePreviewDatabaseIsolation({
         ...previewEnvironment,
-        DIRECT_URL: `postgresql://postgres.${previewProjectRef}:secret@aws-0-ca-central-1.pooler.supabase.com:5432/postgres?sslmode=require`,
+        DIRECT_URL: `postgresql://postgres.${previewProjectRef}:secret@aws-0-ca-central-1.pooler.supabase.com:5432/postgres?sslmode=require&connect_timeout=10`,
       }),
     ).not.toThrow();
   });
 
-  it("rejects a session-pooled runtime URL", () => {
+  it("rejects a direct runtime URL", () => {
     expect(() =>
       validatePreviewDatabaseIsolation({
         ...previewEnvironment,
-        DATABASE_URL: previewEnvironment.DATABASE_URL.replace("6543", "5432"),
+        DATABASE_URL: previewEnvironment.DIRECT_URL,
       }),
-    ).toThrow(/transaction pooling on port 6543/);
+    ).toThrow(/must use the Supabase transaction pooler/);
   });
 
   it("rejects the production project for Preview", () => {
     expect(() =>
       validatePreviewDatabaseIsolation({
         ...previewEnvironment,
-        PREVIEW_DATABASE_PROJECT_REF: PRODUCTION_SUPABASE_PROJECT_REF,
+        SUPABASE_URL: `https://${PRODUCTION_SUPABASE_PROJECT_REF}.supabase.co`,
       }),
     ).toThrow(/isolated from Production/);
   });
 
   it.each([
-    ["PREVIEW_DATABASE_PROJECT_REF", undefined],
+    ["SUPABASE_URL", undefined],
     ["DATABASE_URL", undefined],
     ["DIRECT_URL", undefined],
   ] as const)("rejects Preview when %s is missing", (key, value) => {

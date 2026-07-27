@@ -4,7 +4,7 @@ import { Pool } from "pg";
 import { PrismaClient } from "@/generated/prisma/client";
 import {
   createRuntimePoolConfig,
-  validatePreviewDatabaseIsolation,
+  resolveRuntimeDatabaseUrl,
 } from "@/lib/db/runtime-database-config";
 
 const fallbackDatabaseUrl =
@@ -18,10 +18,10 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createRuntimeDatabase() {
-  validatePreviewDatabaseIsolation(process.env);
-
   const pool = new Pool(
-    createRuntimePoolConfig(process.env.DATABASE_URL ?? fallbackDatabaseUrl),
+    createRuntimePoolConfig(
+      resolveRuntimeDatabaseUrl(process.env, fallbackDatabaseUrl),
+    ),
   );
   const adapter = new PrismaPg(pool);
   const prisma = new PrismaClient({

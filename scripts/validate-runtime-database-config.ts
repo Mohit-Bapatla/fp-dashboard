@@ -1,5 +1,8 @@
-import { validatePreviewDatabaseIsolation } from "../src/lib/db/runtime-database-config";
+import { resolveRuntimeDatabaseUrl } from "../src/lib/db/runtime-database-config";
 
-validatePreviewDatabaseIsolation(process.env);
+resolveRuntimeDatabaseUrl(
+  process.env,
+  "postgresql://USER:PASSWORD@localhost:5432/fp_dashboard?schema=public",
+);
 
 console.log("Runtime database configuration is valid for this environment.");

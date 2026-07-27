@@ -19,7 +19,7 @@ type RuntimeDatabaseEnvironment = {
   [name: string]: string | undefined;
   DATABASE_URL?: string;
   DIRECT_URL?: string;
-  PREVIEW_DATABASE_PROJECT_REF?: string;
+  SUPABASE_URL?: string;
   VERCEL_ENV?: string;
 };
 
@@ -65,6 +65,42 @@ function isSupabasePoolerHost(hostname: string) {
   return hostname.endsWith(SUPABASE_POOLER_SUFFIX);
 }
 
+function previewProjectRefFromSupabaseUrl(rawValue: string | undefined) {
+  if (!rawValue?.trim()) {
+    refusePreviewConfiguration(
+      "SUPABASE_URL is required as the approved Preview identity.",
+    );
+  }
+
+  let parsed: URL;
+
+  try {
+    parsed = new URL(rawValue);
+  } catch {
+    refusePreviewConfiguration("SUPABASE_URL must be a valid URL.");
+  }
+
+  if (parsed.protocol !== "https:") {
+    refusePreviewConfiguration("SUPABASE_URL must use HTTPS.");
+  }
+
+  const hostnameParts = parsed.hostname.split(".");
+  const projectRef =
+    hostnameParts.length === 3 &&
+    hostnameParts[1] === "supabase" &&
+    hostnameParts[2] === "co"
+      ? hostnameParts[0]
+      : undefined;
+
+  if (!projectRef || !SUPABASE_PROJECT_REF_PATTERN.test(projectRef)) {
+    refusePreviewConfiguration(
+      "SUPABASE_URL must identify the approved Supabase Preview project.",
+    );
+  }
+
+  return projectRef;
+}
+
 function assertProjectRef(
   actualProjectRef: string | undefined,
   expectedProjectRef: string,
@@ -84,16 +120,9 @@ export function validatePreviewDatabaseIsolation(
     return;
   }
 
-  const expectedProjectRef = environment.PREVIEW_DATABASE_PROJECT_REF?.trim();
-
-  if (
-    !expectedProjectRef ||
-    !SUPABASE_PROJECT_REF_PATTERN.test(expectedProjectRef)
-  ) {
-    refusePreviewConfiguration(
-      "PREVIEW_DATABASE_PROJECT_REF is required and must be a Supabase project reference.",
-    );
-  }
+  const expectedProjectRef = previewProjectRefFromSupabaseUrl(
+    environment.SUPABASE_URL,
+  );
 
   if (expectedProjectRef === PRODUCTION_SUPABASE_PROJECT_REF) {
     refusePreviewConfiguration(
@@ -109,9 +138,9 @@ export function validatePreviewDatabaseIsolation(
     );
   }
 
-  if (runtimeUrl.port !== "6543") {
+  if (runtimeUrl.port !== "5432" && runtimeUrl.port !== "6543") {
     refusePreviewConfiguration(
-      "DATABASE_URL must use transaction pooling on port 6543.",
+      "DATABASE_URL must use a supported Supabase pooler credential.",
     );
   }
 
@@ -120,12 +149,6 @@ export function validatePreviewDatabaseIsolation(
     expectedProjectRef,
     "DATABASE_URL",
   );
-
-  if (runtimeUrl.searchParams.get("pgbouncer") !== "true") {
-    refusePreviewConfiguration(
-      "DATABASE_URL must explicitly enable transaction-pooler compatibility.",
-    );
-  }
 
   const directUrl = parsePostgresUrl(environment.DIRECT_URL, "DIRECT_URL");
 
@@ -155,6 +178,25 @@ export function validatePreviewDatabaseIsolation(
       "DIRECT_URL does not target the approved Preview project.",
     );
   }
+}
+
+export function resolveRuntimeDatabaseUrl(
+  environment: RuntimeDatabaseEnvironment,
+  fallbackDatabaseUrl: string,
+) {
+  const sourceUrl = environment.DATABASE_URL ?? fallbackDatabaseUrl;
+
+  if (environment.VERCEL_ENV !== "preview") {
+    return sourceUrl;
+  }
+
+  validatePreviewDatabaseIsolation(environment);
+
+  const transactionUrl = new URL(sourceUrl);
+  transactionUrl.port = "6543";
+  transactionUrl.searchParams.set("pgbouncer", "true");
+
+  return transactionUrl.toString();
 }
 
 export function createRuntimePoolConfig(connectionString: string): PoolConfig {
