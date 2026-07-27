@@ -27,6 +27,18 @@ async function recordRecommendationEventsFromBrowser(
 }
 
 function reportRecommendationEvents(events: RecommendationEventInput[]) {
+  const payload = JSON.stringify({ events });
+
+  if (
+    typeof navigator !== "undefined" &&
+    navigator.sendBeacon(
+      "/api/recommendation-events",
+      new Blob([payload], { type: "application/json" }),
+    )
+  ) {
+    return;
+  }
+
   void recordRecommendationEventsFromBrowser(events).catch((error) => {
     console.error("Failed to record recommendation telemetry.", error);
   });
