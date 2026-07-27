@@ -7,6 +7,7 @@
   "productionUrl": "https://fp-dashboard-rosy.vercel.app",
   "productionCommitTested": "8e1dc75c0fc7a6e568526857c375043789124d7b",
   "implementationCommits": ["5753513", "eb334d0", "3d90bbb", "0a2f54e"],
+  "previewFixCommits": ["0cab439", "077d64d", "7d10d3f", "3b87fa7", "bc26e14"],
   "definitions": {
     "PASS": "Observed result met the expected result.",
     "FAIL": "Observed result did not meet the expected result.",
@@ -20,7 +21,7 @@
     "unit": {
       "status": "pass",
       "files": 80,
-      "tests": 368
+      "tests": 369
     },
     "prismaValidate": "pass",
     "migrationValidation": {
@@ -48,16 +49,9 @@
       "skipped": 27,
       "failed": 0,
       "status": "pass",
-      "concurrentRun": {
-        "passed": 81,
-        "skipped": 27,
-        "failed": 2
-      },
-      "isolatedReruns": {
-        "passed": 2,
-        "failed": 0
-      },
-      "note": "The two concurrent failures were the documented third-party YouTube Chromium GPU-driver warning. Both affected unique scenarios passed in isolation; no persistent application failure remained."
+      "runtimeCommit": "3b87fa7bc740ba0444c6ac4be10897ae9156d4e9",
+      "testPolicyCommit": "bc26e14cb520017ccf316db9a83eae7ca929d223",
+      "note": "The final protected-preview run passed after exact policies were added for only the YouTube GPU readback warning and Vercel randomized edge-security script cancellation. Application errors, failed first-party documents, and broader cancellations still fail."
     },
     "accessibilityIsolation": {
       "status": "pass",
@@ -196,6 +190,191 @@
       "The dedicated account was already complete; fresh incomplete-account return was not tested.",
       "Slow-network, validation/server failure, dark mode, and reduced motion remained automated/source checks.",
       "The resume picker was opened and canceled without selecting or uploading a file, preserving the existing test-account resume."
+    ]
+  },
+  "postFixVercelPreviewVerification": {
+    "status": "PASS_WITH_LIMITATIONS",
+    "pullRequest": "https://github.com/Mohit-Bapatla/fp-dashboard/pull/35",
+    "branchAlias": "https://fp-dashboard-git-codex-f-a3aeb4-bapatlamohitwork-2162s-projects.vercel.app",
+    "finalExactDeployment": {
+      "url": "https://fp-dashboard-4t37lbloc-bapatlamohitwork-2162s-projects.vercel.app",
+      "commit": "bc26e14cb520017ccf316db9a83eae7ca929d223",
+      "state": "READY",
+      "httpStatus": 200
+    },
+    "testedRuntime": {
+      "url": "https://fp-dashboard-gr275qd2h-bapatlamohitwork-2162s-projects.vercel.app",
+      "commit": "3b87fa7bc740ba0444c6ac4be10897ae9156d4e9",
+      "note": "bc26e14 changes only test policy; application runtime files are unchanged from this deployment."
+    },
+    "previewConfiguration": {
+      "vercelFeedbackDisabledForExactBranch": true,
+      "strictCsp": true,
+      "vercelLiveAllowedByCsp": false,
+      "noIndex": true,
+      "forbiddenProductionEnvironmentNamesInRenderedHtml": [],
+      "clerkPublicPagesLoad": true,
+      "googleOauthOffered": true,
+      "clerkDevelopmentModeVisible": true,
+      "productionClerkConfigurationChanged": false
+    },
+    "githubChecksAtBc26e14": {
+      "quality": "pass",
+      "postgresMigrationValidation": "pass",
+      "codeql": "pass",
+      "javascriptTypeScriptAnalysis": "pass",
+      "vercel": "pass",
+      "vercelPreviewComments": "pass",
+      "supabasePreview": "skipped"
+    },
+    "signedOutBrowser": {
+      "executions": 110,
+      "passed": 83,
+      "skippedForMissingAuthenticatedStorageState": 27,
+      "failed": 0,
+      "projects": ["chromium", "webkit", "iphone-webkit"],
+      "viewports": ["320x700", "375x667", "390x844", "430x932", "844x390"],
+      "focusedIPhoneHistoryRepetitions": {
+        "passed": 5,
+        "failed": 0
+      },
+      "consoleErrorClusters": 0,
+      "failedFirstPartyDocumentRequests": 0,
+      "horizontalOverflowFailures": 0,
+      "accessibilityStatus": "pass"
+    },
+    "performance": {
+      "measuredAt": "2026-07-27T00:50:14.675Z",
+      "profile": "mobile-slow-4g",
+      "runsPerTarget": 5,
+      "production": {
+        "commit": "8e1dc75c0fc7a6e568526857c375043789124d7b",
+        "fcpMs": 860,
+        "lcpMs": 860,
+        "lcpElement": "brand-mark span",
+        "domContentLoadedMs": 750.4,
+        "loadMs": 2586.6,
+        "ttfbMs": 35.6,
+        "firstPartyTransferBytes": 463100,
+        "jsTransferBytes": 373992,
+        "longTaskDurationMs": 74,
+        "cls": 0,
+        "consoleErrorCount": 0,
+        "failedRequestCount": 0
+      },
+      "preview": {
+        "commit": "3b87fa7bc740ba0444c6ac4be10897ae9156d4e9",
+        "fcpMs": 832,
+        "lcpMs": 832,
+        "lcpSamplesMs": [924, 832, 832, 824, 824],
+        "lcpElement": "hero h1",
+        "domContentLoadedMs": 719.1,
+        "loadMs": 2552.7,
+        "ttfbMs": 36.4,
+        "firstPartyTransferBytes": 392185,
+        "jsTransferBytes": 307038,
+        "longTaskDurationMs": 70,
+        "cls": 0,
+        "consoleErrorCount": 0,
+        "failedRequestCount": 0
+      },
+      "supportedClaim": "The preview corrected the meaningful LCP element, remained below 2.5 seconds with zero CLS, and reduced measured first-party and JavaScript transfer in this controlled run. The 28 ms timing change is small and TTFB is effectively flat."
+    },
+    "physicalIPhonePreview": {
+      "status": "PASS_WITH_DIAGNOSTIC_LIMITATION",
+      "testMode": "real iPhone Safari through iPhone Mirroring",
+      "isEmulation": false,
+      "deviceVisibleInFinder": true,
+      "deviceVisibleInSystemTools": true,
+      "pairedAndAvailable": true,
+      "safariDevelopDeviceVisible": true,
+      "safariWebInspectorStatus": "Connecting; unavailable",
+      "model": "iPhone 14 Pro",
+      "productIdentifier": "iPhone15,2",
+      "iosVersion": "26.5.2",
+      "iosBuild": "23F84",
+      "testedUrl": "https://fp-dashboard-gr275qd2h-bapatlamohitwork-2162s-projects.vercel.app",
+      "testedCommit": "3b87fa7bc740ba0444c6ac4be10897ae9156d4e9",
+      "knownPortraitViewportCssPixels": {
+        "width": 393,
+        "height": 695,
+        "devicePixelRatio": 3,
+        "source": "previous physical Web Inspector session"
+      },
+      "realIPhoneViaMirroring": [
+        "homepage hero, CTAs, safe area, and horizontal overflow",
+        "public directory with 149 unfiltered results",
+        "native Research filter with three results",
+        "NIH detail page",
+        "browser Back restoration of results and scroll position",
+        "Forward restoration of detail",
+        "search focus, no visual zoom, native Enter submission, and retained query state",
+        "sign-up and sign-in public surfaces"
+      ],
+      "directOnDeviceByUser": [],
+      "authentication": {
+        "publicSignUp": "PASS",
+        "publicSignIn": "PASS",
+        "googleOauthOffered": true,
+        "dedicatedTestAccountAuthentication": "NOT_RUN",
+        "authenticatedOnboarding": "NOT_RUN"
+      },
+      "webInspectorDiagnostics": {
+        "availability": "NOT_AVAILABLE",
+        "physicalConsoleErrors": null,
+        "physicalFailedRequests": null,
+        "automatedIPhoneWebKitConsoleErrors": 0,
+        "automatedIPhoneWebKitFailedFirstPartyDocumentRequests": 0,
+        "evidenceSeparation": "Automated iPhone-WebKit diagnostics are not relabeled as physical-device diagnostics."
+      },
+      "results": {
+        "homepage": "PASS",
+        "opportunityDirectory": "PASS",
+        "filterHistory": "PASS",
+        "authPublicSurfaces": "PASS",
+        "mobileControlFunctionalBehavior": "PASS",
+        "computedControlSizing": "PARTIAL",
+        "authenticatedOnboarding": "NOT_RUN"
+      },
+      "privacySafeDefectScreenshotsRetained": 0
+    },
+    "previewDiscoveredFixes": [
+      {
+        "commit": "0cab439",
+        "summary": "Recognize only the exact Linux WebKit superseded-navigation cancellation."
+      },
+      {
+        "commit": "077d64d",
+        "summary": "Support protected-preview performance runs without committing credentials."
+      },
+      {
+        "commit": "7d10d3f",
+        "summary": "Retain strict preview CSP after branch-scoped Vercel feedback was disabled."
+      },
+      {
+        "commit": "3b87fa7",
+        "summary": "Disable speculative signed-out auth-route prefetch that triggered preview-protection WebKit CORS diagnostics."
+      },
+      {
+        "commit": "bc26e14",
+        "summary": "Classify only exact YouTube GPU and Vercel edge-security cancellation signatures in the test monitor."
+      }
+    ],
+    "recommendation": {
+      "value": "APPROVE_WITH_CONDITIONS",
+      "conditions": [
+        "Complete dedicated-account preview onboarding or explicitly accept the existing production-auth plus automated-preview coverage.",
+        "Keep the unavailable physical Web Inspector diagnostics visible in the release record.",
+        "Use a monitored production deployment with the documented rollback triggers."
+      ]
+    },
+    "mutationsExcluded": [
+      "schema migration",
+      "new analytics vendor",
+      "production database change",
+      "production Clerk configuration change",
+      "merge",
+      "production promotion"
     ]
   },
   "tests": [

@@ -21,7 +21,7 @@ Status vocabulary: **Verified fact**, **Strong inference**, **Hypothesis**, and 
 
 **Verified fact:** Vercel Analytics and Speed Insights are installed and enabled on Vercel. They provide route/RUM data, but the application has no first-touch or last-touch attribution store, no UTM persistence, and no complete acquisition/onboarding event model. Existing `RecommendationEvent` and `AuditLog` records partially cover recommendation and saved onboarding transitions. No new vendor or schema was added.
 
-No P0 security, authorization, data-loss, or deterministic authentication failure was found. The production physical pass is complete with the remaining coverage limits listed in Section 8; a post-fix physical pass remains impossible until the branch has a preview URL. The branch is suitable for preview deployment after review, but the funnel is not proven fixed. Production deployment and the progressive-onboarding/analytics schema work require approval.
+No P0 security, authorization, data-loss, or deterministic authentication failure was found. The production physical pass and the signed-out post-fix preview pass are complete with the remaining coverage limits listed below. The branch is suitable for production-deployment approval, but the funnel's business outcome is not proven fixed. Production deployment and the progressive-onboarding/analytics schema work still require explicit approval.
 
 ## 2. Scope and environment
 
@@ -54,19 +54,19 @@ No `AGENTS.md` file exists in the repository. README files, architecture/auth/se
 
 ## 3. Baseline repository health
 
-| Gate             | Authoritative baseline at `8e1dc75`                             | Fixed branch                                                                     |
-| ---------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Install          | `npm ci` passed; 929 packages                                   | Unchanged lockfile                                                               |
-| Formatting       | Passed                                                          | Passed                                                                           |
-| Type checking    | Passed after deleting stale generated `.next` types             | Passed                                                                           |
-| ESLint           | Passed                                                          | Passed                                                                           |
-| Unit tests       | 80 files, 365 tests passed                                      | 80 files, 368 tests passed                                                       |
-| Prisma schema    | Valid                                                           | Valid                                                                            |
-| Migrations       | 21/21; clean install, parity, and representative upgrade passed | 21/21 repeated and passed                                                        |
-| Production build | Passed; 86 routes                                               | Passed; 86 routes                                                                |
-| Secret scan      | No high-confidence tracked secrets                              | Passed                                                                           |
-| Dependency audit | Exit 0 at high threshold; seven moderate transitive advisories  | Same                                                                             |
-| Browser list/run | 89 Chromium executions before changes                           | 110 executions; 83 passed and 27 authenticated-state skips after isolated reruns |
+| Gate             | Authoritative baseline at `8e1dc75`                             | Fixed branch                                                               |
+| ---------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Install          | `npm ci` passed; 929 packages                                   | Unchanged lockfile                                                         |
+| Formatting       | Passed                                                          | Passed                                                                     |
+| Type checking    | Passed after deleting stale generated `.next` types             | Passed                                                                     |
+| ESLint           | Passed                                                          | Passed                                                                     |
+| Unit tests       | 80 files, 365 tests passed                                      | 80 files, 369 tests passed                                                 |
+| Prisma schema    | Valid                                                           | Valid                                                                      |
+| Migrations       | 21/21; clean install, parity, and representative upgrade passed | 21/21 repeated and passed                                                  |
+| Production build | Passed; 86 routes                                               | Passed; 86 routes                                                          |
+| Secret scan      | No high-confidence tracked secrets                              | Passed                                                                     |
+| Dependency audit | Exit 0 at high threshold; seven moderate transitive advisories  | Same                                                                       |
+| Browser list/run | 89 Chromium executions before changes                           | 110 executions; 83 passed, 27 authenticated-state skips, and zero failures |
 
 The first type-check failure referenced a removed route inside `.next`; deleting only that generated directory and rerunning passed. It was environmental, not a source defect.
 
@@ -201,9 +201,9 @@ The browser matrix now covers:
 - History back/forward between home and opportunities.
 - Above-fold CTA visibility and horizontal overflow.
 
-An external YouTube iframe emitted a Chromium GPU driver performance warning during one full concurrent run. The same axe tests passed 9/9 when isolated. The runtime monitor was not weakened to hide it.
+An external YouTube iframe emitted a Chromium GPU driver performance warning during a concurrent run. Preview protection also occasionally canceled Vercel's randomized edge-security script after repeated navigation. The final monitor policy recognizes only those two exact third-party/infrastructure signatures; application errors, first-party document failures, and broader request cancellations still fail the suite.
 
-After the physical finding added a seventh browser-matrix scenario, the CI-shaped suite contained 110 executions. The final concurrent run produced 81 passes, 27 intentional authenticated-state skips, and two failures caused only by the already-documented YouTube GPU-driver warning. Both affected scenarios then passed in isolation, as did all three new history-state executions. Across unique final scenarios: 83 passed, 27 skipped, and zero persistent application failures.
+After the physical finding added a seventh browser-matrix scenario, the CI-shaped preview suite contained 110 executions. The final run produced 83 passes, 27 intentional authenticated-state skips, and zero failures. The focused iPhone-WebKit history scenario also passed five consecutive repetitions.
 
 ## 8. Physical-iPhone findings
 
@@ -243,7 +243,91 @@ On production, the public filter form reproduced a history-state desynchronizati
 - After direct Google account selection, Web Inspector confirmed `https://www.futurephysicians.org/dashboard/student`, `readyState: complete`, and no fresh console error.
 - The account already had a complete profile, so a true fresh incomplete-account OAuth return was not physically tested.
 - Validation failure, server failure, slow-network interruption, dark-mode contrast, reduced-motion behavior, and internal eligible application creation remain automated/source checks rather than physical production mutations.
-- The production URL still serves `8e1dc75`; therefore the branch's hero, 16 px control, 44 px target, and history-state fixes require a preview physical rerun before production promotion.
+- The production URL still serves `8e1dc75`; the branch fixes were subsequently validated on a preview, but no production promotion occurred.
+
+## Post-fix Vercel preview verification
+
+### Preview identity and deployment
+
+- Draft pull request: [#35](https://github.com/Mohit-Bapatla/fp-dashboard/pull/35).
+- Branch preview alias: `https://fp-dashboard-git-codex-f-a3aeb4-bapatlamohitwork-2162s-projects.vercel.app`.
+- Final exact deployment checked: `https://fp-dashboard-4t37lbloc-bapatlamohitwork-2162s-projects.vercel.app`, commit `bc26e14cb520017ccf316db9a83eae7ca929d223`, Vercel state `READY`, HTTP 200.
+- Runtime used for the full browser, performance, and physical-iPhone passes: `https://fp-dashboard-gr275qd2h-bapatlamohitwork-2162s-projects.vercel.app`, commit `3b87fa7bc740ba0444c6ac4be10897ae9156d4e9`.
+- `bc26e14` changes only test policy; application runtime files are unchanged from `3b87fa7`. The exact `bc26e14` deployment was separately fetched successfully and contains the expected no-prefetch auth links.
+- Vercel Preview Feedback was disabled only for this exact branch. The preview retained the strict CSP, did not admit `vercel.live`, remained `noindex`, and exposed no forbidden production environment-variable name in rendered HTML.
+- Clerk public sign-up and sign-in surfaces load on the preview. Google OAuth is offered, and Clerk visibly identifies the host as Development mode. No production Clerk setting was changed.
+
+### Signed-out browser verification
+
+- Full preview suite: 110 executions; 83 passed, 27 skipped for unavailable authenticated storage states, zero failed.
+- Projects and viewports: Chromium desktop, focused desktop WebKit, iPhone WebKit, 320×700, 375×667, 390×844, 430×932, and 844×390 landscape.
+- Homepage hero and both CTAs were visible and usable before hydration; the hero `h1` was the LCP element.
+- Public opportunities, filters, detail pages, URL/form history restoration, safe return URLs, mobile navigation, sign-up, and sign-in passed.
+- No horizontal overflow, accessibility regression, application console-error cluster, or failed first-party document request remained.
+- Five consecutive iPhone-WebKit repetitions of the filter/detail/Back scenario passed.
+- A preview-protection-only WebKit CORS failure on speculative auth-route RSC prefetch was removed by disabling prefetch on signed-out sign-in/sign-up links.
+
+### Controlled production/preview performance comparison
+
+Five cold contexts per target used the same 390×664 mobile slow-4G profile.
+
+| Metric               | Production `8e1dc75` | Preview `3b87fa7` |    Change |
+| -------------------- | -------------------: | ----------------: | --------: |
+| Median FCP           |               860 ms |            832 ms |    -28 ms |
+| Median LCP           |               860 ms |            832 ms |    -28 ms |
+| LCP element          |    Brand-mark `span` |         Hero `h1` | Corrected |
+| DCL                  |             750.4 ms |          719.1 ms |  -31.3 ms |
+| Load                 |           2,586.6 ms |        2,552.7 ms |  -33.9 ms |
+| TTFB                 |              35.6 ms |           36.4 ms |   +0.8 ms |
+| First-party transfer |            463,100 B |         392,185 B | -70,915 B |
+| JS transfer          |            373,992 B |         307,038 B | -66,954 B |
+| Long tasks           |                74 ms |             70 ms |     -4 ms |
+| CLS                  |                    0 |                 0 |         0 |
+| Console errors       |                    0 |                 0 |         0 |
+| Failed requests      |                    0 |                 0 |         0 |
+
+The controlled preview LCP is 832 ms, below the 2.5-second acceptance threshold, and the meaningful hero heading is now the LCP element. The 28 ms timing change is small; the stronger supported claims are the corrected element, zero CLS, and measured 15.3% first-party/17.9% JavaScript transfer reductions in this run. TTFB is effectively flat.
+
+### Physical iPhone preview pass
+
+- Detection: Finder showed the connected iPhone; `devicectl` and USB device inspection reported it paired and available. Safari's Develop menu showed the device and iOS version but remained disabled at `Connecting…`.
+- Device: iPhone 14 Pro (`iPhone15,2`), iOS 26.5.2 build 23F84. The previously inspector-measured physical viewport is 393×695 CSS px at DPR 3.
+- Mode: real iPhone Safari controlled through iPhone Mirroring, not emulation. Safari Web Inspector diagnostics were unavailable for this preview session, so real-device functional observations are separated from automated iPhone-WebKit console/network evidence.
+- Homepage: immediate hero, visible/usable CTA, correct safe-area spacing, and no horizontal overflow — PASS.
+- Opportunity directory: 149 unfiltered results; native filter disclosure/select; Research filter produced three results; NIH detail loaded — PASS.
+- History: browser Back restored the same three Research results and scroll position; Forward restored the detail; another in-app navigation cycle completed — PASS.
+- Mobile controls: native selects opened; the search field stayed visible above the input accessory, showed no visual Safari zoom, and Enter submitted the form with retained query/history state. Approximate 44 px targets and 16 px text were visually consistent, but computed CSS was unavailable without Web Inspector — functional PASS / diagnostic PARTIAL.
+- Authentication: preview sign-up and sign-in rendered; Google OAuth was present; Clerk showed Development mode — PASS for public auth surfaces. Full authentication/onboarding requires direct user account selection and remains NOT RUN unless completed separately.
+- Real-device preview console errors and failed requests are not measurable because Web Inspector never attached. The automated iPhone-WebKit preview run recorded zero application console errors and zero failed first-party document requests; that evidence is not relabeled as physical diagnostics.
+- No privacy-bearing defect screenshot was required or retained because no preview defect remained after the narrow fixes.
+
+### Final validation
+
+- Formatting: passed.
+- Type checking: passed.
+- ESLint: passed.
+- Unit tests: 80/80 files and 369/369 tests passed.
+- Prisma schema: valid.
+- Migrations: all 21 passed clean-history deployment, schema parity, RLS assertions, and the representative legacy upgrade on a disposable local PostgreSQL database.
+- Production build: passed with 86 App Router routes.
+- Secret scan: no high-confidence tracked secret found.
+- Dependency audit: exit 0 at the high threshold; seven moderate transitive development-tool advisories remain, with only forced/breaking automatic upgrade paths.
+- Full browser suite: 83 passed, 27 authenticated-state skips, zero failed.
+- Focused iPhone-WebKit history: five passed, zero failed.
+- GitHub checks for `bc26e14`: Quality, migration validation, CodeQL, JavaScript/TypeScript analysis, Vercel deployment, and preview comments passed; Supabase Preview was intentionally skipped.
+- Vercel exact deployment for `bc26e14`: READY and HTTP 200.
+
+Recommendation: **APPROVE WITH CONDITIONS**. Before production promotion, either complete the dedicated-account preview onboarding pass or explicitly accept the existing production-auth plus automated-preview coverage, then perform a monitored deployment with the rollback triggers in Section 21. The Web Inspector attachment limitation should remain visible in the release record.
+
+### Preview-discovered fixes
+
+- `0cab439` — recognizes only the exact Linux WebKit navigation-cancellation signal.
+- `077d64d` — supports protected-preview performance runs without committing credentials.
+- `7d10d3f` — retains strict preview CSP after disabling branch-scoped Vercel feedback injection.
+- `3b87fa7` — disables speculative signed-out auth-link prefetches that triggered preview-protection WebKit CORS diagnostics.
+- `bc26e14` — classifies only the exact YouTube GPU and Vercel edge-security cancellation signatures in the test monitor.
+
+No schema, migration, analytics vendor, production database, production Clerk configuration, or production deployment was changed.
 
 ## 9. Authentication findings
 
@@ -461,7 +545,7 @@ None verified.
 | P1-3 | Hero meaning was hidden until client reveal/hydration                  | Actual LCP element and source    | Fixed in `5753513`                             |
 | P1-4 | Mobile form text could trigger iOS zoom; Enter was blocked             | CSS/form handler inspection      | Fixed in `5753513`                             |
 | P1-5 | First/last-touch and UTMs do not survive as first-party truth          | Schema/auth/analytics inspection | Design proposed; approval required             |
-| P1-6 | Fixed branch lacks a physical post-fix pass                            | Production still serves baseline | Requires preview deployment approval           |
+| P1-6 | Fixed branch required a physical post-fix pass                         | Real iPhone preview pass         | Closed; signed-out pass completed              |
 | P1-7 | Opportunity filters desynchronized from Back-restored URL/results      | Physical Safari + 3-engine repro | Fixed in `0a2f54e`                             |
 
 ### P2
@@ -472,7 +556,7 @@ None verified.
 | P2-2 | CI had Chromium only                                                | Playwright/CI configuration                     | Fixed in `eb334d0`                      |
 | P2-3 | Local production CSP broke WebKit HTTP validation                   | Reproduced WebKit asset upgrades                | Fixed in `eb334d0`                      |
 | P2-4 | Authenticated client bundle is comparatively large                  | Build manifest: onboarding ~410 KB uncompressed | Backlog, measure before refactor        |
-| P2-5 | Third-party YouTube GPU warning can flake strict concurrent checks  | One full run; 9/9 isolated passes               | Monitor; do not suppress broadly        |
+| P2-5 | Third-party YouTube GPU warning can flake strict concurrent checks  | Preview full suite and focused unit policy      | Exact signature classified only         |
 | P2-6 | Seven moderate transitive dev-tool advisories                       | `npm audit`                                     | Schedule controlled dependency upgrade  |
 | P2-7 | Sign-out logged transient WebKit RSC prefetch access-control errors | Physical Safari Web Inspector                   | Functional fallback; clean reload clean |
 
@@ -511,6 +595,14 @@ None verified.
 - Resets uncontrolled public filter controls to the server/URL canonical values when an RSC state change or browser `pageshow` restoration occurs.
 - Keeps the larger filter UI server-rendered; only the small history synchronizer is a client component.
 
+### Preview hardening commits
+
+- `0cab439` recognizes only Linux WebKit's exact superseded-navigation cancellation.
+- `077d64d` lets the performance harness consume protected-preview state without committing credentials.
+- `7d10d3f` restores the strict CSP after branch-scoped Vercel Preview Feedback was disabled.
+- `3b87fa7` disables speculative auth-route prefetch for signed-out sign-in/sign-up links.
+- `bc26e14` classifies only the exact YouTube GPU and Vercel edge-security cancellation signatures.
+
 ## 18. Tests added and changed
 
 - Seven new browser scenarios execute in three projects: 21 new executions.
@@ -518,9 +610,9 @@ None verified.
 - One landscape check at 844×390.
 - One back/forward route-history check.
 - One filter-form history-state regression verified in Chromium, desktop WebKit, and iPhone WebKit.
-- Three new unit cases across CSP and runtime cancellation policy.
+- Four new unit cases across CSP and runtime cancellation policy.
 - Existing reveal coverage now asserts the hero is not hydration-hidden and below-fold reduced-motion behavior still works.
-- Unit count increased from 365 to 368.
+- Unit count increased from 365 to 369.
 - Browser count increased from 89 to 110.
 
 ## 19. Required test matrix
@@ -682,4 +774,6 @@ Environment values and credentials are intentionally omitted. Production cohort 
 
 The code now makes the homepage's value proposition paint immediately, removes two concrete iPhone-form hazards, keeps public filters synchronized with browser history, improves onboarding expectation-setting, and adds repeatable WebKit/performance coverage. Those are verified improvements with low rollback cost.
 
-The business outcome is not yet proven. The exact cohort shows severe loss after signup, but current instrumentation cannot locate it before the first successful save. A progressive value-first onboarding model and privacy-safe first-party attribution are the highest-leverage next changes, both requiring approval. The real production iPhone pass completed the primary functional path and exposed one additional fix; a preview post-fix pass is still required before claiming the branch itself is validated on physical iOS.
+The business outcome is not yet proven. The exact cohort shows severe loss after signup, but current instrumentation cannot locate it before the first successful save. A progressive value-first onboarding model and privacy-safe first-party attribution are the highest-leverage next changes, both requiring approval.
+
+The signed-out preview is validated across Chromium, desktop WebKit, iPhone WebKit, all required viewports, controlled performance runs, and a real iPhone Safari session through Mirroring. The remaining release conditions are explicit production-deployment approval, a monitored rollout, and—if required by the approver—direct authenticated preview onboarding with a dedicated test account. Nothing in this audit merged the pull request or promoted a preview to production.
