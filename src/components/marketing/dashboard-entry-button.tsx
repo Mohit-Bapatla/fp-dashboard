@@ -15,6 +15,7 @@ type DashboardEntryAction = {
   href: string;
   label: string;
   linkType: "internal";
+  prefetch?: false;
 };
 
 export function getDashboardEntryAction({
@@ -59,6 +60,7 @@ export function getDashboardEntryAction({
     href: `/sign-up?redirect_url=${encodeURIComponent(destination)}`,
     label: "Create Free Profile",
     linkType: "internal",
+    prefetch: false,
   };
 }
 
@@ -91,7 +93,11 @@ export async function DashboardEntryButton({
   );
 
   return (
-    <Link className={buttonClassName} href={action.href}>
+    <Link
+      className={buttonClassName}
+      href={action.href}
+      prefetch={action.prefetch}
+    >
       {content}
     </Link>
   );

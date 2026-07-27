@@ -29,6 +29,7 @@ export function getMarketingHeaderActions(role: AppRole | null) {
     account: {
       href: account.href,
       label: role ? "Dashboard" : account.label,
+      ...(account.prefetch === false ? { prefetch: false as const } : {}),
     },
     showSignIn: role === null,
   };
@@ -41,6 +42,7 @@ export async function MarketingHeader() {
     <Link
       className={cn(primaryButtonClass, "w-full xl:w-auto")}
       href={actions.account.href}
+      prefetch={actions.account.prefetch}
     >
       {actions.account.label}
       <ArrowRight aria-hidden="true" className="size-4" />
@@ -69,6 +71,7 @@ export async function MarketingHeader() {
             <Link
               className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-semibold text-brand-navy transition hover:bg-blue-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               href="/sign-in"
+              prefetch={false}
             >
               Sign In
             </Link>
