@@ -1,0 +1,166 @@
+import type { PoolConfig } from "pg";
+
+const POSTGRES_PROTOCOLS = new Set(["postgres:", "postgresql:"]);
+const SUPABASE_POOLER_SUFFIX = ".pooler.supabase.com";
+const SUPABASE_PROJECT_REF_PATTERN = /^[a-z0-9]{20}$/;
+
+export const PRODUCTION_SUPABASE_PROJECT_REF = "ksuzzfzufotrwrxdrynl";
+
+export const RUNTIME_DATABASE_POOL_CONFIG = Object.freeze({
+  max: 1,
+  min: 0,
+  connectionTimeoutMillis: 5_000,
+  idleTimeoutMillis: 10_000,
+  maxLifetimeSeconds: 300,
+  allowExitOnIdle: true,
+} satisfies Omit<PoolConfig, "connectionString" | "application_name">);
+
+type RuntimeDatabaseEnvironment = {
+  [name: string]: string | undefined;
+  DATABASE_URL?: string;
+  DIRECT_URL?: string;
+  PREVIEW_DATABASE_PROJECT_REF?: string;
+  VERCEL_ENV?: string;
+};
+
+function refusePreviewConfiguration(reason: string): never {
+  throw new Error(`Unsafe Preview database configuration: ${reason}`);
+}
+
+function parsePostgresUrl(
+  rawValue: string | undefined,
+  variableName: "DATABASE_URL" | "DIRECT_URL",
+) {
+  if (!rawValue?.trim()) {
+    refusePreviewConfiguration(`${variableName} is required.`);
+  }
+
+  let parsed: URL;
+
+  try {
+    parsed = new URL(rawValue);
+  } catch {
+    refusePreviewConfiguration(
+      `${variableName} must be a valid PostgreSQL URL.`,
+    );
+  }
+
+  if (!POSTGRES_PROTOCOLS.has(parsed.protocol)) {
+    refusePreviewConfiguration(
+      `${variableName} must use the PostgreSQL protocol.`,
+    );
+  }
+
+  return parsed;
+}
+
+function projectRefFromPoolerUsername(parsed: URL) {
+  const username = decodeURIComponent(parsed.username);
+  const separatorIndex = username.lastIndexOf(".");
+
+  return separatorIndex === -1 ? undefined : username.slice(separatorIndex + 1);
+}
+
+function isSupabasePoolerHost(hostname: string) {
+  return hostname.endsWith(SUPABASE_POOLER_SUFFIX);
+}
+
+function assertProjectRef(
+  actualProjectRef: string | undefined,
+  expectedProjectRef: string,
+  variableName: "DATABASE_URL" | "DIRECT_URL",
+) {
+  if (actualProjectRef !== expectedProjectRef) {
+    refusePreviewConfiguration(
+      `${variableName} does not target the approved Preview project.`,
+    );
+  }
+}
+
+export function validatePreviewDatabaseIsolation(
+  environment: RuntimeDatabaseEnvironment,
+) {
+  if (environment.VERCEL_ENV !== "preview") {
+    return;
+  }
+
+  const expectedProjectRef = environment.PREVIEW_DATABASE_PROJECT_REF?.trim();
+
+  if (
+    !expectedProjectRef ||
+    !SUPABASE_PROJECT_REF_PATTERN.test(expectedProjectRef)
+  ) {
+    refusePreviewConfiguration(
+      "PREVIEW_DATABASE_PROJECT_REF is required and must be a Supabase project reference.",
+    );
+  }
+
+  if (expectedProjectRef === PRODUCTION_SUPABASE_PROJECT_REF) {
+    refusePreviewConfiguration(
+      "the approved Preview project must be isolated from Production.",
+    );
+  }
+
+  const runtimeUrl = parsePostgresUrl(environment.DATABASE_URL, "DATABASE_URL");
+
+  if (!isSupabasePoolerHost(runtimeUrl.hostname)) {
+    refusePreviewConfiguration(
+      "DATABASE_URL must use the Supabase transaction pooler.",
+    );
+  }
+
+  if (runtimeUrl.port !== "6543") {
+    refusePreviewConfiguration(
+      "DATABASE_URL must use transaction pooling on port 6543.",
+    );
+  }
+
+  assertProjectRef(
+    projectRefFromPoolerUsername(runtimeUrl),
+    expectedProjectRef,
+    "DATABASE_URL",
+  );
+
+  if (runtimeUrl.searchParams.get("pgbouncer") !== "true") {
+    refusePreviewConfiguration(
+      "DATABASE_URL must explicitly enable transaction-pooler compatibility.",
+    );
+  }
+
+  const directUrl = parsePostgresUrl(environment.DIRECT_URL, "DIRECT_URL");
+
+  if (directUrl.toString() === runtimeUrl.toString()) {
+    refusePreviewConfiguration(
+      "DIRECT_URL must be separate from the transaction-pooled runtime URL.",
+    );
+  }
+
+  if (directUrl.port !== "5432") {
+    refusePreviewConfiguration(
+      "DIRECT_URL must use the direct or session-pooled migration port 5432.",
+    );
+  }
+
+  if (isSupabasePoolerHost(directUrl.hostname)) {
+    assertProjectRef(
+      projectRefFromPoolerUsername(directUrl),
+      expectedProjectRef,
+      "DIRECT_URL",
+    );
+    return;
+  }
+
+  if (directUrl.hostname !== `db.${expectedProjectRef}.supabase.co`) {
+    refusePreviewConfiguration(
+      "DIRECT_URL does not target the approved Preview project.",
+    );
+  }
+}
+
+export function createRuntimePoolConfig(connectionString: string): PoolConfig {
+  return {
+    connectionString,
+    ...RUNTIME_DATABASE_POOL_CONFIG,
+    application_name: "fp-dashboard-runtime",
+  };
+}

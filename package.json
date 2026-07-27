@@ -21,7 +21,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run db:runtime:validate && next build",
     "postinstall": "node scripts/patch-minimatch-brace-expansion.mjs && prisma generate",
     "start": "next start",
     "lint": "eslint",
@@ -38,6 +38,7 @@
     "audit:performance:public": "node scripts/audit-public-performance.mjs",
     "db:validate": "prisma validate",
     "db:generate": "prisma generate",
+    "db:runtime:validate": "tsx scripts/validate-runtime-database-config.ts",
     "db:migrate": "prisma migrate dev",
     "db:migrate:validate": "node scripts/validate-migrations.mjs",
     "db:seed": "prisma db seed"
