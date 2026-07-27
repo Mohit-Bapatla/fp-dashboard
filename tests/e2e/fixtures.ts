@@ -11,6 +11,7 @@ import {
 import {
   isBrowserNavigationCancellation,
   isExpectedSupersededChunkCancellation,
+  isExpectedVercelSecurityScriptCancellation,
   toPageErrorIssue,
 } from "./runtime-monitor-policy";
 
@@ -70,6 +71,17 @@ const allowedConsoleMessages: readonly AllowedConsoleMessage[] = [
       /^Permissions policy violation: compute-pressure is not allowed in this document\.$/,
     reason: "YouTube compute-pressure permissions-policy notice",
     type: "error",
+  },
+  {
+    // Headless Chromium can emit this driver-level performance warning while
+    // the privacy-enhanced YouTube player reads its own WebGL canvas. It is
+    // confined to the cross-origin embed and does not indicate a page failure.
+    locationPattern:
+      /^https:\/\/www\.youtube-nocookie\.com\/embed\/[^/:?]+(?:\?[^:]*)?:\d+:\d+$/,
+    pattern:
+      /^\[\.WebGL-0x[a-f0-9]+\]GL Driver Message \(OpenGL, Performance, GL_CLOSE_PATH_NV, High\): GPU stall due to ReadPixels$/i,
+    reason: "YouTube headless WebGL readback notice",
+    type: "warning",
   },
 ];
 
@@ -141,6 +153,22 @@ function isAllowedRequestCancellation(
     if (
       url.searchParams.has("_rsc") &&
       ["fetch", "xhr"].includes(request.resourceType())
+    ) {
+      return true;
+    }
+
+    // Vercel's edge security layer injects a randomized challenge script at
+    // this exact path shape. A repeated navigation can cancel the previous
+    // challenge request; successful loads, HTTP failures, different paths,
+    // and ordinary application scripts remain visible to the monitor.
+    if (
+      isExpectedVercelSecurityScriptCancellation({
+        errorText: request.failure()?.errorText ?? null,
+        hasSupersedingMainFrameNavigation,
+        method: request.method(),
+        resourceType: request.resourceType(),
+        url: request.url(),
+      })
     ) {
       return true;
     }

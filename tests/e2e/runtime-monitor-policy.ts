@@ -39,6 +39,27 @@ export function isExpectedSupersededChunkCancellation({
   }
 }
 
+export function isExpectedVercelSecurityScriptCancellation({
+  errorText,
+  method,
+  resourceType,
+  url,
+}: RequestFailureSignal) {
+  if (
+    method !== "GET" ||
+    resourceType !== "script" ||
+    !isBrowserNavigationCancellation(errorText)
+  ) {
+    return false;
+  }
+
+  try {
+    return /^\/[a-f0-9]{16}\/script\.js$/i.test(new URL(url).pathname);
+  } catch {
+    return false;
+  }
+}
+
 export function toPageErrorIssue(error: Error, url: string) {
   return {
     detail: error.stack ?? error.message,

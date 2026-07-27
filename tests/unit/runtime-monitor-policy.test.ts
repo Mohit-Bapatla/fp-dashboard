@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   isBrowserNavigationCancellation,
   isExpectedSupersededChunkCancellation,
+  isExpectedVercelSecurityScriptCancellation,
   toPageErrorIssue,
   type RequestFailureSignal,
 } from "../e2e/runtime-monitor-policy";
@@ -39,6 +40,36 @@ describe("browser runtime monitor policy", () => {
         errorText: "cancelled",
       }),
     ).toBe(true);
+  });
+
+  it("recognizes only the exact cancelled Vercel security script shape", () => {
+    const vercelSecurityScript = {
+      ...expectedCancellation,
+      hasSupersedingMainFrameNavigation: false,
+      url: "https://preview.example.com/b325571d24134398/script.js",
+    };
+
+    expect(
+      isExpectedVercelSecurityScriptCancellation(vercelSecurityScript),
+    ).toBe(true);
+    expect(
+      isExpectedVercelSecurityScriptCancellation({
+        ...vercelSecurityScript,
+        errorText: "net::ERR_FAILED",
+      }),
+    ).toBe(false);
+    expect(
+      isExpectedVercelSecurityScriptCancellation({
+        ...vercelSecurityScript,
+        url: "https://preview.example.com/assets/script.js",
+      }),
+    ).toBe(false);
+    expect(
+      isExpectedVercelSecurityScriptCancellation({
+        ...vercelSecurityScript,
+        resourceType: "document",
+      }),
+    ).toBe(false);
   });
 
   it.each([
