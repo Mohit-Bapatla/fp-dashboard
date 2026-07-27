@@ -1725,5 +1725,265 @@
       "regressionTestAdded": false,
       "fixCommit": null
     }
-  ]
+  ],
+  "finalAuthenticatedPhysicalIPhoneReleaseGate": {
+    "date": "2026-07-27",
+    "pullRequest": 35,
+    "branch": "codex/funnel-mobile-performance-audit",
+    "supersedes": "serverlessPoolingReleaseGateResolution.physicalIPhone incomplete evidence and BLOCK recommendation",
+    "recommendation": "APPROVE_FOR_PRODUCTION",
+    "pullRequestAction": "MARK_READY_FOR_OWNER_REVIEW",
+    "actionsExcluded": [
+      "merge",
+      "production promotion",
+      "production schema mutation",
+      "production data mutation",
+      "production environment mutation"
+    ],
+    "exactRuntime": {
+      "sha": "998866a57e2254d50e14a3700252db9e820eb03a",
+      "deploymentId": "dpl_6Ww1iTTc2PUU5GPvYYnoNvyvcTNz",
+      "url": "https://fp-dashboard-m9byb8eus-bapatlamohitwork-2162s-projects.vercel.app",
+      "state": "READY",
+      "laterHeadAtTestStart": "0a87ef31afe18cfaeadf110318040cc478deda08",
+      "runtimeDeltaAfterTestedSha": false
+    },
+    "postRuntimeChanges": [
+      {
+        "sha": "9bbf211b8cb2a3fdd9d33d465c8ad8506a928e46",
+        "classification": "tests/configuration",
+        "summary": "Isolate authenticated connection-load request sessions.",
+        "runtimeEffect": false
+      },
+      {
+        "sha": "0a87ef31afe18cfaeadf110318040cc478deda08",
+        "classification": "documentation/artifacts",
+        "summary": "Record the serverless-pooling release-gate evidence.",
+        "runtimeEffect": false
+      }
+    ],
+    "device": {
+      "model": "iPhone 14 Pro",
+      "hardwareIdentifier": "iPhone15,2",
+      "iosVersion": "26.5.2",
+      "interactionChannel": "REAL_IPHONE_THROUGH_MACOS_IPHONE_MIRRORING",
+      "browserEmulation": false
+    },
+    "previewIsolationBeforeSignup": {
+      "status": "PASS",
+      "fictionalOpportunities": 3,
+      "fictionalPartnerOrganizations": 1,
+      "previewSentinels": 3,
+      "users": 0,
+      "studentProfiles": 0,
+      "savedOpportunities": 0,
+      "applications": 0,
+      "resumes": 0,
+      "productionInventoryWasNotRendered": true
+    },
+    "authentication": {
+      "status": "PASS",
+      "accountType": "synthetic disposable Clerk Development user",
+      "signupMethod": "Preview-supported email and password with Clerk Development verification code",
+      "developmentModeVisible": true,
+      "returnedToExactPreview": true,
+      "productionDomainRedirects": 0,
+      "productionDataLeakage": false,
+      "initialStudentState": "INCOMPLETE"
+    },
+    "majorStages": [
+      {
+        "stage": "launch_and_authentication",
+        "status": "PASS"
+      },
+      {
+        "stage": "onboarding_step_1",
+        "status": "PASS"
+      },
+      {
+        "stage": "onboarding_steps_2_through_4",
+        "status": "PASS"
+      },
+      {
+        "stage": "profile_completion_and_student_dashboard",
+        "status": "PASS"
+      },
+      {
+        "stage": "dashboard_opportunities_saved_applications_navigation",
+        "status": "PASS"
+      },
+      {
+        "stage": "save_remove_and_refresh",
+        "status": "PASS"
+      },
+      {
+        "stage": "application_start_surface_without_submission",
+        "status": "PASS"
+      },
+      {
+        "stage": "logout_login_completed_student_return",
+        "status": "PASS"
+      },
+      {
+        "stage": "cold_safari_force_close_reopen_and_sign_in",
+        "status": "PASS"
+      }
+    ],
+    "mobileInputBehavior": {
+      "normalPageScaleReadable": "PASS",
+      "unexpectedFocusZoom": 0,
+      "horizontalOverflow": 0,
+      "primaryControlsApproximately44PixelsOrGreater": "PASS",
+      "ordinaryFieldEnterNativeValidation": "PASS",
+      "specialtyEnterAddsChipWithoutSubmit": "PASS",
+      "multilineEnterAddsNewlineWithoutSubmit": "PASS",
+      "backForwardPersistence": "PASS",
+      "refreshResumesSavedStep": "PASS",
+      "validationRetainsEnteredValues": "PASS",
+      "nativeSelectOpenDismiss": "PASS",
+      "keyboardOrInputAccessoryObstruction": 0,
+      "note": "Mac keyboard input through Mirroring produced the iOS input accessory rather than a full software keyboard; it dismissed cleanly and never trapped the active field or primary action."
+    },
+    "dashboard": {
+      "routeAfterCompletion": "/dashboard/student",
+      "fictionalOpportunityInventory": 3,
+      "dashboardUnavailableOccurrences": 0,
+      "connectionPoolErrors": 0,
+      "requestTimeouts": 0,
+      "endlessLoadingOccurrences": 0,
+      "genericServerErrors": 0
+    },
+    "saveRemove": {
+      "savedThroughPhysicalUi": true,
+      "appearedInSaved": true,
+      "removedThroughPhysicalUi": true,
+      "absentAfterRefresh": true
+    },
+    "applicationStart": {
+      "workspaceLoaded": true,
+      "harmlessDateControlOpened": true,
+      "externalApplicationOpened": false,
+      "applicationSubmitted": false,
+      "resumeUploaded": false,
+      "privateNotesEntered": false,
+      "unexpectedInternalRecord": {
+        "created": true,
+        "status": "PREPARING",
+        "submitted": false,
+        "resumeAttached": false,
+        "deletedDuringCleanup": true
+      }
+    },
+    "logoutLogin": {
+      "signedOutDestination": "PASS_PREVIEW_HOME",
+      "developmentEmailCodeSignin": "PASS",
+      "completedStudentDestination": "/dashboard/student",
+      "incorrectOnboardingReturn": false
+    },
+    "coldSafari": {
+      "forceClosedThroughRealIosAppSwitcher": true,
+      "reopened": true,
+      "existingPrivateBrowsingSessionResumed": false,
+      "protectedPreviewAccessReestablished": true,
+      "signinRequestedAndCompleted": true,
+      "dashboardLoadedAfterReauthentication": true,
+      "connectionError": false,
+      "status": "PASS"
+    },
+    "mirroring": {
+      "temporaryDisconnects": 1,
+      "visibleMessage": "iPhone in Use",
+      "recovery": "Clicked Connect and continued from the current Safari flow.",
+      "manualDeviceActionRequired": false,
+      "status": "PASS_WITH_RECOVERED_TRANSIENT_DISCONNECT"
+    },
+    "safariWebInspector": {
+      "status": "UNAVAILABLE_CONNECTING",
+      "independentBlocker": false,
+      "directConsoleDiagnosticsAvailable": false,
+      "directNetworkDiagnosticsAvailable": false
+    },
+    "exactDeploymentRuntimeLogs": {
+      "fromUtc": "2026-07-27T21:15:00Z",
+      "toUtc": "2026-07-27T22:10:00Z",
+      "reportedStatusGroups": {
+        "200": 271,
+        "307": 12,
+        "303": 2
+      },
+      "http4xx": 0,
+      "http5xx": 0,
+      "warningErrorOrFatalEntries": 0,
+      "visiblePhysicalApplicationErrors": 0
+    },
+    "cleanup": {
+      "status": "PASS",
+      "clerkDevelopmentUserDeleted": true,
+      "stagingFinalCounts": {
+        "fictionalOpportunitiesRetained": 3,
+        "fictionalPartnerOrganizationsRetained": 1,
+        "users": 0,
+        "studentProfiles": 0,
+        "savedOpportunities": 0,
+        "applications": 0,
+        "resumes": 0,
+        "auditLogs": 0,
+        "recommendationEvents": 0,
+        "storageObjects": 0
+      },
+      "temporarySaveGone": true,
+      "unexpectedApplicationGone": true,
+      "resumeMetadataAndObjectsGone": true,
+      "identifierBearingMirroringScreenshotsRemoved": true,
+      "localCredentialNoteRemoved": true,
+      "clipboardCleared": true,
+      "finalSupavisorBackendWorkers": 1,
+      "manualDatabaseSessionTerminationRequired": false
+    },
+    "productionNonMutation": {
+      "status": "PASS",
+      "rerunStartCounts": {
+        "opportunities": 157,
+        "users": 63,
+        "savedOpportunities": 4,
+        "applications": 13
+      },
+      "rerunFinalCounts": {
+        "opportunities": 157,
+        "users": 63,
+        "savedOpportunities": 4,
+        "applications": 13
+      },
+      "previewSentinelMatches": 0,
+      "disposableAccountMatches": 0,
+      "note": "The 63-user count was present before this rerun and remained unchanged. Earlier audit sections sampled 62 users in earlier windows.",
+      "schemaMutated": false,
+      "dataMutatedByThisTest": false,
+      "storageMutated": false,
+      "environmentMutated": false
+    },
+    "criteria": {
+      "exactReleaseRuntimeVerified": "PASS",
+      "noRuntimeChangeAfterTestedSha": "PASS",
+      "previewAuthenticationIsolated": "PASS",
+      "incompleteStudentCompletesFourStepOnboarding": "PASS",
+      "mobileFocusEnterBackRefreshPersistence": "PASS",
+      "dashboardAndRecommendationsRender": "PASS",
+      "saveRemove": "PASS",
+      "applicationStartWithoutSubmission": "PASS",
+      "completedStudentReturnsAfterLogoutLogin": "PASS",
+      "coldSafariReopen": "PASS",
+      "noNewExactDeploymentRuntimeFailure": "PASS",
+      "temporaryRecordsAndIdentifierTracesCleaned": "PASS",
+      "productionUnchanged": "PASS",
+      "existingRequiredChecksGreen": "PASS"
+    },
+    "monitoredRollout": [
+      "Merge only after owner review and green CI, CodeQL, and Vercel checks on the final artifact head.",
+      "Promote the merge commit only in a separate authorized action and record the exact Production deployment ID and SHA.",
+      "Verify signed-out routes, authentication entry points, and the completed-student dashboard immediately after promotion.",
+      "Monitor Vercel 4xx/5xx and warning/error/fatal logs plus Supavisor connection aggregates for at least 15 minutes.",
+      "Rollback to the immediately preceding known-good Production deployment on authentication leakage, dashboard failure, save failure, pool exhaustion, elevated 5xx, or persistent connection growth."
+    ]
+  }
 }

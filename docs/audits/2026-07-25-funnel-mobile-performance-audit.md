@@ -1188,3 +1188,110 @@ Production remained at 157 opportunities, 62 users, four saved opportunities, an
 **Release recommendation: BLOCK.**
 
 The database blocker is resolved, but the explicit approval criteria require the complete authenticated flow on the physical iPhone. Keep PR #35 in draft. Do not merge and do not promote any deployment. Reopen only after the real iPhone completes the listed onboarding, mobile-input, save/remove, logout/login, and cold-Safari checks against the exact runtime candidate, followed by the same cleanup and a clean log review.
+
+## Final authenticated physical-iPhone release gate — 2026-07-27
+
+This chronological section records the completed real-device rerun and supersedes the earlier physical-iPhone `BLOCK` conclusion. It does not rewrite or erase that earlier evidence.
+
+### Release SHA and device
+
+- Exact runtime SHA: `998866a57e2254d50e14a3700252db9e820eb03a`
+- Exact deployment: `dpl_6Ww1iTTc2PUU5GPvYYnoNvyvcTNz`
+- Exact Preview: `https://fp-dashboard-m9byb8eus-bapatlamohitwork-2162s-projects.vercel.app`
+- Device: real iPhone 14 Pro (`iPhone15,2`) running iOS 26.5.2
+- Interaction channel: macOS iPhone Mirroring, not browser emulation
+- Safari Web Inspector: still unavailable at `Connecting…`; no direct inspector console/network evidence was used
+
+Every commit after the tested runtime is non-runtime:
+
+| Commit     | Classification          | Runtime effect |
+| ---------- | ----------------------- | -------------- |
+| `9bbf211`  | Tests/configuration     | None           |
+| `0a87ef31` | Documentation/artifacts | None           |
+
+`9bbf211` changes only the authenticated connection-stability test harness. `0a87ef31` changes only the two audit artifacts. The deployed application runtime therefore remains exactly `998866a`.
+
+Before account creation, the physical Preview showed the three fictional staging opportunities, including the `PREVIEW ONLY —` sentinel, rather than Production's 157-opportunity inventory. Staging began with one fictional partner organization and zero users, profiles, saves, applications, resumes, recommendation events, and audit logs. Production began this rerun at 157 opportunities, 63 users, four saves, 13 applications, zero Preview sentinels, and zero disposable-account matches.
+
+### Chronological real-device results
+
+1. **Launch and authentication — PASS.** Safari stayed on the exact protected Preview. A new synthetic Clerk Development user was created with a Preview-supported email/password and development verification-code flow. Clerk displayed Development mode. The authentication return remained on the exact Preview; no request or navigation reached `www.futurephysicians.org` or another Production deployment. The new user began as an incomplete student.
+2. **Onboarding Step 1 — PASS.** Focus remained at normal page scale with no unexpected Safari zoom or horizontal overflow. The visible inputs remained readable and the primary controls were approximately 44 pixels or taller. Mac keyboard input through Mirroring produced the iOS input accessory without permanently covering the active field or primary action. Return on a partially completed ordinary form invoked native required-field validation and retained the entered value.
+3. **Onboarding Steps 2–4 — PASS.** All four screens were completed with fictional data. Native selects opened and dismissed correctly. Refresh during the specialties screen resumed the saved step. Back restored the location screen with its values intact; forward returned to the correct later step. Return in the specialty field added a `Pediatric Cardiology` chip without submitting. Return in the final multiline goals field inserted a newline without submitting. Required final-step validation was clear and retained entered state. The keyboard/accessory never trapped the flow or made the primary action unreachable.
+4. **Profile completion and dashboard — PASS.** Finishing the profile returned the completed student to `/dashboard/student`. Home, opportunities, Saved, and Applications remained responsive. No dashboard-unavailable message, connection-pool error, request timeout, endless loader, or generic server error appeared. The opportunity inventory remained the three fictional staging records.
+5. **Save and remove — PASS.** One fictional staging opportunity was saved, appeared in Saved, was removed through the UI, and remained absent after a Safari refresh.
+6. **Application-start surface — PASS.** The fictional application workspace loaded, showed 0% progress, and allowed the harmless target-date control to open and retain the existing fictional deadline. No official-application link was opened, no application was submitted, no resume was selected or uploaded, and no private note was entered. Opening the internal workspace created one `PREPARING` staging record; it was confirmed unsubmitted with no resume and was deleted during cleanup.
+7. **Logout/login return — PASS.** Sign-out returned to the correct signed-out Preview home. Clerk Development email-code sign-in returned the completed student directly to `/dashboard/student`, not onboarding.
+8. **Cold Safari lifecycle — PASS.** Safari was force-closed through the real iOS app switcher and reopened. Private Browsing did not retain the protected-deployment bypass/session, so Safari first requested Vercel protection access and then Preview sign-in. A new temporary protection bypass was established, Clerk Development sign-in completed, and the student dashboard loaded successfully without a connection error. This meets the allowed cold-start outcome: sign-in was requested and completed correctly.
+9. **Mirroring recovery — PASS.** Mirroring briefly displayed `iPhone in Use` during the first reauthentication attempt. Clicking Connect restored the same Safari flow, and the test continued from the last verified step. No manual device action was required.
+
+No identifier-bearing authentication screenshot was retained. The temporary share token, disposable account identifier, password, development code, clipboard contents, and local credential note were removed after use.
+
+### Runtime diagnostics
+
+The accepted physical-test log window was `2026-07-27T21:15:00Z` through `2026-07-27T22:10:00Z` for the exact deployment. Vercel's reported status groups included 271 responses with status 200, 12 expected 307 redirects, and two expected 303 redirects. The same exact-deployment window contained:
+
+- zero 4xx responses
+- zero 5xx responses
+- zero warning, error, or fatal log entries
+- no visible client-side application error on the physical iPhone
+
+Safari Web Inspector remained unavailable, so inspector-specific console and failed-request capture remains a documented limitation. The clean exact-deployment runtime log review and the visible physical behavior provide the diagnostic evidence for this rerun.
+
+### Cleanup and non-mutation proof
+
+The exact synthetic Clerk Development user was permanently deleted. Its isolated staging audit events were deleted before the staging user row; the profile, save, application, and other dependent records were removed and rechecked.
+
+Final staging state:
+
+- Fictional opportunities retained: 3
+- Fictional partner organizations retained: 1
+- Users: 0
+- Student profiles: 0
+- Saved opportunities: 0
+- Applications: 0
+- Resumes and storage objects: 0
+- Audit logs: 0
+- Recommendation events: 0
+- Supavisor backend workers: 1 idle worker, naturally returned to the expected level
+
+The temporary local credential note and all generated iPhone Mirroring screenshots from this rerun were permanently removed, and the Mac clipboard was cleared.
+
+Production ended at the same rerun baseline: 157 opportunities, 63 users, four saves, and 13 applications, with zero Preview sentinels and zero disposable-account matches. The earlier sections' 62-user Production samples were from earlier audit windows; the 63-user count was already present immediately before this rerun and remained 63 afterward. This test did not mutate Production schema, data, storage, or environment configuration.
+
+### Final release decision
+
+| Approval criterion                                  | Result |
+| --------------------------------------------------- | ------ |
+| Exact release runtime verified                      | PASS   |
+| No runtime change after the tested SHA              | PASS   |
+| Preview authentication succeeds and stays isolated  | PASS   |
+| Incomplete student completes all four steps         | PASS   |
+| Mobile focus, Enter, Back, refresh, and persistence | PASS   |
+| Dashboard and fictional recommendations load        | PASS   |
+| Save/remove survives refresh                        | PASS   |
+| Application surface loads without submission        | PASS   |
+| Completed student returns after logout/login        | PASS   |
+| Cold Safari reopen completes correctly              | PASS   |
+| No new exact-deployment runtime failure             | PASS   |
+| Temporary records and identifier-bearing traces     | PASS   |
+| Production unchanged                                | PASS   |
+| Existing required GitHub/Vercel checks              | PASS   |
+
+**Release recommendation: APPROVE FOR PRODUCTION.**
+
+PR #35 may be marked ready for owner review. This recommendation does not authorize merging or Production promotion.
+
+Recommended monitored rollout:
+
+1. Owner reviews and merges PR #35 only after the final artifact commit's CI, CodeQL, and Vercel checks are green.
+2. Promote the merge commit to Production in a separate authorized action; record the Production deployment ID and commit SHA before traffic validation.
+3. Immediately verify signed-out home, opportunities, sign-up/sign-in, and the completed-student dashboard; confirm the Production inventory remains Production-sized and contains no Preview sentinel.
+4. Monitor Vercel 4xx/5xx and warning/error/fatal logs plus Supabase/Supavisor connection aggregates for at least 15 minutes. Require no `EMAXCONNSESSION`, pool timeout, dashboard-unavailable event, failed save, or anomalous worker accumulation.
+5. Run one disposable Production-safe smoke account only if separately authorized and a cleanup path is approved; otherwise keep the monitored rollout read-only.
+
+Rollback:
+
+1. If any authentication redirect leakage, dashboard failure, save failure, pool exhaustion, elevated 5xx rate, or persistent connection growth appears, stop the rollout and redeploy the immediately preceding known-good Production deployment.
+2. Reconfirm the prior deployment ID is serving, verify signed-out and dashboard health, and monitor error/connection recovery.
+3. Do not reuse or promote the failed deployment until the failure is reproduced on an isolated Preview and the release gate is rerun.
