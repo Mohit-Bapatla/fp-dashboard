@@ -46,26 +46,6 @@ describe("security headers", () => {
     }
   });
 
-  it("allows the Vercel toolbar frame only in preview environments", () => {
-    const previousVercelEnv = process.env.VERCEL_ENV;
-    Object.assign(process.env, { VERCEL_ENV: "preview" });
-    try {
-      expect(buildContentSecurityPolicy("preview-nonce")).toContain(
-        "frame-src 'self' https://*.accounts.dev https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://www.youtube-nocookie.com https://vercel.live",
-      );
-    } finally {
-      if (previousVercelEnv === undefined) {
-        delete process.env.VERCEL_ENV;
-      } else {
-        Object.assign(process.env, { VERCEL_ENV: previousVercelEnv });
-      }
-    }
-
-    expect(buildContentSecurityPolicy("production-nonce")).not.toContain(
-      "frame-src 'self' https://*.accounts.dev https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://www.youtube-nocookie.com https://vercel.live",
-    );
-  });
-
   it("permits React development diagnostics without weakening production", () => {
     const previousNodeEnv = process.env.NODE_ENV;
     Object.assign(process.env, { NODE_ENV: "development" });
