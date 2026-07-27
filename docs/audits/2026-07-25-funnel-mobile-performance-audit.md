@@ -777,3 +777,61 @@ The code now makes the homepage's value proposition paint immediately, removes t
 The business outcome is not yet proven. The exact cohort shows severe loss after signup, but current instrumentation cannot locate it before the first successful save. A progressive value-first onboarding model and privacy-safe first-party attribution are the highest-leverage next changes, both requiring approval.
 
 The signed-out preview is validated across Chromium, desktop WebKit, iPhone WebKit, all required viewports, controlled performance runs, and a real iPhone Safari session through Mirroring. The remaining release conditions are explicit production-deployment approval, a monitored rollout, and—if required by the approver—direct authenticated preview onboarding with a dedicated test account. Nothing in this audit merged the pull request or promoted a preview to production.
+
+## 27. Final release gate for PR #35
+
+Final-gate date: 2026-07-26 CDT
+
+This section supersedes the earlier **APPROVE WITH CONDITIONS** recommendation. The final recommendation is **BLOCK**. PR #35 remains a draft; nothing was merged or promoted.
+
+### Release SHA coverage
+
+The final branch head is `ed72f1c60dbfc57a4e13fa40e801093c36051d24`. Vercel reported the exact requested deployment, `https://fp-dashboard-3if5kmx7f-bapatlamohitwork-2162s-projects.vercel.app`, as READY with `githubCommitSha=ed72f1c60dbfc57a4e13fa40e801093c36051d24`.
+
+Every commit after the fully exercised runtime was classified:
+
+| Commit                                     | Classification          | Files                                                                                                       | Release implication                                                                                               |
+| ------------------------------------------ | ----------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `bc26e14cb520017ccf316db9a83eae7ca929d223` | Tests/configuration     | `tests/e2e/fixtures.ts`, `tests/e2e/runtime-monitor-policy.ts`, `tests/unit/runtime-monitor-policy.test.ts` | Narrows test monitoring to exact known preview-infrastructure cancellations; no application runtime file changed. |
+| `ed72f1c60dbfc57a4e13fa40e801093c36051d24` | Documentation/artifacts | This Markdown report and the machine-readable results                                                       | Records the completed post-fix preview verification; no application runtime file changed.                         |
+
+There was no runtime-code change after `3b87fa7bc740ba0444c6ac4be10897ae9156d4e9`. The focused signed-out and physical-iPhone runtime coverage therefore remains applicable to the final head; Phase 1 did not require a redundant runtime rerun. The final exact deployment also dynamically served `/opportunities` successfully, and Vercel reported no error/fatal runtime logs for that deployment in the checked 24-hour window.
+
+All GitHub/Vercel checks at `ed72f1c` were green: Quality, PostgreSQL migration validation, CodeQL, JavaScript/TypeScript analysis, Vercel, and Vercel Preview Comments passed. Supabase Preview was intentionally skipped.
+
+### Authenticated-preview safety boundary
+
+The preview has separate Development-mode Clerk keys and separate Preview-scoped `DATABASE_URL` and `DIRECT_URL` variables. That is not sufficient evidence of database isolation:
+
+- The exact preview route is `force-dynamic` and returned 149 current verified opportunities.
+- A read-only query against the active production Supabase project returned the same count and the same first sorted record UUID/title as the exact preview.
+- The only separate Supabase project, `fp-dashboard-staging`, was `INACTIVE`; it exposed no usable database or development branch during the gate.
+- Vercel reported no project integration that could provide an isolated per-preview database, and the database variables apply to all Preview deployments rather than the PR branch alone.
+
+The active preview data path is therefore consistent with the production database and fails the required “no production-domain or production-data leakage” criterion. Because sign-up, onboarding, saves, and sign-out audit activity would create or update database rows, the disposable Clerk sign-up was stopped before submission. No disposable account, profile, save, application, resume, or other temporary record was created, so cleanup is complete by non-creation.
+
+The requested authenticated physical-iPhone flow is intentionally **NOT RUN** at this unsafe boundary. This is not a Safari Web Inspector block: the iPhone 14 Pro (`iPhone15,2`) on iOS 26.5.2 build 23F84 remains paired and available, real-iPhone signed-out behavior through Mirroring already passed, and Web Inspector remains documented as unavailable at `Connecting…`.
+
+### Final criteria and decision
+
+| Release criterion                                            | Result                                                                                    | Evidence                                                                                                                          |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Exact release SHA verified                                   | PASS                                                                                      | Exact deployment is READY and reports `ed72f1c`.                                                                                  |
+| Preview authentication succeeds                              | NOT RUN / BLOCKED                                                                         | Stopped before account creation because database isolation failed.                                                                |
+| Incomplete student completes onboarding                      | NOT RUN / BLOCKED                                                                         | Would write through the unsafe preview data path.                                                                                 |
+| Completed student returns after logout/login                 | NOT RUN / BLOCKED                                                                         | Depends on the blocked disposable-account flow.                                                                                   |
+| No production-domain or production-data leakage              | FAIL                                                                                      | Exact dynamic preview data matches the active production Supabase dataset; isolated staging is inactive.                          |
+| No mobile blocker                                            | PASS for completed signed-out/production physical coverage; authenticated gate incomplete | Real iPhone Safari/Mirroring and automated iPhone-WebKit evidence remain as documented.                                           |
+| No new console/request failure in automated preview coverage | PASS                                                                                      | Zero automated application-console/failed-first-party-document failures; no Vercel error/fatal runtime log in the checked window. |
+| Temporary records cleaned up                                 | PASS / NOT APPLICABLE                                                                     | No disposable account or temporary database record was created.                                                                   |
+| GitHub/Vercel checks remain green                            | PASS at `ed72f1c`                                                                         | Required checks passed; Supabase Preview was intentionally skipped.                                                               |
+
+**Release recommendation: BLOCK.** Keep PR #35 in draft. Do not merge it and do not promote the deployment.
+
+To reopen the gate:
+
+1. Reactivate and validate `fp-dashboard-staging`, or provision a Supabase development branch with no production data.
+2. Bind `DATABASE_URL`, `DIRECT_URL`, storage, and any server-side Supabase credentials to that isolated target for the PR Preview environment, preferably with branch-specific scope.
+3. Redeploy and prove the exact deployment reads the isolated target without exposing a credential or mutating production.
+4. Run the complete disposable Clerk Development account flow on the physical iPhone, including onboarding, persistence/history/validation, save/remove, logout/login return, and safe account/data cleanup.
+5. Reconfirm automated diagnostics and all GitHub/Vercel checks at the resulting release head, then issue a new release decision.

@@ -377,6 +377,104 @@
       "production promotion"
     ]
   },
+  "finalReleaseGate": {
+    "date": "2026-07-26",
+    "pullRequest": "https://github.com/Mohit-Bapatla/fp-dashboard/pull/35",
+    "pullRequestState": "DRAFT",
+    "recommendation": "BLOCK",
+    "supersedesRecommendation": "APPROVE_WITH_CONDITIONS",
+    "releaseHead": "ed72f1c60dbfc57a4e13fa40e801093c36051d24",
+    "fullyTestedRuntime": "3b87fa7bc740ba0444c6ac4be10897ae9156d4e9",
+    "finalTestPolicyCommit": "bc26e14cb520017ccf316db9a83eae7ca929d223",
+    "exactDeployment": {
+      "url": "https://fp-dashboard-3if5kmx7f-bapatlamohitwork-2162s-projects.vercel.app",
+      "state": "READY",
+      "reportedGithubCommitSha": "ed72f1c60dbfc57a4e13fa40e801093c36051d24"
+    },
+    "postRuntimeChanges": [
+      {
+        "commit": "bc26e14cb520017ccf316db9a83eae7ca929d223",
+        "classification": "tests/configuration",
+        "files": [
+          "tests/e2e/fixtures.ts",
+          "tests/e2e/runtime-monitor-policy.ts",
+          "tests/unit/runtime-monitor-policy.test.ts"
+        ],
+        "runtimeCodeChanged": false
+      },
+      {
+        "commit": "ed72f1c60dbfc57a4e13fa40e801093c36051d24",
+        "classification": "documentation/artifacts",
+        "files": [
+          "docs/audits/2026-07-25-funnel-mobile-performance-audit.md",
+          "docs/audits/2026-07-25-funnel-mobile-performance-test-results.json"
+        ],
+        "runtimeCodeChanged": false
+      }
+    ],
+    "runtimeCoverage": {
+      "runtimeCodeChangedAfterFullyTestedRuntime": false,
+      "focusedRuntimeRerunRequired": false,
+      "signedOutAndPhysicalCoverageRemainsApplicable": true,
+      "exactDeploymentDynamicOpportunityProbe": "PASS",
+      "vercelErrorOrFatalLogsInChecked24HourWindow": 0
+    },
+    "previewDataIsolation": {
+      "status": "FAIL",
+      "clerkDevelopmentKeysScopedToPreview": true,
+      "databaseVariablesScopedToPreview": true,
+      "databaseVariablesScopedToPullRequestBranch": false,
+      "vercelProjectIntegrationsInstalled": false,
+      "exactPreviewOpportunityCount": 149,
+      "activeProductionOpportunityCount": 149,
+      "firstSortedPreviewRecordId": "0b376334-1e3f-4c22-bab3-7d801cc822f4",
+      "firstSortedProductionRecordId": "0b376334-1e3f-4c22-bab3-7d801cc822f4",
+      "activeProductionSupabaseStatus": "ACTIVE_HEALTHY",
+      "separateStagingSupabaseStatus": "INACTIVE",
+      "separateSupabaseDevelopmentBranchesAvailable": false,
+      "conclusion": "The exact force-dynamic preview data path matches the active production Supabase dataset while the only separate staging target is inactive. Production-data isolation is not satisfied."
+    },
+    "authenticatedPhysicalIPhone": {
+      "status": "NOT_RUN_BLOCKED_BY_DATA_ISOLATION",
+      "accountCreationSubmitted": false,
+      "temporaryRecordsCreated": false,
+      "cleanupStatus": "PASS_BY_NON_CREATION",
+      "model": "iPhone 14 Pro",
+      "productIdentifier": "iPhone15,2",
+      "iosVersion": "26.5.2",
+      "iosBuild": "23F84",
+      "testModeAvailable": "real iPhone Safari through iPhone Mirroring",
+      "webInspectorStatus": "Connecting; unavailable",
+      "webInspectorIsIndependentBlocker": false,
+      "reason": "Sign-up, onboarding, saves, and audit events would write through a preview data path that is not isolated from production."
+    },
+    "criteria": {
+      "exactReleaseShaVerified": "PASS",
+      "previewAuthentication": "NOT_RUN_BLOCKED",
+      "incompleteStudentCompletesOnboarding": "NOT_RUN_BLOCKED",
+      "completedStudentReturnsAfterLogoutLogin": "NOT_RUN_BLOCKED",
+      "noProductionDomainOrDataLeakage": "FAIL",
+      "noMobileBlocker": "PASS_EXISTING_SIGNED_OUT_AND_PRODUCTION_PHYSICAL_COVERAGE_AUTHENTICATED_GATE_INCOMPLETE",
+      "noNewAutomatedConsoleOrRequestFailure": "PASS",
+      "temporaryRecordsCleanedUp": "PASS_NOT_APPLICABLE",
+      "githubAndVercelChecksAtReleaseHead": "PASS",
+      "supabasePreviewCheck": "SKIPPED"
+    },
+    "requiredRemediation": [
+      "Reactivate and validate fp-dashboard-staging or provision a Supabase development branch with no production data.",
+      "Bind all Preview database and storage credentials to the isolated target, preferably scoped to the pull-request branch.",
+      "Redeploy and prove the exact deployment reads the isolated target.",
+      "Run the complete disposable Clerk Development physical-iPhone flow and clean up its temporary account and records.",
+      "Reconfirm automated diagnostics and all checks at the resulting release head."
+    ],
+    "actionsExcluded": [
+      "disposable account creation",
+      "production database mutation",
+      "merge",
+      "production promotion",
+      "mark ready for review"
+    ]
+  },
   "tests": [
     {
       "id": "HP-D-01",
