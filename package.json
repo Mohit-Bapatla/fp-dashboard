@@ -36,6 +36,7 @@
     "security:audit": "npm audit --audit-level=high",
     "security:secrets": "node scripts/scan-secrets.mjs",
     "audit:performance:public": "node scripts/audit-public-performance.mjs",
+    "audit:connections:authenticated": "node scripts/audit-authenticated-connection-stability.mjs",
     "db:validate": "prisma validate",
     "db:generate": "prisma generate",
     "db:runtime:validate": "tsx scripts/validate-runtime-database-config.ts",
