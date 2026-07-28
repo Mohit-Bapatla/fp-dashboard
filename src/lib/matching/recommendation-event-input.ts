@@ -42,9 +42,7 @@ function isOptionalFiniteNumber(
 function isBoundedMetadata(
   value: unknown,
 ): value is
-  | Record<string, string | number | boolean | null>
-  | null
-  | undefined {
+  Record<string, string | number | boolean | null> | null | undefined {
   if (value === undefined || value === null) return true;
   if (typeof value !== "object" || Array.isArray(value)) return false;
 
