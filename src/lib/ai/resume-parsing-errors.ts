@@ -7,8 +7,7 @@ import {
 } from "@/lib/student/resume-parse-state";
 
 export type ResumeParseErrorCode =
-  | PersistedResumeParseFailureReason
-  | "OWNERSHIP_DENIED";
+  PersistedResumeParseFailureReason | "OWNERSHIP_DENIED";
 
 export type ResumeParseFailureStage =
   | "ownership_lookup"

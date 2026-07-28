@@ -4,9 +4,7 @@ import {
 } from "@/lib/matching/grade-levels";
 
 export type EligibilityCategory =
-  | "STRONG_MATCH"
-  | "POSSIBLE_MATCH"
-  | "NOT_ELIGIBLE";
+  "STRONG_MATCH" | "POSSIBLE_MATCH" | "NOT_ELIGIBLE";
 
 export type EligibilityResult = {
   category: EligibilityCategory;

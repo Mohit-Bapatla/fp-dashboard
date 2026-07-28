@@ -23,12 +23,7 @@ import { createManagedAutoplayTimer } from "@/lib/marketing/autoplay-timer";
 import { cn } from "@/lib/utils";
 
 type StudentPreviewTab =
-  | "overview"
-  | "discover"
-  | "saved"
-  | "applications"
-  | "events"
-  | "profile";
+  "overview" | "discover" | "saved" | "applications" | "events" | "profile";
 
 const studentPreviewTabs: readonly {
   description: string;
