@@ -946,7 +946,7 @@ GitHub/Vercel checks at that head were green: Quality, PostgreSQL migration vali
 
 ### Authenticated Preview evidence layers
 
-The disposable Clerk Development account used the non-real address `fp-gate+clerk_test_20260726b@example.com`. No password, key, OTP secret, or token is retained in this report.
+The disposable Clerk Development account is recorded as `[REDACTED_TEST_ACCOUNT_A]`. No password, key, OTP secret, token, or exact account identifier is retained in this report.
 
 #### Real iPhone 14 Pro
 
@@ -1166,7 +1166,7 @@ Because the real-device interaction channel remained unavailable, this gate did 
 
 ### Cleanup and non-mutation proof
 
-The exact disposable Clerk Development user `release-pool+clerk_test_20260727a@example.com` was permanently deleted. Its staging audit logs and recommendation events were deleted before its staging user row, and the profile cascade was verified.
+The disposable Clerk Development user recorded as `[REDACTED_TEST_ACCOUNT_B]` was permanently deleted. Its staging audit logs and recommendation events were deleted before its staging user row, and the profile cascade was verified.
 
 Final staging state is three fictional opportunities, one fictional partner organization, and zero users, student profiles, saves, applications, audit logs, recommendation events, resume metadata, or resume objects. Browser authentication state, Playwright traces, screenshots containing identifiers, and disposable PostgreSQL containers were removed. Supavisor workers returned naturally to the expected idle level; no database session was manually terminated.
 

@@ -770,7 +770,7 @@
     },
     "authenticatedPreview": {
       "disposableAccount": {
-        "email": "fp-gate+clerk_test_20260726b@example.com",
+        "email": "[REDACTED_TEST_ACCOUNT_A]",
         "clerkEnvironment": "Development",
         "realStudentOrProductionCredential": false
       },
@@ -1312,7 +1312,7 @@
     },
     "cleanup": {
       "status": "PASS",
-      "clerkDevelopmentUser": "release-pool+clerk_test_20260727a@example.com",
+      "clerkDevelopmentUser": "[REDACTED_TEST_ACCOUNT_B]",
       "clerkDevelopmentUserDeleted": true,
       "stagingFinalCounts": {
         "fictionalOpportunitiesRetained": 3,
