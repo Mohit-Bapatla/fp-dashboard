@@ -41,6 +41,7 @@ describe("role-aware marketing actions", () => {
       account: {
         href: "/sign-up?redirect_url=%2Fdashboard%2Fstudent%2Fonboarding",
         label: "Create Free Profile",
+        prefetch: false,
       },
       showSignIn: true,
     });
@@ -63,6 +64,7 @@ describe("role-aware marketing actions", () => {
     ).toMatchObject({
       href: "/sign-up?redirect_url=%2Fdashboard%2Fstudent%2Fonboarding",
       label: "Create Free Profile",
+      prefetch: false,
     });
   });
 

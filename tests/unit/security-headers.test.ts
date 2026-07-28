@@ -21,12 +21,29 @@ describe("security headers", () => {
     expect(csp).not.toContain("https://*.futurephysicians.org");
     expect(csp).not.toContain("script-src 'self' 'unsafe-inline'");
     expect(csp).not.toContain("'unsafe-eval'");
+    expect(csp).not.toContain("upgrade-insecure-requests");
     expect(headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect(headers.get("X-Frame-Options")).toBe("DENY");
     expect(headers.get("Referrer-Policy")).toBe(
       "strict-origin-when-cross-origin",
     );
     expect(headers.get("Permissions-Policy")).toContain("camera=()");
+  });
+
+  it("upgrades insecure requests only on Vercel's HTTPS environments", () => {
+    const previousVercel = process.env.VERCEL;
+    Object.assign(process.env, { VERCEL: "1" });
+    try {
+      expect(buildContentSecurityPolicy("production-nonce")).toContain(
+        "upgrade-insecure-requests",
+      );
+    } finally {
+      if (previousVercel === undefined) {
+        delete process.env.VERCEL;
+      } else {
+        Object.assign(process.env, { VERCEL: previousVercel });
+      }
+    }
   });
 
   it("permits React development diagnostics without weakening production", () => {

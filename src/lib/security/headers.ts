@@ -1,6 +1,9 @@
 export function buildContentSecurityPolicy(nonce: string) {
   const developmentEval =
     process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
+  const upgradeInsecureRequests = process.env.VERCEL
+    ? ["upgrade-insecure-requests"]
+    : [];
 
   return [
     "default-src 'self'",
@@ -17,7 +20,7 @@ export function buildContentSecurityPolicy(nonce: string) {
     "worker-src 'self' blob:",
     "manifest-src 'self'",
     "media-src 'self' https:",
-    "upgrade-insecure-requests",
+    ...upgradeInsecureRequests,
   ].join("; ");
 }
 

@@ -1,24 +1,41 @@
 import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 
 import { PrismaClient } from "@/generated/prisma/client";
+import {
+  createRuntimePoolConfig,
+  resolveRuntimeDatabaseUrl,
+} from "@/lib/db/runtime-database-config";
 
 const fallbackDatabaseUrl =
   "postgresql://USER:PASSWORD@localhost:5432/fp_dashboard?schema=public";
 
 const globalForPrisma = globalThis as unknown as {
-  prisma?: PrismaClient;
+  runtimeDatabase?: {
+    pool: Pool;
+    prisma: PrismaClient;
+  };
 };
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL ?? fallbackDatabaseUrl,
-});
-
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
+function createRuntimeDatabase() {
+  const pool = new Pool(
+    createRuntimePoolConfig(
+      resolveRuntimeDatabaseUrl(process.env, fallbackDatabaseUrl),
+    ),
+  );
+  const adapter = new PrismaPg(pool);
+  const prisma = new PrismaClient({
     adapter,
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+  return { pool, prisma };
 }
+
+const runtimeDatabase =
+  globalForPrisma.runtimeDatabase ?? createRuntimeDatabase();
+
+// Next.js can evaluate this module more than once inside one warm serverless
+// instance. Keep one Prisma client and one bounded pg Pool per isolate.
+globalForPrisma.runtimeDatabase = runtimeDatabase;
+
+export const prisma = runtimeDatabase.prisma;

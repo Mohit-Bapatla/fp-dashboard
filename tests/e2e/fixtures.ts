@@ -9,7 +9,10 @@ import {
 } from "@playwright/test";
 
 import {
+  isBrowserNavigationCancellation,
   isExpectedSupersededChunkCancellation,
+  isExpectedVercelSecurityScriptCancellation,
+  isExpectedWebKitRscFetchCancellation,
   toPageErrorIssue,
 } from "./runtime-monitor-policy";
 
@@ -70,6 +73,17 @@ const allowedConsoleMessages: readonly AllowedConsoleMessage[] = [
     reason: "YouTube compute-pressure permissions-policy notice",
     type: "error",
   },
+  {
+    // Headless Chromium can emit this driver-level performance warning while
+    // the privacy-enhanced YouTube player reads its own WebGL canvas. It is
+    // confined to the cross-origin embed and does not indicate a page failure.
+    locationPattern:
+      /^https:\/\/www\.youtube-nocookie\.com\/embed\/[^/:?]+(?:\?[^:]*)?:\d+:\d+$/,
+    pattern:
+      /^\[\.WebGL-0x[a-f0-9]+\]GL Driver Message \(OpenGL, Performance, GL_CLOSE_PATH_NV, High\): GPU stall due to ReadPixels$/i,
+    reason: "YouTube headless WebGL readback notice",
+    type: "warning",
+  },
 ];
 
 const applicationErrorSignatures = [
@@ -123,7 +137,7 @@ function isAllowedRequestCancellation(
 ) {
   if (
     request.method() !== "GET" ||
-    request.failure()?.errorText !== "net::ERR_ABORTED"
+    !isBrowserNavigationCancellation(request.failure()?.errorText ?? null)
   ) {
     return false;
   }
@@ -140,6 +154,22 @@ function isAllowedRequestCancellation(
     if (
       url.searchParams.has("_rsc") &&
       ["fetch", "xhr"].includes(request.resourceType())
+    ) {
+      return true;
+    }
+
+    // Vercel's edge security layer injects a randomized challenge script at
+    // this exact path shape. A repeated navigation can cancel the previous
+    // challenge request; successful loads, HTTP failures, different paths,
+    // and ordinary application scripts remain visible to the monitor.
+    if (
+      isExpectedVercelSecurityScriptCancellation({
+        errorText: request.failure()?.errorText ?? null,
+        hasSupersedingMainFrameNavigation,
+        method: request.method(),
+        resourceType: request.resourceType(),
+        url: request.url(),
+      })
     ) {
       return true;
     }
@@ -211,6 +241,7 @@ async function findApplicationErrorBoundary(page: Page) {
 function installRuntimeErrorMonitor(
   page: Page,
   baseURL: string | undefined,
+  browserName: string,
   issues: RuntimeIssue[],
 ) {
   let supersedingMainFrameNavigation: {
@@ -236,6 +267,16 @@ function installRuntimeErrorMonitor(
     supersedingMainFrameNavigation = null;
   };
   const onPageError = (error: Error) => {
+    if (
+      isExpectedWebKitRscFetchCancellation({
+        browserName,
+        error,
+        pageUrl: page.url(),
+      })
+    ) {
+      return;
+    }
+
     issues.push(toPageErrorIssue(error, page.url()));
   };
   const onConsole = (message: ConsoleMessage) => {
@@ -337,11 +378,12 @@ type ErrorMonitorFixtures = {
  */
 export const test = base.extend<ErrorMonitorFixtures>({
   runtimeErrorMonitor: [
-    async ({ page }, use, testInfo) => {
+    async ({ browserName, page }, use, testInfo) => {
       const issues: RuntimeIssue[] = [];
       const removeListeners = installRuntimeErrorMonitor(
         page,
         testInfo.project.use.baseURL,
+        browserName,
         issues,
       );
 

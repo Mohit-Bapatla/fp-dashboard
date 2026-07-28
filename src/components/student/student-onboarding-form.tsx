@@ -31,6 +31,7 @@ type StudentOnboardingFormProps = {
 };
 
 type TextFieldProps = {
+  autoComplete?: string;
   errors: StudentProfileFieldErrors;
   label: string;
   name: keyof StudentProfileFormValues;
@@ -168,6 +169,7 @@ function uniqueSpecialties(values: string[]) {
 }
 
 function TextField({
+  autoComplete,
   errors,
   label,
   name,
@@ -181,7 +183,7 @@ function TextField({
   const controlId = `student-${name}`;
   const errorId = `${controlId}-error`;
   const className = cn(
-    "mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-primary",
+    "mt-2 min-h-11 w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground shadow-sm outline-none transition focus:border-primary sm:text-sm",
     error && "border-red-400 focus:border-red-500",
   );
 
@@ -191,6 +193,7 @@ function TextField({
       {required ? <span className="text-primary"> *</span> : null}
       {rows ? (
         <textarea
+          autoComplete={autoComplete}
           aria-describedby={error ? errorId : undefined}
           aria-invalid={Boolean(error)}
           aria-required={required || undefined}
@@ -203,6 +206,7 @@ function TextField({
         />
       ) : (
         <input
+          autoComplete={autoComplete}
           aria-describedby={error ? errorId : undefined}
           aria-invalid={Boolean(error)}
           aria-required={required || undefined}
@@ -244,7 +248,7 @@ function SelectField({
         aria-invalid={Boolean(error)}
         aria-required={required || undefined}
         className={cn(
-          "mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-primary",
+          "mt-2 min-h-11 w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground shadow-sm outline-none transition focus:border-primary sm:text-sm",
           error && "border-red-400 focus:border-red-500",
         )}
         defaultValue={values[name] as string}
@@ -354,7 +358,7 @@ function SpecialtyTagInput({
           aria-describedby={error ? errorId : undefined}
           aria-invalid={Boolean(error)}
           className={cn(
-            "h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground shadow-sm outline-none transition focus:border-primary",
+            "h-11 w-full rounded-lg border border-border bg-background px-3 text-base text-foreground shadow-sm outline-none transition focus:border-primary sm:text-sm",
             error && "border-red-400 focus:border-red-500",
           )}
           id="student-custom-specialty"
@@ -448,18 +452,7 @@ export function StudentOnboardingForm({
   ]);
 
   return (
-    <form
-      className="rounded-xl border border-border bg-background shadow-sm"
-      onKeyDown={(event) => {
-        if (
-          event.key === "Enter" &&
-          event.target instanceof HTMLInputElement &&
-          event.target.type !== "submit"
-        ) {
-          event.preventDefault();
-        }
-      }}
-    >
+    <form className="rounded-xl border border-border bg-background shadow-sm">
       <input name="returnTo" type="hidden" value={returnTo} />
       <input name="step" type="hidden" value={step} />
       <div className="border-b border-border p-6">
@@ -574,6 +567,7 @@ export function StudentOnboardingForm({
           className={cn("grid gap-5 sm:grid-cols-2", step !== 0 && "hidden")}
         >
           <TextField
+            autoComplete="given-name"
             errors={state.fieldErrors}
             label="First name"
             name="firstName"
@@ -581,6 +575,7 @@ export function StudentOnboardingForm({
             values={state.values}
           />
           <TextField
+            autoComplete="family-name"
             errors={state.fieldErrors}
             label="Last name"
             name="lastName"
@@ -588,6 +583,7 @@ export function StudentOnboardingForm({
             values={state.values}
           />
           <TextField
+            autoComplete="organization"
             errors={state.fieldErrors}
             label="School"
             name="school"
@@ -615,7 +611,7 @@ export function StudentOnboardingForm({
                 aria-invalid={Boolean(state.fieldErrors.gradeYear)}
                 aria-required="true"
                 className={cn(
-                  "mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-primary",
+                  "mt-2 min-h-11 w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground shadow-sm outline-none transition focus:border-primary sm:text-sm",
                   state.fieldErrors.gradeYear &&
                     "border-red-400 focus:border-red-500",
                 )}
@@ -653,7 +649,7 @@ export function StudentOnboardingForm({
                   aria-invalid={Boolean(state.fieldErrors.gradeYearCustom)}
                   aria-required="true"
                   className={cn(
-                    "mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-primary",
+                    "mt-2 min-h-11 w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground shadow-sm outline-none transition focus:border-primary sm:text-sm",
                     state.fieldErrors.gradeYearCustom &&
                       "border-red-400 focus:border-red-500",
                   )}
@@ -716,6 +712,7 @@ export function StudentOnboardingForm({
           className={cn("grid gap-5 sm:grid-cols-2", step !== 1 && "hidden")}
         >
           <TextField
+            autoComplete="address-level2"
             errors={state.fieldErrors}
             label="City"
             name="city"
@@ -723,6 +720,7 @@ export function StudentOnboardingForm({
             values={state.values}
           />
           <TextField
+            autoComplete="address-level1"
             errors={state.fieldErrors}
             label="State"
             name="state"
@@ -730,6 +728,7 @@ export function StudentOnboardingForm({
             values={state.values}
           />
           <TextField
+            autoComplete="country-name"
             errors={state.fieldErrors}
             label="Country"
             name="country"

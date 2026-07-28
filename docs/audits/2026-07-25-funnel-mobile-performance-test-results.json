@@ -1,0 +1,1989 @@
+{
+  "schemaVersion": 1,
+  "auditDate": "2026-07-25",
+  "timezone": "America/Chicago",
+  "branch": "codex/funnel-mobile-performance-audit",
+  "authoritativeStartCommit": "8e1dc75c0fc7a6e568526857c375043789124d7b",
+  "productionUrl": "https://fp-dashboard-rosy.vercel.app",
+  "productionCommitTested": "8e1dc75c0fc7a6e568526857c375043789124d7b",
+  "implementationCommits": ["5753513", "eb334d0", "3d90bbb", "0a2f54e"],
+  "previewFixCommits": ["0cab439", "077d64d", "7d10d3f", "3b87fa7", "bc26e14"],
+  "definitions": {
+    "PASS": "Observed result met the expected result.",
+    "FAIL": "Observed result did not meet the expected result.",
+    "PARTIAL": "Only some required layers or environments were verified.",
+    "NOT_RUN": "The required environment or authenticated state was unavailable."
+  },
+  "validation": {
+    "format": "pass",
+    "typecheck": "pass",
+    "lint": "pass",
+    "unit": {
+      "status": "pass",
+      "files": 80,
+      "tests": 369
+    },
+    "prismaValidate": "pass",
+    "migrationValidation": {
+      "status": "pass",
+      "migrations": 21,
+      "checks": [
+        "clean history",
+        "schema parity",
+        "representative legacy upgrade"
+      ]
+    },
+    "productionBuild": {
+      "status": "pass",
+      "routes": 86
+    },
+    "secretScan": "pass",
+    "dependencyAudit": {
+      "status": "pass_at_high_threshold",
+      "moderateAdvisories": 7,
+      "automaticBreakingFixApplied": false
+    },
+    "browserFullRun": {
+      "executions": 110,
+      "passed": 83,
+      "skipped": 27,
+      "failed": 0,
+      "status": "pass",
+      "runtimeCommit": "3b87fa7bc740ba0444c6ac4be10897ae9156d4e9",
+      "testPolicyCommit": "bc26e14cb520017ccf316db9a83eae7ca929d223",
+      "note": "The final protected-preview run passed after exact policies were added for only the YouTube GPU readback warning and Vercel randomized edge-security script cancellation. Application errors, failed first-party documents, and broader cancellations still fail."
+    },
+    "accessibilityIsolation": {
+      "status": "pass",
+      "executions": 9,
+      "passed": 9
+    },
+    "focusedBrowserMatrix": {
+      "status": "pass",
+      "executions": 21,
+      "passed": 21
+    }
+  },
+  "cohort": {
+    "startUtc": "2026-07-19T05:00:00Z",
+    "endApproxUtc": "2026-07-25T06:50:00Z",
+    "studentSignups": 45,
+    "studentsWithPersistedOnboardingStep": 6,
+    "studentsWithCompletedProfile": 5,
+    "studentsWithoutPersistedStepSignal": 39,
+    "signupToPersistedStepRate": 0.1333,
+    "signupToProfileCompletionRate": 0.1111,
+    "medianSecondsToCompletion": 317.4,
+    "periodRecommendationImpressions": 192,
+    "periodUniqueRecommendationViewers": 8,
+    "periodOpportunitySaves": 3,
+    "periodUniqueSavers": 1,
+    "periodApplicationsStarted": 4,
+    "periodUniqueApplicationStarters": 3,
+    "periodApplicationsSubmitted": 0
+  },
+  "performance": {
+    "profile": {
+      "name": "mobile-slow-4g",
+      "viewport": {
+        "width": 390,
+        "height": 664
+      },
+      "downloadBitsPerSecond": 1600000,
+      "uploadBitsPerSecond": 750000,
+      "latencyMs": 150,
+      "cpuSlowdownMultiplier": 4,
+      "runsPerBuild": 5
+    },
+    "homepageBefore": {
+      "commit": "8e1dc75c0fc7a6e568526857c375043789124d7b",
+      "fcpMs": 764,
+      "lcpMs": 764,
+      "lcpElement": "brand-mark span",
+      "loadMs": 2476.2,
+      "cls": 0,
+      "firstPartyTransferBytes": 445199,
+      "jsTransferBytes": 355209,
+      "longTaskDurationMs": 74,
+      "consoleErrorCount": 0,
+      "failedRequestCount": 0
+    },
+    "homepageAfter": {
+      "commit": "5753513",
+      "fcpMs": 764,
+      "lcpMs": 764,
+      "lcpElement": "hero h1",
+      "loadMs": 2467.1,
+      "cls": 0,
+      "firstPartyTransferBytes": 445209,
+      "jsTransferBytes": 355212,
+      "longTaskDurationMs": 74,
+      "consoleErrorCount": 0,
+      "failedRequestCount": 0
+    },
+    "claim": "The fix corrected the meaningful LCP element without a timing, layout-shift, error, or material transfer regression. No field-performance improvement is claimed before deployment."
+  },
+  "physicalIPhone": {
+    "status": "PASS",
+    "deviceVisibleInFinder": true,
+    "deviceVisibleInSystemTools": true,
+    "deviceVisibleInSafariInspector": true,
+    "pairedOverWiredUsb": true,
+    "model": "iPhone 14 Pro",
+    "productIdentifier": "iPhone15,2",
+    "iosVersion": "26.5.2",
+    "iosBuild": "23F84",
+    "safariVersion": "Safari on iOS 26.5.2; separate WebKit marketing version not exposed",
+    "testedUrl": "https://www.futurephysicians.org",
+    "requestedUrl": "https://fp-dashboard-rosy.vercel.app",
+    "productionCommitTested": "8e1dc75c0fc7a6e568526857c375043789124d7b",
+    "fixedBranchPhysicallyTested": false,
+    "testWindowLocal": "2026-07-25 approximately 02:28-11:09 America/Chicago",
+    "orientations": ["portrait", "landscape"],
+    "portraitViewportCssPixels": {
+      "width": 393,
+      "height": 695,
+      "devicePixelRatio": 3
+    },
+    "networkProfile": "normal Wi-Fi",
+    "realIPhoneViaMirroring": [
+      "homepage and navigation",
+      "public opportunity directory, filters, and detail",
+      "sign-up and Google provider transition",
+      "authenticated four-step profile edit and completion",
+      "student dashboard",
+      "save, verify Saved, and remove",
+      "external-application start form and date control without submission",
+      "Safari background and cold restart",
+      "sign-out"
+    ],
+    "directOnDeviceByUser": [
+      "Google authentication and account selection",
+      "portrait-to-landscape orientation change",
+      "soft-keyboard focus, typing, dismissal, zoom, and obstruction check",
+      "resume file picker open and cancel"
+    ],
+    "webInspectorDiagnostics": {
+      "normalNavigationConsoleErrors": 0,
+      "normalNavigationFailedDocumentRequests": 0,
+      "signOutTransitionRscFallbacks": 1,
+      "signOutTransitionBlockedRscPrefetches": 5,
+      "cleanReloadConsoleErrors": 0,
+      "postGoogleLoginUrl": "https://www.futurephysicians.org/dashboard/student",
+      "postGoogleLoginReadyState": "complete",
+      "postGoogleLoginConsoleErrors": 0
+    },
+    "findings": [
+      {
+        "severity": "P1",
+        "summary": "Back restored the prior URL and result set but not uncontrolled filter control values.",
+        "fixCommit": "0a2f54e"
+      },
+      {
+        "severity": "P2",
+        "summary": "Sign-out produced transient WebKit RSC fallback/prefetch access-control diagnostics; navigation succeeded and a clean reload was clean.",
+        "fixCommit": null
+      }
+    ],
+    "limits": [
+      "Production served the starting commit, so branch fixes require a preview physical rerun.",
+      "The dedicated account was already complete; fresh incomplete-account return was not tested.",
+      "Slow-network, validation/server failure, dark mode, and reduced motion remained automated/source checks.",
+      "The resume picker was opened and canceled without selecting or uploading a file, preserving the existing test-account resume."
+    ]
+  },
+  "postFixVercelPreviewVerification": {
+    "status": "PASS_WITH_LIMITATIONS",
+    "pullRequest": "https://github.com/Mohit-Bapatla/fp-dashboard/pull/35",
+    "branchAlias": "https://fp-dashboard-git-codex-f-a3aeb4-bapatlamohitwork-2162s-projects.vercel.app",
+    "finalExactDeployment": {
+      "url": "https://fp-dashboard-4t37lbloc-bapatlamohitwork-2162s-projects.vercel.app",
+      "commit": "bc26e14cb520017ccf316db9a83eae7ca929d223",
+      "state": "READY",
+      "httpStatus": 200
+    },
+    "testedRuntime": {
+      "url": "https://fp-dashboard-gr275qd2h-bapatlamohitwork-2162s-projects.vercel.app",
+      "commit": "3b87fa7bc740ba0444c6ac4be10897ae9156d4e9",
+      "note": "bc26e14 changes only test policy; application runtime files are unchanged from this deployment."
+    },
+    "previewConfiguration": {
+      "vercelFeedbackDisabledForExactBranch": true,
+      "strictCsp": true,
+      "vercelLiveAllowedByCsp": false,
+      "noIndex": true,
+      "forbiddenProductionEnvironmentNamesInRenderedHtml": [],
+      "clerkPublicPagesLoad": true,
+      "googleOauthOffered": true,
+      "clerkDevelopmentModeVisible": true,
+      "productionClerkConfigurationChanged": false
+    },
+    "githubChecksAtBc26e14": {
+      "quality": "pass",
+      "postgresMigrationValidation": "pass",
+      "codeql": "pass",
+      "javascriptTypeScriptAnalysis": "pass",
+      "vercel": "pass",
+      "vercelPreviewComments": "pass",
+      "supabasePreview": "skipped"
+    },
+    "signedOutBrowser": {
+      "executions": 110,
+      "passed": 83,
+      "skippedForMissingAuthenticatedStorageState": 27,
+      "failed": 0,
+      "projects": ["chromium", "webkit", "iphone-webkit"],
+      "viewports": ["320x700", "375x667", "390x844", "430x932", "844x390"],
+      "focusedIPhoneHistoryRepetitions": {
+        "passed": 5,
+        "failed": 0
+      },
+      "consoleErrorClusters": 0,
+      "failedFirstPartyDocumentRequests": 0,
+      "horizontalOverflowFailures": 0,
+      "accessibilityStatus": "pass"
+    },
+    "performance": {
+      "measuredAt": "2026-07-27T00:50:14.675Z",
+      "profile": "mobile-slow-4g",
+      "runsPerTarget": 5,
+      "production": {
+        "commit": "8e1dc75c0fc7a6e568526857c375043789124d7b",
+        "fcpMs": 860,
+        "lcpMs": 860,
+        "lcpElement": "brand-mark span",
+        "domContentLoadedMs": 750.4,
+        "loadMs": 2586.6,
+        "ttfbMs": 35.6,
+        "firstPartyTransferBytes": 463100,
+        "jsTransferBytes": 373992,
+        "longTaskDurationMs": 74,
+        "cls": 0,
+        "consoleErrorCount": 0,
+        "failedRequestCount": 0
+      },
+      "preview": {
+        "commit": "3b87fa7bc740ba0444c6ac4be10897ae9156d4e9",
+        "fcpMs": 832,
+        "lcpMs": 832,
+        "lcpSamplesMs": [924, 832, 832, 824, 824],
+        "lcpElement": "hero h1",
+        "domContentLoadedMs": 719.1,
+        "loadMs": 2552.7,
+        "ttfbMs": 36.4,
+        "firstPartyTransferBytes": 392185,
+        "jsTransferBytes": 307038,
+        "longTaskDurationMs": 70,
+        "cls": 0,
+        "consoleErrorCount": 0,
+        "failedRequestCount": 0
+      },
+      "supportedClaim": "The preview corrected the meaningful LCP element, remained below 2.5 seconds with zero CLS, and reduced measured first-party and JavaScript transfer in this controlled run. The 28 ms timing change is small and TTFB is effectively flat."
+    },
+    "physicalIPhonePreview": {
+      "status": "PASS_WITH_DIAGNOSTIC_LIMITATION",
+      "testMode": "real iPhone Safari through iPhone Mirroring",
+      "isEmulation": false,
+      "deviceVisibleInFinder": true,
+      "deviceVisibleInSystemTools": true,
+      "pairedAndAvailable": true,
+      "safariDevelopDeviceVisible": true,
+      "safariWebInspectorStatus": "Connecting; unavailable",
+      "model": "iPhone 14 Pro",
+      "productIdentifier": "iPhone15,2",
+      "iosVersion": "26.5.2",
+      "iosBuild": "23F84",
+      "testedUrl": "https://fp-dashboard-gr275qd2h-bapatlamohitwork-2162s-projects.vercel.app",
+      "testedCommit": "3b87fa7bc740ba0444c6ac4be10897ae9156d4e9",
+      "knownPortraitViewportCssPixels": {
+        "width": 393,
+        "height": 695,
+        "devicePixelRatio": 3,
+        "source": "previous physical Web Inspector session"
+      },
+      "realIPhoneViaMirroring": [
+        "homepage hero, CTAs, safe area, and horizontal overflow",
+        "public directory with 149 unfiltered results",
+        "native Research filter with three results",
+        "NIH detail page",
+        "browser Back restoration of results and scroll position",
+        "Forward restoration of detail",
+        "search focus, no visual zoom, native Enter submission, and retained query state",
+        "sign-up and sign-in public surfaces"
+      ],
+      "directOnDeviceByUser": [],
+      "authentication": {
+        "publicSignUp": "PASS",
+        "publicSignIn": "PASS",
+        "googleOauthOffered": true,
+        "dedicatedTestAccountAuthentication": "NOT_RUN",
+        "authenticatedOnboarding": "NOT_RUN"
+      },
+      "webInspectorDiagnostics": {
+        "availability": "NOT_AVAILABLE",
+        "physicalConsoleErrors": null,
+        "physicalFailedRequests": null,
+        "automatedIPhoneWebKitConsoleErrors": 0,
+        "automatedIPhoneWebKitFailedFirstPartyDocumentRequests": 0,
+        "evidenceSeparation": "Automated iPhone-WebKit diagnostics are not relabeled as physical-device diagnostics."
+      },
+      "results": {
+        "homepage": "PASS",
+        "opportunityDirectory": "PASS",
+        "filterHistory": "PASS",
+        "authPublicSurfaces": "PASS",
+        "mobileControlFunctionalBehavior": "PASS",
+        "computedControlSizing": "PARTIAL",
+        "authenticatedOnboarding": "NOT_RUN"
+      },
+      "privacySafeDefectScreenshotsRetained": 0
+    },
+    "previewDiscoveredFixes": [
+      {
+        "commit": "0cab439",
+        "summary": "Recognize only the exact Linux WebKit superseded-navigation cancellation."
+      },
+      {
+        "commit": "077d64d",
+        "summary": "Support protected-preview performance runs without committing credentials."
+      },
+      {
+        "commit": "7d10d3f",
+        "summary": "Retain strict preview CSP after branch-scoped Vercel feedback was disabled."
+      },
+      {
+        "commit": "3b87fa7",
+        "summary": "Disable speculative signed-out auth-route prefetch that triggered preview-protection WebKit CORS diagnostics."
+      },
+      {
+        "commit": "bc26e14",
+        "summary": "Classify only exact YouTube GPU and Vercel edge-security cancellation signatures in the test monitor."
+      }
+    ],
+    "recommendation": {
+      "value": "APPROVE_WITH_CONDITIONS",
+      "conditions": [
+        "Complete dedicated-account preview onboarding or explicitly accept the existing production-auth plus automated-preview coverage.",
+        "Keep the unavailable physical Web Inspector diagnostics visible in the release record.",
+        "Use a monitored production deployment with the documented rollback triggers."
+      ]
+    },
+    "mutationsExcluded": [
+      "schema migration",
+      "new analytics vendor",
+      "production database change",
+      "production Clerk configuration change",
+      "merge",
+      "production promotion"
+    ]
+  },
+  "finalReleaseGate": {
+    "date": "2026-07-26",
+    "pullRequest": "https://github.com/Mohit-Bapatla/fp-dashboard/pull/35",
+    "pullRequestState": "DRAFT",
+    "recommendation": "BLOCK",
+    "supersedesRecommendation": "APPROVE_WITH_CONDITIONS",
+    "releaseHead": "ed72f1c60dbfc57a4e13fa40e801093c36051d24",
+    "fullyTestedRuntime": "3b87fa7bc740ba0444c6ac4be10897ae9156d4e9",
+    "finalTestPolicyCommit": "bc26e14cb520017ccf316db9a83eae7ca929d223",
+    "exactDeployment": {
+      "url": "https://fp-dashboard-3if5kmx7f-bapatlamohitwork-2162s-projects.vercel.app",
+      "state": "READY",
+      "reportedGithubCommitSha": "ed72f1c60dbfc57a4e13fa40e801093c36051d24"
+    },
+    "postRuntimeChanges": [
+      {
+        "commit": "bc26e14cb520017ccf316db9a83eae7ca929d223",
+        "classification": "tests/configuration",
+        "files": [
+          "tests/e2e/fixtures.ts",
+          "tests/e2e/runtime-monitor-policy.ts",
+          "tests/unit/runtime-monitor-policy.test.ts"
+        ],
+        "runtimeCodeChanged": false
+      },
+      {
+        "commit": "ed72f1c60dbfc57a4e13fa40e801093c36051d24",
+        "classification": "documentation/artifacts",
+        "files": [
+          "docs/audits/2026-07-25-funnel-mobile-performance-audit.md",
+          "docs/audits/2026-07-25-funnel-mobile-performance-test-results.json"
+        ],
+        "runtimeCodeChanged": false
+      }
+    ],
+    "runtimeCoverage": {
+      "runtimeCodeChangedAfterFullyTestedRuntime": false,
+      "focusedRuntimeRerunRequired": false,
+      "signedOutAndPhysicalCoverageRemainsApplicable": true,
+      "exactDeploymentDynamicOpportunityProbe": "PASS",
+      "vercelErrorOrFatalLogsInChecked24HourWindow": 0
+    },
+    "previewDataIsolation": {
+      "status": "FAIL",
+      "clerkDevelopmentKeysScopedToPreview": true,
+      "databaseVariablesScopedToPreview": true,
+      "databaseVariablesScopedToPullRequestBranch": false,
+      "vercelProjectIntegrationsInstalled": false,
+      "exactPreviewOpportunityCount": 149,
+      "activeProductionOpportunityCount": 149,
+      "firstSortedPreviewRecordId": "0b376334-1e3f-4c22-bab3-7d801cc822f4",
+      "firstSortedProductionRecordId": "0b376334-1e3f-4c22-bab3-7d801cc822f4",
+      "activeProductionSupabaseStatus": "ACTIVE_HEALTHY",
+      "separateStagingSupabaseStatus": "INACTIVE",
+      "separateSupabaseDevelopmentBranchesAvailable": false,
+      "conclusion": "The exact force-dynamic preview data path matches the active production Supabase dataset while the only separate staging target is inactive. Production-data isolation is not satisfied."
+    },
+    "authenticatedPhysicalIPhone": {
+      "status": "NOT_RUN_BLOCKED_BY_DATA_ISOLATION",
+      "accountCreationSubmitted": false,
+      "temporaryRecordsCreated": false,
+      "cleanupStatus": "PASS_BY_NON_CREATION",
+      "model": "iPhone 14 Pro",
+      "productIdentifier": "iPhone15,2",
+      "iosVersion": "26.5.2",
+      "iosBuild": "23F84",
+      "testModeAvailable": "real iPhone Safari through iPhone Mirroring",
+      "webInspectorStatus": "Connecting; unavailable",
+      "webInspectorIsIndependentBlocker": false,
+      "reason": "Sign-up, onboarding, saves, and audit events would write through a preview data path that is not isolated from production."
+    },
+    "criteria": {
+      "exactReleaseShaVerified": "PASS",
+      "previewAuthentication": "NOT_RUN_BLOCKED",
+      "incompleteStudentCompletesOnboarding": "NOT_RUN_BLOCKED",
+      "completedStudentReturnsAfterLogoutLogin": "NOT_RUN_BLOCKED",
+      "noProductionDomainOrDataLeakage": "FAIL",
+      "noMobileBlocker": "PASS_EXISTING_SIGNED_OUT_AND_PRODUCTION_PHYSICAL_COVERAGE_AUTHENTICATED_GATE_INCOMPLETE",
+      "noNewAutomatedConsoleOrRequestFailure": "PASS",
+      "temporaryRecordsCleanedUp": "PASS_NOT_APPLICABLE",
+      "githubAndVercelChecksAtReleaseHead": "PASS",
+      "supabasePreviewCheck": "SKIPPED"
+    },
+    "requiredRemediation": [
+      "Reactivate and validate fp-dashboard-staging or provision a Supabase development branch with no production data.",
+      "Bind all Preview database and storage credentials to the isolated target, preferably scoped to the pull-request branch.",
+      "Redeploy and prove the exact deployment reads the isolated target.",
+      "Run the complete disposable Clerk Development physical-iPhone flow and clean up its temporary account and records.",
+      "Reconfirm automated diagnostics and all checks at the resulting release head."
+    ],
+    "actionsExcluded": [
+      "disposable account creation",
+      "production database mutation",
+      "merge",
+      "production promotion",
+      "mark ready for review"
+    ]
+  },
+  "isolatedPreviewReleaseGateReopen": {
+    "date": "2026-07-26/27",
+    "pullRequest": "https://github.com/Mohit-Bapatla/fp-dashboard/pull/35",
+    "pullRequestState": "DRAFT",
+    "recommendation": "BLOCK",
+    "supersedes": "finalReleaseGate",
+    "releaseHead": "deab04cc950434cdbda81c76e43143723b5fa36b",
+    "exactDeployment": {
+      "url": "https://fp-dashboard-r7gx7c26k-bapatlamohitwork-2162s-projects.vercel.app",
+      "deploymentId": "dpl_DBPnrUAYJSn5H4scof65VDhH3VYz",
+      "state": "READY",
+      "reportedGithubCommitSha": "deab04cc950434cdbda81c76e43143723b5fa36b",
+      "branch": "codex/funnel-mobile-performance-audit"
+    },
+    "environmentInventory": [
+      {
+        "variable": "DATABASE_URL",
+        "usedBy": "Prisma runtime via @prisma/adapter-pg",
+        "productionCategory": "production Supabase database",
+        "previewCategory": "branch-scoped staging Supabase session-pooler URL",
+        "isolationRisk": "critical read/write path and global Preview inheritance",
+        "action": "Branch override bound to staging; session-mode pool exhaustion remains a blocker."
+      },
+      {
+        "variable": "DIRECT_URL",
+        "usedBy": "Prisma CLI and migrations",
+        "productionCategory": "production direct database",
+        "previewCategory": "branch-scoped staging direct database",
+        "isolationRisk": "production schema mutation",
+        "action": "Branch override bound to staging; all 21 migrations applied only there."
+      },
+      {
+        "variable": "SUPABASE_URL",
+        "usedBy": "private resume storage client",
+        "productionCategory": "production Supabase project",
+        "previewCategory": "branch-scoped staging Supabase project",
+        "isolationRisk": "wrong storage project",
+        "action": "Branch override supersedes the older combined Production/Preview value."
+      },
+      {
+        "variable": "SUPABASE_SERVICE_ROLE_KEY",
+        "usedBy": "server-side resume storage client",
+        "productionCategory": "Production-only secret",
+        "previewCategory": "absent",
+        "isolationRisk": "production storage mutation",
+        "action": "Kept Production-only; Preview storage writes fail closed."
+      },
+      {
+        "variable": "SUPABASE_RESUME_BUCKET",
+        "usedBy": "resume storage namespace",
+        "productionCategory": "production bucket",
+        "previewCategory": "branch-scoped fp-preview-student-resumes",
+        "isolationRisk": "file mixing",
+        "action": "Separate private staging bucket; zero objects before and after."
+      },
+      {
+        "variable": "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+        "usedBy": "Clerk browser UI",
+        "productionCategory": "production Clerk instance",
+        "previewCategory": "global Preview Clerk Development key",
+        "isolationRisk": "production authentication leakage",
+        "action": "Development mode and exact Preview return verified."
+      },
+      {
+        "variable": "CLERK_SECRET_KEY",
+        "usedBy": "Clerk server authentication",
+        "productionCategory": "production Clerk instance",
+        "previewCategory": "global Preview Clerk Development key",
+        "isolationRisk": "production user/session mutation",
+        "action": "Disposable user existed only in Development and was deleted."
+      },
+      {
+        "variable": "NEXT_PUBLIC_APP_URL and Clerk route variables",
+        "usedBy": "canonical links and auth redirects",
+        "productionCategory": "production origin and route paths",
+        "previewCategory": "branch Preview alias and relative route paths",
+        "isolationRisk": "production-domain redirect",
+        "action": "All tested auth transitions remained on the exact Preview origin."
+      },
+      {
+        "variable": "EMAIL_NOTIFICATIONS_ENABLED and RESEND_*",
+        "usedBy": "email wrapper",
+        "productionCategory": "optional production provider",
+        "previewCategory": "disabled/absent",
+        "isolationRisk": "real email",
+        "action": "Branch flag false; no provider send path enabled."
+      },
+      {
+        "variable": "CRON_SECRET",
+        "usedBy": "scheduled-job routes",
+        "productionCategory": "production bearer secret",
+        "previewCategory": "absent",
+        "isolationRisk": "scheduled production-like work",
+        "action": "No Preview cron configured."
+      },
+      {
+        "variable": "OPENAI_API_KEY, UPSTASH_REDIS_REST_*, SENTRY_*",
+        "usedBy": "optional resume analysis, rate limiting, and monitoring",
+        "productionCategory": "optional production integrations",
+        "previewCategory": "absent",
+        "isolationRisk": "external processing or shared state/telemetry",
+        "action": "No resume upload; isolated database rate-limit fallback; no Preview telemetry destination."
+      },
+      {
+        "variable": "Supabase anon/public key and Clerk webhook secret",
+        "usedBy": "no repository runtime path found",
+        "productionCategory": "not used by this app",
+        "previewCategory": "not configured",
+        "isolationRisk": "direct browser access or webhook mutation",
+        "action": "No direct-client/webhook path; anon/authenticated/Public staging database access revoked."
+      }
+    ],
+    "environmentScope": {
+      "branchScopedOverrides": [
+        "DATABASE_URL",
+        "DIRECT_URL",
+        "NEXT_PUBLIC_APP_URL",
+        "NEXT_PUBLIC_CLERK_SIGN_IN_URL",
+        "NEXT_PUBLIC_CLERK_SIGN_UP_URL",
+        "NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL",
+        "NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL",
+        "NEXT_PUBLIC_CLERK_SIGN_UP_FORCE_REDIRECT_URL",
+        "NEXT_PUBLIC_CLERK_SIGN_OUT_FALLBACK_REDIRECT_URL",
+        "SUPABASE_URL",
+        "SUPABASE_RESUME_BUCKET",
+        "EMAIL_NOTIFICATIONS_ENABLED"
+      ],
+      "globalPreviewDevelopmentAuth": [
+        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+        "CLERK_SECRET_KEY"
+      ],
+      "productionOnly": ["SUPABASE_SERVICE_ROLE_KEY"],
+      "inheritanceCaveat": "Older global Preview database values and combined Production/Preview Supabase URL/bucket values remain in Vercel, but this branch has explicit higher-precedence overrides.",
+      "productionServiceRoleScopeCorrection": {
+        "combinedProductionPreviewEntryRemovedByCliScopeOperation": true,
+        "existingProductionSecretRestoredAsProductionOnly": true,
+        "secretPrintedOrCommitted": false,
+        "productionDeploymentPromotedOrRebuilt": false,
+        "productionDataOrSchemaChanged": false,
+        "previewStillInheritsKey": false
+      }
+    },
+    "stagingStrategy": {
+      "chosen": "existing dedicated fp-dashboard-staging Supabase project after restoration and inspection",
+      "projectRef": "fjagysinaodnpxcdgogp",
+      "projectName": "fp-dashboard-staging",
+      "projectStatus": "ACTIVE_HEALTHY",
+      "databaseHost": "db.fjagysinaodnpxcdgogp.supabase.co",
+      "databaseName": "postgres",
+      "region": "ca-central-1",
+      "runtimeRole": "fp_preview_runtime",
+      "storageBucket": "fp-preview-student-resumes",
+      "preMigrationState": {
+        "publicApplicationRows": 0,
+        "supabaseAuthUsers": 0,
+        "storageObjects": 0
+      },
+      "alternatives": [
+        {
+          "option": "Supabase development branch",
+          "selected": false,
+          "reason": "No existing non-default branch; new provisioning/cost was unnecessary after the dedicated project proved empty and separate."
+        },
+        {
+          "option": "fresh dedicated project",
+          "selected": false,
+          "reason": "Would duplicate the already separate, empty, recoverable staging project and could add recurring cost."
+        }
+      ],
+      "productionComparison": {
+        "projectRef": "ksuzzfzufotrwrxdrynl",
+        "databaseHost": "db.ksuzzfzufotrwrxdrynl.supabase.co",
+        "region": "us-east-2",
+        "allIdentifiersDifferent": true
+      }
+    },
+    "migrationsAndSeed": {
+      "repositoryMigrationCount": 21,
+      "stagingAppliedMigrationCount": 21,
+      "incompleteOrRolledBack": 0,
+      "firstMigration": "20260517214323_stage_3_core_schema",
+      "lastMigration": "20260718093000_resume_review_require_reanalysis",
+      "seed": {
+        "fictionalOrganizations": 1,
+        "fictionalPublishedOpportunities": 3,
+        "titlePrefix": "PREVIEW ONLY —",
+        "productionDumpImported": false,
+        "realPersonalDataCopied": false
+      },
+      "stagingOnlyRlsPolicyMigration": {
+        "name": "grant_preview_runtime_role_rls_access",
+        "role": "fp_preview_runtime",
+        "tables": [
+          "SavedOpportunity",
+          "ApplicationChecklistItem",
+          "OpportunityCorrectionReport"
+        ],
+        "anonOrAuthenticatedGrantsAdded": false
+      }
+    },
+    "isolationProof": {
+      "status": "PASS",
+      "performedBeforeAuthentication": true,
+      "repeatedAfterFinalTestFix": true,
+      "checks": [
+        {
+          "check": "project reference",
+          "production": "ksuzzfzufotrwrxdrynl",
+          "preview": "fjagysinaodnpxcdgogp",
+          "result": "PASS"
+        },
+        {
+          "check": "database host",
+          "production": "db.ksuzzfzufotrwrxdrynl.supabase.co",
+          "preview": "db.fjagysinaodnpxcdgogp.supabase.co",
+          "result": "PASS"
+        },
+        {
+          "check": "storage project and bucket",
+          "production": "production project/bucket",
+          "preview": "staging project/fp-preview-student-resumes",
+          "result": "PASS"
+        },
+        {
+          "check": "opportunity count",
+          "production": 157,
+          "preview": 3,
+          "result": "PASS"
+        },
+        {
+          "check": "first sorted opportunity UUID",
+          "production": "0747324b-d433-4775-bb63-0215a010d287",
+          "preview": "10000000-0000-4000-8000-000000000001",
+          "result": "PASS"
+        },
+        {
+          "check": "Preview sentinel count",
+          "production": 0,
+          "preview": 3,
+          "result": "PASS"
+        },
+        {
+          "check": "production first-UUID fingerprint in Preview",
+          "previewMatches": 0,
+          "result": "PASS"
+        },
+        {
+          "check": "initial staging user/profile/save/application rows",
+          "preview": {
+            "users": 0,
+            "studentProfiles": 0,
+            "savedOpportunities": 0,
+            "applications": 0
+          },
+          "result": "PASS"
+        },
+        {
+          "check": "anonymous direct REST access",
+          "previewHttpStatus": 401,
+          "result": "PASS"
+        }
+      ]
+    },
+    "webkitQualityFix": {
+      "commit": "deab04cc950434cdbda81c76e43143723b5fa36b",
+      "message": "test: ignore WebKit RSC navigation cancellation",
+      "classification": "tests/configuration",
+      "rootCause": "WebKit-only same-origin localhost RSC Fetch cancellation with the exact access-control cancellation text during superseded history navigation.",
+      "policyScope": [
+        "WebKit",
+        "same origin",
+        "_rsc request",
+        "Fetch resource type",
+        "exact cancellation signature"
+      ],
+      "stillFails": [
+        "Chromium cancellation",
+        "cross-origin cancellation",
+        "non-RSC failure",
+        "document failure",
+        "API failure",
+        "different error text"
+      ],
+      "focusedPolicyTests": {
+        "passed": 15,
+        "failed": 0
+      },
+      "fullUnitTests": {
+        "files": 80,
+        "tests": 374,
+        "failed": 0
+      }
+    },
+    "authenticatedPreview": {
+      "disposableAccount": {
+        "email": "[REDACTED_TEST_ACCOUNT_A]",
+        "clerkEnvironment": "Development",
+        "realStudentOrProductionCredential": false
+      },
+      "physicalIPhone": {
+        "status": "PARTIAL_BLOCKING",
+        "deviceName": "Mohit’s iPhone",
+        "model": "iPhone 14 Pro",
+        "productIdentifier": "iPhone15,2",
+        "iosVersion": "26.5.2",
+        "iosBuild": "23F84",
+        "connection": "paired, available, USB",
+        "exactPreviewAuthentication": "PASS",
+        "developmentModeAuthSurface": "PASS",
+        "previewOriginReturn": "PASS",
+        "productionRedirectOrAccountLeakage": "NONE_OBSERVED",
+        "authenticatedStudentRoute": "PASS",
+        "onboardingStep1Render": "PASS",
+        "allFourScreens": "NOT_COMPLETED",
+        "fontSizeAtLeast16": "NOT_CONFIRMED_IN_AUTHENTICATED_PHYSICAL_FLOW",
+        "primaryControlsApprox44": "NOT_CONFIRMED_IN_AUTHENTICATED_PHYSICAL_FLOW",
+        "unexpectedFocusZoom": "NOT_CONFIRMED",
+        "keyboardObstruction": "NOT_CONFIRMED",
+        "nativeEnterSubmission": "NOT_CONFIRMED",
+        "saveRemove": "NOT_COMPLETED",
+        "logoutLoginReturn": "NOT_COMPLETED",
+        "limitation": "iPhone Mirroring pointer/scroll failed with noWindowsAvailable after authentication; direct devicectl automation unavailable because Developer Mode is disabled."
+      },
+      "automatedExactPreview": {
+        "status": "FUNCTIONAL_FLOW_COMPLETED_WITH_RUNTIME_FAILURES",
+        "signupAndPreviewReturn": "PASS",
+        "validationRetainsValues": "PASS",
+        "fourOnboardingScreens": "PASS",
+        "refreshResumesExpectedStep": "PASS",
+        "backForwardPreservesState": "PASS",
+        "specialtyEnterAddsChip": "PASS",
+        "syntheticNativeEnterSubmission": "DID_NOT_SUBMIT_NOT_CLASSIFIED_WITHOUT_PHYSICAL_CONFIRMATION",
+        "finishRedirect": "/dashboard/student",
+        "stagingRecommendationsRendered": 3,
+        "saveAppearsInSaved": "PASS_AFTER_STAGING_RLS_FIX",
+        "temporarySaveRemoved": "PASS",
+        "applicationStartSurfaceOpened": "PASS",
+        "applicationCreatedOrSubmitted": false,
+        "resumeUploaded": false,
+        "signOutPreviewOrigin": "PASS",
+        "completedUserSignInDestination": "/dashboard/student",
+        "completedUserReturnedToOnboarding": false
+      },
+      "safariWebInspector": {
+        "status": "Connecting; unavailable",
+        "independentBlocker": false
+      },
+      "runtimeFailures": [
+        {
+          "timestampUtc": "2026-07-27T04:12:30Z",
+          "request": "POST /dashboard/student",
+          "httpStatus": 500,
+          "error": "PostgreSQL 42501 RLS violation on SavedOpportunity",
+          "resolution": "Staging-only role-scoped RLS policy; save/remove retry passed.",
+          "releaseImpact": "fixed environment policy defect but counts as a newly discovered runtime failure"
+        },
+        {
+          "timestampUtc": "2026-07-27T04:22:39Z",
+          "request": "GET /dashboard/student",
+          "httpStatus": 200,
+          "visibleResult": "Dashboard unavailable",
+          "error": "EMAXCONNSESSION; Supavisor session-mode pool_size 15 exhausted",
+          "recovery": "Terminated 15 idle staging runtime sessions and hard reloaded; dashboard then rendered.",
+          "reproductionEvidence": "One hard reload recreated 10 idle fp_preview_runtime sessions.",
+          "releaseImpact": "unresolved release blocker"
+        }
+      ],
+      "cleanRuntimeLogTail": {
+        "fromUtc": "2026-07-27T04:24:45Z",
+        "toUtc": "2026-07-27T04:27:07Z",
+        "errorFatalWarningLogs": 0,
+        "doesNotSupersedeEarlierFailures": true
+      }
+    },
+    "cleanup": {
+      "status": "PASS",
+      "clerkDevelopmentUserDeleted": true,
+      "stagingFinalCounts": {
+        "fictionalOpportunitiesRetained": 3,
+        "fictionalPartnerOrganizationsRetained": 1,
+        "users": 0,
+        "studentProfiles": 0,
+        "savedOpportunities": 0,
+        "applications": 0,
+        "auditLogs": 0,
+        "recommendationEvents": 0,
+        "resumeObjects": 0,
+        "disposableEmailMatches": 0
+      },
+      "productionFinalCounts": {
+        "opportunities": 157,
+        "users": 62,
+        "savedOpportunities": 4,
+        "applications": 13,
+        "previewSentinelMatches": 0,
+        "disposableEmailMatches": 0
+      },
+      "productionTrackedCountsUnchanged": true,
+      "productionSchemaMutated": false,
+      "productionDataMutated": false
+    },
+    "finalChecks": {
+      "quality": "PASS",
+      "postgresql16MigrationValidation": "PASS",
+      "codeql": "PASS",
+      "javascriptTypescriptAnalysis": "PASS",
+      "vercel": "PASS",
+      "vercelPreviewComments": "PASS",
+      "supabasePreview": "SKIPPED_EXPECTED",
+      "formatting": "PASS",
+      "typecheck": "PASS",
+      "lint": "PASS",
+      "unitTests": "PASS_374",
+      "prismaValidation": "PASS",
+      "all21Migrations": "PASS",
+      "productionBuild": "PASS",
+      "secretScan": "PASS",
+      "highThresholdDependencyAudit": "PASS",
+      "fullPublicBrowserSuite": "PASS",
+      "focusedChromiumWebkitIPhoneWebkitPolicyAndHistoryCoverage": "PASS",
+      "accessibility": "PASS_CARRIED_FORWARD_NO_RUNTIME_CHANGE",
+      "publicPerformanceComparison": "PASS_CARRIED_FORWARD_NO_RUNTIME_CHANGE"
+    },
+    "criteria": {
+      "isolatedPreviewDatabaseAndStorage": "PASS",
+      "exactFinalPreviewSha": "PASS",
+      "allRequiredRepositoryChecksGreen": "PASS",
+      "previewAuthenticationIsolated": "PASS",
+      "incompleteStudentCompletesOnboardingOnPhysicalIPhone": "FAIL_NOT_COMPLETED",
+      "completedStudentLogoutLoginReturnOnPhysicalIPhone": "FAIL_NOT_COMPLETED",
+      "noProductionDomainOrDataLeakage": "PASS",
+      "noNewConsoleRequestOrRuntimeFailure": "FAIL",
+      "temporaryRecordsCleanedUp": "PASS",
+      "productionCountsUnchanged": "PASS"
+    },
+    "blockers": [
+      "The complete authenticated four-screen, keyboard/zoom/Enter, save/remove, and logout/login flow was not completed on the physical iPhone after iPhone Mirroring lost its input channel.",
+      "The exact Preview exhausted the 15-client Supavisor session-mode pool and temporarily made the completed-student dashboard unavailable.",
+      "Native iPhone Enter, focus zoom, keyboard obstruction, and authenticated control sizing remain unverified."
+    ],
+    "requiredRemediation": [
+      "Use a serverless-safe transaction-pooler configuration for the branch Preview or make an evidence-backed runtime pooling change, then redeploy.",
+      "Stress authenticated dashboard reads and mutations enough to prove no pool exhaustion, RLS failure, console error, or failed request.",
+      "Restore reliable physical-iPhone interaction and complete the entire authenticated mobile checklist.",
+      "Repeat cleanup and production non-mutation proof.",
+      "Keep all required checks green before marking PR #35 ready for review."
+    ],
+    "actionsExcluded": [
+      "mark ready for review",
+      "merge",
+      "production promotion",
+      "production schema mutation",
+      "production data mutation"
+    ]
+  },
+  "serverlessPoolingReleaseGateResolution": {
+    "date": "2026-07-27",
+    "pullRequest": 35,
+    "branch": "codex/funnel-mobile-performance-audit",
+    "supersedes": "isolatedPreviewReleaseGateReopen.connection-exhaustion evidence",
+    "recommendation": "BLOCK",
+    "pullRequestState": "DRAFT",
+    "actionsExcluded": [
+      "mark ready for review",
+      "merge",
+      "production promotion",
+      "production schema mutation",
+      "production data mutation",
+      "production environment mutation"
+    ],
+    "commitClassification": {
+      "runtimeCode": [
+        {
+          "sha": "01666222",
+          "summary": "Bound the serverless Preview runtime pool and reuse one Pool/Prisma pair per warm isolate."
+        },
+        {
+          "sha": "49c8ee75",
+          "summary": "Derive the effective Preview transaction-pooler endpoint."
+        },
+        {
+          "sha": "26473467",
+          "summary": "Validate the effective Preview runtime endpoint and migration/runtime separation."
+        },
+        {
+          "sha": "0d1678f0",
+          "summary": "Keep recommendation telemetry through navigation."
+        },
+        {
+          "sha": "998866a57e2254d50e14a3700252db9e820eb03a",
+          "summary": "Persist same-origin recommendation telemetry with sendBeacon and a keepalive fallback."
+        }
+      ],
+      "testsAndConfiguration": [
+        {
+          "sha": "720aa0f0",
+          "summary": "Add the authenticated connection-stability audit."
+        },
+        {
+          "sha": "9bbf211b8cb2a3fdd9d33d465c8ad8506a928e46",
+          "summary": "Isolate authenticated high-concurrency request sessions from Clerk CDN/browser-context saturation."
+        }
+      ],
+      "documentationAndArtifacts": [
+        {
+          "summary": "Append this chronological release-gate report and machine-readable result.",
+          "runtimeDelta": false
+        }
+      ]
+    },
+    "exactRuntime": {
+      "sha": "998866a57e2254d50e14a3700252db9e820eb03a",
+      "deploymentId": "dpl_6Ww1iTTc2PUU5GPvYYnoNvyvcTNz",
+      "url": "https://fp-dashboard-m9byb8eus-bapatlamohitwork-2162s-projects.vercel.app",
+      "state": "READY",
+      "vercelMetadataMatchesSha": true,
+      "laterTestOnlyHead": "9bbf211b8cb2a3fdd9d33d465c8ad8506a928e46",
+      "laterHeadRuntimeDelta": false,
+      "laterHeadChecks": {
+        "ci": "PASS",
+        "codeql": "PASS",
+        "vercel": "PASS",
+        "previewDeployment": "READY"
+      }
+    },
+    "rootCause": {
+      "failedPath": {
+        "destination": "isolated staging Supabase project",
+        "hostCategory": "Supavisor pooler",
+        "port": 5432,
+        "mode": "session",
+        "runtimeClientPoolMaximum": 10,
+        "preparedStatements": "No explicit named-statement policy.",
+        "reuse": "The prior initializer did not guarantee one reused Pool/Prisma pair across every warm Preview module evaluation."
+      },
+      "proof": [
+        "One hard reload recreated 10 idle runtime sessions.",
+        "A second isolated runtime could exceed the 15-client Supavisor session allowance.",
+        "The resulting application failure was EMAXCONNSESSION and displayed Dashboard unavailable.",
+        "No long-running query or checked-out transaction explained the persistent idle-session growth."
+      ],
+      "classification": "Serverless instances used a session pool and an implicit pg maximum of 10, mapping idle client sessions to persistent database backends."
+    },
+    "correctedTopology": {
+      "runtime": {
+        "destination": "isolated staging Supabase project",
+        "hostCategory": "Supavisor pooler",
+        "port": 6543,
+        "mode": "transaction",
+        "pgbouncerParameter": true,
+        "preparedStatements": "No statementNameGenerator; no named prepared-statement cache.",
+        "pool": {
+          "max": 1,
+          "min": 0,
+          "connectionTimeoutMillis": 5000,
+          "idleTimeoutMillis": 10000,
+          "maxLifetimeSeconds": 300,
+          "allowExitOnIdle": true,
+          "applicationName": "fp-dashboard-runtime"
+        },
+        "reuse": "One global pg Pool and PrismaClient pair per warm isolate in every environment."
+      },
+      "migrations": {
+        "variable": "DIRECT_URL",
+        "destination": "same isolated staging project",
+        "port": 5432,
+        "mode": "direct or session",
+        "runtimeUse": false
+      },
+      "previewValidation": [
+        "SUPABASE_URL must identify the approved non-production Preview project.",
+        "DATABASE_URL must use a supported staging Supabase pooler credential.",
+        "The effective runtime URL is forced to port 6543 with pgbouncer=true.",
+        "DIRECT_URL must be separate and use the approved staging direct/session path on port 5432.",
+        "Validation errors never print credentials."
+      ],
+      "productionBehaviorChanged": false
+    },
+    "connectionVariableInventory": [
+      {
+        "name": "DATABASE_URL",
+        "scope": "Vercel Preview",
+        "destination": "staging",
+        "hostCategory": "Supabase pooler",
+        "configuredPort": "5432 or 6543 credential",
+        "effectivePort": 6543,
+        "mode": "transaction",
+        "use": "runtime",
+        "preparedStatements": "not named or cached",
+        "poolMaximum": 1,
+        "connectionTimeoutMillis": 5000,
+        "idleTimeoutMillis": 10000
+      },
+      {
+        "name": "DIRECT_URL",
+        "scope": "Vercel Preview",
+        "destination": "staging",
+        "hostCategory": "Supabase direct or session pooler",
+        "port": 5432,
+        "mode": "direct or session",
+        "use": "Prisma CLI and migrations",
+        "runtimeUse": false
+      },
+      {
+        "name": "SUPABASE_URL",
+        "scope": "Vercel Preview",
+        "destination": "staging",
+        "hostCategory": "Supabase HTTPS API",
+        "use": "Preview project identity and storage endpoint identity",
+        "databaseConnection": false
+      },
+      {
+        "name": "MIGRATION_VALIDATION_DATABASE_URL",
+        "scope": "CI and local only",
+        "destination": "disposable PostgreSQL 16",
+        "port": 5432,
+        "mode": "direct",
+        "use": "all-21-migration validation",
+        "deployedRuntimeUse": false
+      },
+      {
+        "name": "DISPOSABLE_TEST_DATABASE_URL",
+        "scope": "local test only",
+        "destination": "disposable PostgreSQL",
+        "use": "reliability fixture/reset scripts",
+        "deployedRuntimeUse": false
+      },
+      {
+        "name": "SUPABASE_SERVICE_ROLE_KEY",
+        "scope": "Vercel Preview",
+        "destination": "staging storage API",
+        "use": "storage administration",
+        "databaseConnection": false
+      }
+    ],
+    "unusedConnectionFallbacks": [
+      "MIGRATION_DATABASE_URL",
+      "POSTGRES_URL variants"
+    ],
+    "observability": {
+      "privacySafe": true,
+      "captured": [
+        "aggregate Supavisor backend counts and states",
+        "HTTP status distribution",
+        "request latency",
+        "Vercel error signatures",
+        "browser console/page/request failures"
+      ],
+      "excluded": [
+        "authentication tokens",
+        "database credentials",
+        "query parameters containing user data",
+        "student profile values",
+        "complete SQL containing personal values"
+      ],
+      "baselineSupavisorBackendWorkers": 2,
+      "maximumObservedSupavisorBackendWorkers": 14,
+      "fiveMinuteSoakSample": 8,
+      "tenMinuteSoakSample": 1,
+      "finalSupavisorBackendWorkers": 1,
+      "manualSessionTerminationRequired": false,
+      "limitation": "Transaction-pooler backend workers appear as Supavisor in pg_stat_activity, so per-client application names and exact application-side pool wait time are not directly observable there."
+    },
+    "authenticatedConnectionMatrix": {
+      "startUtc": "2026-07-27T07:28:44.382Z",
+      "finishUtc": "2026-07-27T07:32:07.157Z",
+      "sessionModel": "Isolated authenticated request sessions for server-rendered routes.",
+      "routes": [
+        "/dashboard/student",
+        "/dashboard/student/opportunities",
+        "/dashboard/student/saved",
+        "/dashboard/student/applications",
+        "/dashboard/student"
+      ],
+      "wavesPerConcurrency": 3,
+      "results": [
+        {
+          "concurrency": 1,
+          "successful": 15,
+          "total": 15,
+          "medianOfWaveMediansMs": 632.7,
+          "worstWaveP95Ms": 961.6,
+          "maximumMs": 961.6
+        },
+        {
+          "concurrency": 5,
+          "successful": 75,
+          "total": 75,
+          "medianOfWaveMediansMs": 716.5,
+          "worstWaveP95Ms": 2076.7,
+          "maximumMs": 2243.9
+        },
+        {
+          "concurrency": 10,
+          "successful": 150,
+          "total": 150,
+          "medianOfWaveMediansMs": 711.6,
+          "worstWaveP95Ms": 3389.1,
+          "maximumMs": 3802.2
+        },
+        {
+          "concurrency": 15,
+          "successful": 225,
+          "total": 225,
+          "medianOfWaveMediansMs": 810.6,
+          "worstWaveP95Ms": 3932.1,
+          "maximumMs": 4233.5
+        },
+        {
+          "concurrency": 20,
+          "successful": 300,
+          "total": 300,
+          "medianOfWaveMediansMs": 480,
+          "worstWaveP95Ms": 3905.1,
+          "maximumMs": 4240.5
+        },
+        {
+          "concurrency": 30,
+          "successful": 450,
+          "total": 450,
+          "medianOfWaveMediansMs": 654.5,
+          "worstWaveP95Ms": 2910.2,
+          "maximumMs": 3070.6
+        }
+      ],
+      "totalSuccessful": 1215,
+      "totalRequests": 1215,
+      "statusDistribution": {
+        "200": 1215
+      },
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "httpFailures": 0,
+      "requestFailures": 0,
+      "poolExhaustionErrors": 0,
+      "dashboardUnavailableOccurrences": 0,
+      "manualRecoveryRequired": false
+    },
+    "soak": {
+      "startUtc": "2026-07-27T07:32:32.930Z",
+      "finishUtc": "2026-07-27T07:48:06.340Z",
+      "durationMinutes": 15,
+      "intervalSeconds": 5,
+      "isolatedRealChromiumContexts": 3,
+      "successfulNavigations": 125,
+      "totalNavigations": 125,
+      "statusDistribution": {
+        "200": 125
+      },
+      "medianMs": 722.1,
+      "p95Ms": 961.5,
+      "maximumMs": 1212.5,
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "httpFailures": 0,
+      "requestFailures": 0,
+      "connectionsAccumulated": false
+    },
+    "acceptedVercelLogWindow": {
+      "fromUtc": "2026-07-27T07:28:44Z",
+      "toUtc": "2026-07-27T07:48:07Z",
+      "http4xx": 0,
+      "http5xx": 0,
+      "searches": {
+        "EMAXCONNSESSION": 0,
+        "P2024": 0,
+        "too many clients": 0,
+        "Dashboard unavailable": 0,
+        "pool timeout": 0
+      },
+      "rejectedHarnessDiagnostics": "Earlier shared browser-context diagnostics produced Clerk CDN load failures and pending-session telemetry responses. Those waves were rejected, the harness was isolated, and they are not counted as database-capacity evidence."
+    },
+    "quality": {
+      "formatting": "PASS",
+      "typecheck": "PASS",
+      "lint": "PASS",
+      "unitTests": {
+        "status": "PASS",
+        "files": 82,
+        "tests": 393
+      },
+      "prismaSchemaValidation": "PASS",
+      "all21Migrations": "PASS_POSTGRESQL_16_SCHEMA_PARITY_AND_LEGACY_UPGRADE",
+      "productionBuild": "PASS",
+      "secretScan": "PASS",
+      "highThresholdDependencyAudit": "PASS",
+      "focusedHistoryPolicy": "PASS_30_OF_30_CHROMIUM_DESKTOP_WEBKIT_IPHONE_WEBKIT",
+      "fullBrowserSuite": {
+        "passed": 81,
+        "expectedAuthenticatedStateSkips": 29,
+        "failed": 0
+      },
+      "accessibility": "PASS",
+      "performance": {
+        "status": "PASS",
+        "lcpGateMs": 2500,
+        "consoleErrors": 0,
+        "failedRequests": 0,
+        "maximumMobileCls": 0.15295
+      },
+      "codeql": "PASS",
+      "ci": "PASS",
+      "vercel": "PASS"
+    },
+    "physicalIPhone": {
+      "device": "Mohit’s iPhone",
+      "model": "iPhone 14 Pro",
+      "hardwareIdentifier": "iPhone15,2",
+      "iosVersion": "26.5.2",
+      "directDeviceDetection": "DETECTED_BUT_CURRENTLY_UNAVAILABLE_TO_DEVICECONTROL",
+      "xctraceEnumeration": "PASS",
+      "mirroring": {
+        "status": "FAIL_INCOMPLETE",
+        "visibleMessage": "Timed Out — iPhone Mirroring timed out due to iPhone use while connecting. Lock your iPhone before connecting."
+      },
+      "directAuthenticatedFlow": "NOT_COMPLETED_ON_EXACT_RUNTIME",
+      "automatedIPhoneWebKit": "PASS",
+      "safariWebInspector": "UNAVAILABLE_CONNECTING",
+      "webInspectorIndependentBlocker": false,
+      "checksNotCompleted": [
+        "all four onboarding screens",
+        "direct 16-pixel input sizing",
+        "direct approximately 44-pixel control sizing",
+        "focus zoom",
+        "keyboard obstruction",
+        "native Enter form action",
+        "specialty-chip Enter",
+        "Back/Forward/refresh persistence",
+        "validation value retention",
+        "save and remove",
+        "application-start surface",
+        "logout and login return",
+        "Safari force-close and reopen"
+      ]
+    },
+    "cleanup": {
+      "status": "PASS",
+      "clerkDevelopmentUser": "[REDACTED_TEST_ACCOUNT_B]",
+      "clerkDevelopmentUserDeleted": true,
+      "stagingFinalCounts": {
+        "fictionalOpportunitiesRetained": 3,
+        "fictionalPartnerOrganizationsRetained": 1,
+        "users": 0,
+        "studentProfiles": 0,
+        "savedOpportunities": 0,
+        "applications": 0,
+        "auditLogs": 0,
+        "recommendationEvents": 0,
+        "resumeMetadata": 0,
+        "resumeObjects": 0
+      },
+      "browserAuthenticationStateRemoved": true,
+      "identifierBearingTracesAndScreenshotsRemoved": true,
+      "temporaryPostgresqlContainersRemoved": true,
+      "idleTestSessionsNaturallyReturnedToExpectedLevel": true
+    },
+    "productionNonMutation": {
+      "status": "PASS",
+      "opportunities": 157,
+      "users": 62,
+      "savedOpportunities": 4,
+      "applications": 13,
+      "previewSentinelMatches": 0,
+      "schemaMutated": false,
+      "dataMutated": false,
+      "storageMutated": false,
+      "environmentMutated": false
+    },
+    "criteria": {
+      "serverlessSafePreviewTransactionPooling": "PASS",
+      "exactRuntimeTested": "PASS",
+      "noPoolExhaustionThroughThirtyConcurrentSessions": "PASS",
+      "noConnectionAccumulationDuringFifteenMinuteSoak": "PASS",
+      "completeAuthenticatedPhysicalIPhoneFlow": "FAIL_NOT_COMPLETED",
+      "requiredAutomatedChecksGreen": "PASS",
+      "previewCleanup": "PASS",
+      "productionUnchanged": "PASS"
+    },
+    "blocker": "The complete authenticated physical-iPhone flow is an explicit approval requirement and was not completed because iPhone Mirroring could not connect while the device remained in use.",
+    "requiredNextEvidence": "Run the entire direct physical-iPhone onboarding, mobile-input, save/remove, logout/login, and cold-Safari checklist against the exact runtime candidate, then repeat cleanup and inspect the same deployment logs.",
+    "remainingLimitations": [
+      "Safari Web Inspector remains at Connecting and supplies no direct console/request diagnostics.",
+      "Transaction-pooler pg_stat_activity samples expose Supavisor backend workers rather than exact client application names or application-side pool wait time."
+    ]
+  },
+  "tests": [
+    {
+      "id": "HP-D-01",
+      "surface": "anonymous homepage",
+      "deviceBrowser": "Chromium desktop",
+      "authentication": "anonymous",
+      "expected": "Hero and primary CTA paint and function immediately.",
+      "actual": "Visible with no runtime error.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "E2E and performance harness",
+      "mode": "automated",
+      "regressionTestAdded": true,
+      "fixCommit": "5753513"
+    },
+    {
+      "id": "HP-I-01",
+      "surface": "anonymous homepage",
+      "deviceBrowser": "iPhone WebKit emulation and physical iPhone Safari",
+      "authentication": "anonymous",
+      "expected": "CTA above fold and no horizontal overflow.",
+      "actual": "Passed at 320, 375, 390, and 430 pixel widths plus the physical 393 pixel portrait viewport.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "browser-matrix.spec.ts and Safari Web Inspector",
+      "mode": "mixed",
+      "regressionTestAdded": true,
+      "fixCommit": "eb334d0"
+    },
+    {
+      "id": "OD-D-01",
+      "surface": "opportunity discovery",
+      "deviceBrowser": "Chromium desktop",
+      "authentication": "anonymous",
+      "expected": "Inventory, filters, and public details work.",
+      "actual": "Passed.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "existing E2E smoke",
+      "mode": "automated",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "OD-I-01",
+      "surface": "opportunity discovery",
+      "deviceBrowser": "iPhone WebKit emulation and physical iPhone Safari",
+      "authentication": "anonymous",
+      "expected": "Navigation, results, URL, and filter controls remain synchronized.",
+      "actual": "Production physical Safari exposed stale form values after Back; the branch fix passed Chromium, WebKit, and iPhone WebKit.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "physical Safari and browser matrix",
+      "mode": "mixed",
+      "regressionTestAdded": true,
+      "fixCommit": "0a2f54e"
+    },
+    {
+      "id": "SU-D-01",
+      "surface": "sign-up",
+      "deviceBrowser": "Chromium production",
+      "authentication": "anonymous",
+      "expected": "Clerk sign-up surface loads.",
+      "actual": "Passed with allowed vendor notices.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "production E2E",
+      "mode": "automated",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "SU-P-01",
+      "surface": "sign-up",
+      "deviceBrowser": "physical iPhone Safari",
+      "authentication": "anonymous",
+      "expected": "Usable sign-up and unblocked provider transition.",
+      "actual": "Clerk rendered and Google account chooser opened.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "iPhone Mirroring and Safari Web Inspector",
+      "mode": "manual",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "AU-O-01",
+      "surface": "Google OAuth return",
+      "deviceBrowser": "physical iPhone Safari",
+      "authentication": "dedicated test account",
+      "expected": "OAuth state and intended return are preserved.",
+      "actual": "Authentication was completed directly by the user and returned to the authenticated student area.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "direct user authentication and Web Inspector",
+      "mode": "manual",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "AU-R-01",
+      "surface": "incomplete-account return",
+      "deviceBrowser": "server tests; physical iPhone used a complete account",
+      "authentication": "incomplete student",
+      "expected": "User resumes the intended onboarding step.",
+      "actual": "Source and unit behavior pass; the physical account was already complete, so this state was not reproduced.",
+      "status": "PARTIAL",
+      "severity": "P1",
+      "evidence": "auth and onboarding tests",
+      "mode": "mixed",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "ON-F-01",
+      "surface": "onboarding fresh start",
+      "deviceBrowser": "unit/action",
+      "authentication": "incomplete student",
+      "expected": "Four resumable steps save transactionally.",
+      "actual": "Passed.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "unit/action suite",
+      "mode": "automated",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "ON-R-01",
+      "surface": "onboarding refresh",
+      "deviceBrowser": "unit/action",
+      "authentication": "partially complete student",
+      "expected": "Saved data and step resume.",
+      "actual": "Passed at server/action level.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "unit tests",
+      "mode": "automated",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "ON-B-01",
+      "surface": "onboarding back navigation",
+      "deviceBrowser": "unit/action",
+      "authentication": "partially complete student",
+      "expected": "State remains consistent.",
+      "actual": "Passed at server/action level.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "unit tests",
+      "mode": "automated",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "ON-V-01",
+      "surface": "onboarding validation",
+      "deviceBrowser": "unit/action",
+      "authentication": "student",
+      "expected": "Clear errors and entered values retained.",
+      "actual": "Passed.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "unit tests",
+      "mode": "automated",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "ON-S-01",
+      "surface": "onboarding server failure",
+      "deviceBrowser": "unit/action",
+      "authentication": "student",
+      "expected": "No false completion and safe retry.",
+      "actual": "Passed.",
+      "status": "PASS",
+      "severity": "P0",
+      "evidence": "unit tests",
+      "mode": "automated",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "ON-PK-01",
+      "surface": "onboarding keyboard",
+      "deviceBrowser": "physical iPhone Safari",
+      "authentication": "test student",
+      "expected": "No zoom or obscured action; native Enter behavior.",
+      "actual": "The user completed focus, typing, keyboard dismissal, zoom, and obstruction checks and reported no additional blocker; production DOM still measured ordinary controls at 14 pixels, and the branch fix remains automated.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "physical DOM and automated regression",
+      "mode": "mixed",
+      "regressionTestAdded": true,
+      "fixCommit": "5753513"
+    },
+    {
+      "id": "ON-PF-01",
+      "surface": "resume file upload",
+      "deviceBrowser": "physical iPhone Safari",
+      "authentication": "test student",
+      "expected": "Harmless file picker flow is clear and recoverable.",
+      "actual": "The user opened and canceled the native picker without selecting or uploading a file; the existing resume remained untouched.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "direct-on-device user validation",
+      "mode": "manual",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "ON-C-01",
+      "surface": "profile completion",
+      "deviceBrowser": "unit/action and physical iPhone Safari",
+      "authentication": "student",
+      "expected": "Completion is transactional and idempotent.",
+      "actual": "Existing valid values were recompleted and the profile returned to the student dashboard.",
+      "status": "PASS",
+      "severity": "P0",
+      "evidence": "unit tests and Web Inspector",
+      "mode": "mixed",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "ON-D-01",
+      "surface": "post-completion redirect",
+      "deviceBrowser": "unit/server and physical iPhone Safari",
+      "authentication": "complete student",
+      "expected": "Intended student dashboard.",
+      "actual": "Passed at server/unit level and physically reached /dashboard/student.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "unit tests and Web Inspector",
+      "mode": "mixed",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "AC-S-01",
+      "surface": "save opportunity",
+      "deviceBrowser": "unit/action and physical iPhone Safari",
+      "authentication": "complete student",
+      "expected": "Idempotent saved state and safe cleanup.",
+      "actual": "Saved, verified on Saved, and removed after the physical check.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "unit tests, iPhone Mirroring, and Web Inspector",
+      "mode": "mixed",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "AC-A-01",
+      "surface": "start application",
+      "deviceBrowser": "unit/action and physical iPhone Safari",
+      "authentication": "eligible student",
+      "expected": "Workspace begins without an external submission.",
+      "actual": "External start form and date control opened physically; no application was submitted or created. Internal behavior passed at action level.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "unit tests and iPhone Mirroring",
+      "mode": "mixed",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "AU-L-01",
+      "surface": "logout/login return",
+      "deviceBrowser": "source tests and physical iPhone Safari",
+      "authentication": "test account",
+      "expected": "Correct destination and persisted session.",
+      "actual": "Cold Safari restart retained the session, physical sign-out returned home, and direct Google login returned to /dashboard/student with readyState complete and no fresh console error.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "auth tests, iPhone Mirroring, and Web Inspector",
+      "mode": "mixed",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "RB-S-01",
+      "surface": "student attempts admin access",
+      "deviceBrowser": "unit/server",
+      "authentication": "student",
+      "expected": "Deny or redirect to student dashboard.",
+      "actual": "Passed.",
+      "status": "PASS",
+      "severity": "P0",
+      "evidence": "role tests",
+      "mode": "automated",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "RB-A-01",
+      "surface": "anonymous attempts student access",
+      "deviceBrowser": "Chromium and unit/server",
+      "authentication": "anonymous",
+      "expected": "Safe sign-in redirect with intended return.",
+      "actual": "Passed.",
+      "status": "PASS",
+      "severity": "P0",
+      "evidence": "E2E and unit tests",
+      "mode": "automated",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    },
+    {
+      "id": "PF-H-01",
+      "surface": "homepage performance",
+      "deviceBrowser": "Chromium iPhone slow profile",
+      "authentication": "anonymous",
+      "expected": "LCP below 2.5 seconds and meaningful hero LCP.",
+      "actual": "764 ms median, hero h1, CLS 0.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "public performance harness",
+      "mode": "automated",
+      "regressionTestAdded": true,
+      "fixCommit": "5753513"
+    },
+    {
+      "id": "RS-M-01",
+      "surface": "mobile overflow",
+      "deviceBrowser": "Chromium, WebKit, iPhone WebKit emulation, and physical iPhone Safari",
+      "authentication": "anonymous and authenticated",
+      "expected": "No horizontal overflow across required sizes.",
+      "actual": "Automated portrait/landscape matrix passed; physical portrait showed no horizontal overflow, and the user completed the direct landscape check without reporting an additional defect.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "browser matrix and Web Inspector",
+      "mode": "mixed",
+      "regressionTestAdded": true,
+      "fixCommit": "eb334d0"
+    },
+    {
+      "id": "PF-S-01",
+      "surface": "slow network",
+      "deviceBrowser": "Chromium iPhone profile",
+      "authentication": "anonymous",
+      "expected": "Useful content with no request or console failure.",
+      "actual": "Passed with zero errors/failures.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "public performance harness",
+      "mode": "automated",
+      "regressionTestAdded": true,
+      "fixCommit": "3d90bbb"
+    },
+    {
+      "id": "AX-01",
+      "surface": "accessibility basics",
+      "deviceBrowser": "Chromium and axe",
+      "authentication": "anonymous",
+      "expected": "No detectable WCAG A/AA violation.",
+      "actual": "Nine of nine isolated executions passed.",
+      "status": "PASS",
+      "severity": "P1",
+      "evidence": "axe E2E",
+      "mode": "automated",
+      "regressionTestAdded": false,
+      "fixCommit": null
+    }
+  ],
+  "finalAuthenticatedPhysicalIPhoneReleaseGate": {
+    "date": "2026-07-27",
+    "pullRequest": 35,
+    "branch": "codex/funnel-mobile-performance-audit",
+    "supersedes": "serverlessPoolingReleaseGateResolution.physicalIPhone incomplete evidence and BLOCK recommendation",
+    "recommendation": "APPROVE_FOR_PRODUCTION",
+    "pullRequestAction": "MARK_READY_FOR_OWNER_REVIEW",
+    "actionsExcluded": [
+      "merge",
+      "production promotion",
+      "production schema mutation",
+      "production data mutation",
+      "production environment mutation"
+    ],
+    "exactRuntime": {
+      "sha": "998866a57e2254d50e14a3700252db9e820eb03a",
+      "deploymentId": "dpl_6Ww1iTTc2PUU5GPvYYnoNvyvcTNz",
+      "url": "https://fp-dashboard-m9byb8eus-bapatlamohitwork-2162s-projects.vercel.app",
+      "state": "READY",
+      "laterHeadAtTestStart": "0a87ef31afe18cfaeadf110318040cc478deda08",
+      "runtimeDeltaAfterTestedSha": false
+    },
+    "postRuntimeChanges": [
+      {
+        "sha": "9bbf211b8cb2a3fdd9d33d465c8ad8506a928e46",
+        "classification": "tests/configuration",
+        "summary": "Isolate authenticated connection-load request sessions.",
+        "runtimeEffect": false
+      },
+      {
+        "sha": "0a87ef31afe18cfaeadf110318040cc478deda08",
+        "classification": "documentation/artifacts",
+        "summary": "Record the serverless-pooling release-gate evidence.",
+        "runtimeEffect": false
+      }
+    ],
+    "device": {
+      "model": "iPhone 14 Pro",
+      "hardwareIdentifier": "iPhone15,2",
+      "iosVersion": "26.5.2",
+      "interactionChannel": "REAL_IPHONE_THROUGH_MACOS_IPHONE_MIRRORING",
+      "browserEmulation": false
+    },
+    "previewIsolationBeforeSignup": {
+      "status": "PASS",
+      "fictionalOpportunities": 3,
+      "fictionalPartnerOrganizations": 1,
+      "previewSentinels": 3,
+      "users": 0,
+      "studentProfiles": 0,
+      "savedOpportunities": 0,
+      "applications": 0,
+      "resumes": 0,
+      "productionInventoryWasNotRendered": true
+    },
+    "authentication": {
+      "status": "PASS",
+      "accountType": "synthetic disposable Clerk Development user",
+      "signupMethod": "Preview-supported email and password with Clerk Development verification code",
+      "developmentModeVisible": true,
+      "returnedToExactPreview": true,
+      "productionDomainRedirects": 0,
+      "productionDataLeakage": false,
+      "initialStudentState": "INCOMPLETE"
+    },
+    "majorStages": [
+      {
+        "stage": "launch_and_authentication",
+        "status": "PASS"
+      },
+      {
+        "stage": "onboarding_step_1",
+        "status": "PASS"
+      },
+      {
+        "stage": "onboarding_steps_2_through_4",
+        "status": "PASS"
+      },
+      {
+        "stage": "profile_completion_and_student_dashboard",
+        "status": "PASS"
+      },
+      {
+        "stage": "dashboard_opportunities_saved_applications_navigation",
+        "status": "PASS"
+      },
+      {
+        "stage": "save_remove_and_refresh",
+        "status": "PASS"
+      },
+      {
+        "stage": "application_start_surface_without_submission",
+        "status": "PASS"
+      },
+      {
+        "stage": "logout_login_completed_student_return",
+        "status": "PASS"
+      },
+      {
+        "stage": "cold_safari_force_close_reopen_and_sign_in",
+        "status": "PASS"
+      }
+    ],
+    "mobileInputBehavior": {
+      "normalPageScaleReadable": "PASS",
+      "unexpectedFocusZoom": 0,
+      "horizontalOverflow": 0,
+      "primaryControlsApproximately44PixelsOrGreater": "PASS",
+      "ordinaryFieldEnterNativeValidation": "PASS",
+      "specialtyEnterAddsChipWithoutSubmit": "PASS",
+      "multilineEnterAddsNewlineWithoutSubmit": "PASS",
+      "backForwardPersistence": "PASS",
+      "refreshResumesSavedStep": "PASS",
+      "validationRetainsEnteredValues": "PASS",
+      "nativeSelectOpenDismiss": "PASS",
+      "keyboardOrInputAccessoryObstruction": 0,
+      "note": "Mac keyboard input through Mirroring produced the iOS input accessory rather than a full software keyboard; it dismissed cleanly and never trapped the active field or primary action."
+    },
+    "dashboard": {
+      "routeAfterCompletion": "/dashboard/student",
+      "fictionalOpportunityInventory": 3,
+      "dashboardUnavailableOccurrences": 0,
+      "connectionPoolErrors": 0,
+      "requestTimeouts": 0,
+      "endlessLoadingOccurrences": 0,
+      "genericServerErrors": 0
+    },
+    "saveRemove": {
+      "savedThroughPhysicalUi": true,
+      "appearedInSaved": true,
+      "removedThroughPhysicalUi": true,
+      "absentAfterRefresh": true
+    },
+    "applicationStart": {
+      "workspaceLoaded": true,
+      "harmlessDateControlOpened": true,
+      "externalApplicationOpened": false,
+      "applicationSubmitted": false,
+      "resumeUploaded": false,
+      "privateNotesEntered": false,
+      "unexpectedInternalRecord": {
+        "created": true,
+        "status": "PREPARING",
+        "submitted": false,
+        "resumeAttached": false,
+        "deletedDuringCleanup": true
+      }
+    },
+    "logoutLogin": {
+      "signedOutDestination": "PASS_PREVIEW_HOME",
+      "developmentEmailCodeSignin": "PASS",
+      "completedStudentDestination": "/dashboard/student",
+      "incorrectOnboardingReturn": false
+    },
+    "coldSafari": {
+      "forceClosedThroughRealIosAppSwitcher": true,
+      "reopened": true,
+      "existingPrivateBrowsingSessionResumed": false,
+      "protectedPreviewAccessReestablished": true,
+      "signinRequestedAndCompleted": true,
+      "dashboardLoadedAfterReauthentication": true,
+      "connectionError": false,
+      "status": "PASS"
+    },
+    "mirroring": {
+      "temporaryDisconnects": 1,
+      "visibleMessage": "iPhone in Use",
+      "recovery": "Clicked Connect and continued from the current Safari flow.",
+      "manualDeviceActionRequired": false,
+      "status": "PASS_WITH_RECOVERED_TRANSIENT_DISCONNECT"
+    },
+    "safariWebInspector": {
+      "status": "UNAVAILABLE_CONNECTING",
+      "independentBlocker": false,
+      "directConsoleDiagnosticsAvailable": false,
+      "directNetworkDiagnosticsAvailable": false
+    },
+    "exactDeploymentRuntimeLogs": {
+      "fromUtc": "2026-07-27T21:15:00Z",
+      "toUtc": "2026-07-27T22:10:00Z",
+      "reportedStatusGroups": {
+        "200": 271,
+        "307": 12,
+        "303": 2
+      },
+      "http4xx": 0,
+      "http5xx": 0,
+      "warningErrorOrFatalEntries": 0,
+      "visiblePhysicalApplicationErrors": 0
+    },
+    "cleanup": {
+      "status": "PASS",
+      "clerkDevelopmentUserDeleted": true,
+      "stagingFinalCounts": {
+        "fictionalOpportunitiesRetained": 3,
+        "fictionalPartnerOrganizationsRetained": 1,
+        "users": 0,
+        "studentProfiles": 0,
+        "savedOpportunities": 0,
+        "applications": 0,
+        "resumes": 0,
+        "auditLogs": 0,
+        "recommendationEvents": 0,
+        "storageObjects": 0
+      },
+      "temporarySaveGone": true,
+      "unexpectedApplicationGone": true,
+      "resumeMetadataAndObjectsGone": true,
+      "identifierBearingMirroringScreenshotsRemoved": true,
+      "localCredentialNoteRemoved": true,
+      "clipboardCleared": true,
+      "finalSupavisorBackendWorkers": 1,
+      "manualDatabaseSessionTerminationRequired": false
+    },
+    "productionNonMutation": {
+      "status": "PASS",
+      "rerunStartCounts": {
+        "opportunities": 157,
+        "users": 63,
+        "savedOpportunities": 4,
+        "applications": 13
+      },
+      "rerunFinalCounts": {
+        "opportunities": 157,
+        "users": 63,
+        "savedOpportunities": 4,
+        "applications": 13
+      },
+      "previewSentinelMatches": 0,
+      "disposableAccountMatches": 0,
+      "note": "The 63-user count was present before this rerun and remained unchanged. Earlier audit sections sampled 62 users in earlier windows.",
+      "schemaMutated": false,
+      "dataMutatedByThisTest": false,
+      "storageMutated": false,
+      "environmentMutated": false
+    },
+    "criteria": {
+      "exactReleaseRuntimeVerified": "PASS",
+      "noRuntimeChangeAfterTestedSha": "PASS",
+      "previewAuthenticationIsolated": "PASS",
+      "incompleteStudentCompletesFourStepOnboarding": "PASS",
+      "mobileFocusEnterBackRefreshPersistence": "PASS",
+      "dashboardAndRecommendationsRender": "PASS",
+      "saveRemove": "PASS",
+      "applicationStartWithoutSubmission": "PASS",
+      "completedStudentReturnsAfterLogoutLogin": "PASS",
+      "coldSafariReopen": "PASS",
+      "noNewExactDeploymentRuntimeFailure": "PASS",
+      "temporaryRecordsAndIdentifierTracesCleaned": "PASS",
+      "productionUnchanged": "PASS",
+      "existingRequiredChecksGreen": "PASS"
+    },
+    "monitoredRollout": [
+      "Merge only after owner review and green CI, CodeQL, and Vercel checks on the final artifact head.",
+      "Promote the merge commit only in a separate authorized action and record the exact Production deployment ID and SHA.",
+      "Verify signed-out routes, authentication entry points, and the completed-student dashboard immediately after promotion.",
+      "Monitor Vercel 4xx/5xx and warning/error/fatal logs plus Supavisor connection aggregates for at least 15 minutes.",
+      "Rollback to the immediately preceding known-good Production deployment on authentication leakage, dashboard failure, save failure, pool exhaustion, elevated 5xx, or persistent connection growth."
+    ]
+  }
+}

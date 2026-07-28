@@ -1,17 +1,9 @@
 import "server-only";
 
 import { prisma } from "@/lib/db/prisma";
+import type { RecommendationEventInput } from "@/lib/matching/recommendation-event-input";
 
-export type RecommendationEventInput = {
-  applicationId?: string | null;
-  eventType: "IMPRESSION" | "CLICK" | "APPLICATION" | "SEARCH_RESULTS";
-  matchScore?: number | null;
-  metadata?: Record<string, string | number | boolean | null> | null;
-  opportunityId?: string | null;
-  resultCount?: number | null;
-  searchQuery?: string | null;
-  source: string;
-};
+export type { RecommendationEventInput } from "@/lib/matching/recommendation-event-input";
 
 export async function recordRecommendationEvents({
   events,

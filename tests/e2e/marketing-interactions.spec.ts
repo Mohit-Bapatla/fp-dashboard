@@ -300,32 +300,43 @@ test("marketing reveals finish quickly and remain visible with reduced motion", 
 }) => {
   await page.goto("/");
 
-  const heroReveal = page.locator('[data-reveal="section"]').first();
+  const hero = page
+    .getByRole("heading", { name: "Build your path into healthcare." })
+    .locator("xpath=ancestor::section");
+  const firstBelowFoldReveal = page.locator('[data-reveal="section"]').first();
   await expect(page.locator("html")).toHaveAttribute(
     "data-marketing-motion",
     "enabled",
   );
-  await expect(heroReveal).toHaveAttribute("data-revealed", "true");
+  await expect(hero.locator('[data-reveal="section"]')).toHaveCount(0);
   await expect(
-    heroReveal.locator("[data-marketing-reveal-item]").first(),
+    hero.getByRole("heading", { name: "Build your path into healthcare." }),
   ).toBeVisible();
-  const revealConfiguration = await heroReveal.evaluate((element) => ({
-    distance: element.style.getPropertyValue("--marketing-reveal-distance"),
-    duration: element.style.getPropertyValue("--marketing-reveal-duration"),
-  }));
-  expect(revealConfiguration).toEqual({ distance: "14px", duration: "340ms" });
+  await firstBelowFoldReveal.scrollIntoViewIfNeeded();
+  await expect(firstBelowFoldReveal).toHaveAttribute("data-revealed", "true");
+  const revealConfiguration = await firstBelowFoldReveal.evaluate(
+    (element) => ({
+      distance: element.style.getPropertyValue("--marketing-reveal-distance"),
+      duration: element.style.getPropertyValue("--marketing-reveal-duration"),
+    }),
+  );
+  expect(revealConfiguration).toEqual({ distance: "10px", duration: "320ms" });
 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.reload();
-  const reducedHeroReveal = page.locator('[data-reveal="section"]').first();
+  const reducedBelowFoldReveal = page
+    .locator('[data-reveal="section"]')
+    .first();
   await expect(page.locator("html")).not.toHaveAttribute(
     "data-marketing-motion",
     "enabled",
   );
-  await expect(reducedHeroReveal).toHaveAttribute("data-revealed", "true");
-  await expect(reducedHeroReveal).not.toHaveClass(/marketing-reveal--pending/);
+  await expect(reducedBelowFoldReveal).toHaveAttribute("data-revealed", "true");
+  await expect(reducedBelowFoldReveal).not.toHaveClass(
+    /marketing-reveal--pending/,
+  );
   await expect(
-    reducedHeroReveal.locator("[data-marketing-reveal-item]").first(),
+    reducedBelowFoldReveal.locator("[data-marketing-reveal-item]").first(),
   ).toBeVisible();
 });
 

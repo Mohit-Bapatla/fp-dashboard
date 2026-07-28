@@ -9,6 +9,7 @@ import type { EligibilityCategory } from "@/lib/matching/opportunity-eligibility
 import { studentOpportunityTypeOptions } from "@/lib/student/opportunity-filters";
 import type { PublicOpportunityFilterOptions } from "@/lib/public/opportunities";
 
+import { PublicOpportunityFilterHistorySync } from "./public-opportunity-filter-history-sync";
 import { formatOpportunityEnum } from "./public-opportunity-card";
 
 export type PublicOpportunityFilterValues = {
@@ -27,7 +28,7 @@ export type PublicOpportunityFilterValues = {
 };
 
 const inputClass =
-  "min-h-11 w-full rounded-xl border border-border bg-white px-3 text-sm text-brand-navy outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15";
+  "min-h-11 w-full rounded-xl border border-border bg-white px-3 text-base text-brand-navy outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15 sm:text-sm";
 
 function FilterFields({
   filters,
@@ -203,15 +204,18 @@ function FilterForm({
   filters,
   idPrefix,
   options,
+  stateKey,
   showEligibility,
 }: {
   filters: PublicOpportunityFilterValues;
   idPrefix: string;
   options: PublicOpportunityFilterOptions;
+  stateKey: string;
   showEligibility: boolean;
 }) {
   return (
     <form action="/opportunities" className="space-y-5" method="get">
+      <PublicOpportunityFilterHistorySync stateKey={stateKey} />
       <FilterFields
         filters={filters}
         idPrefix={idPrefix}
@@ -251,6 +255,7 @@ export function PublicOpportunityFilters({
   const activeFilterCount = Object.entries(filters).filter(
     ([key, value]) => Boolean(value) && !(key === "sort" && value === "newest"),
   ).length;
+  const filterStateKey = JSON.stringify(filters);
 
   return (
     <div>
@@ -278,6 +283,7 @@ export function PublicOpportunityFilters({
             filters={filters}
             idPrefix="mobile-opportunity"
             options={options}
+            stateKey={`mobile-${filterStateKey}`}
             showEligibility={showEligibility}
           />
         </div>
@@ -305,6 +311,7 @@ export function PublicOpportunityFilters({
           filters={filters}
           idPrefix="desktop-opportunity"
           options={options}
+          stateKey={`desktop-${filterStateKey}`}
           showEligibility={showEligibility}
         />
       </aside>

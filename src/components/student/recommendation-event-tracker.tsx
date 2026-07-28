@@ -4,8 +4,45 @@ import { useEffect, useTransition } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 
-import { recordRecommendationEventsAction } from "@/app/dashboard/recommendations/actions";
-import type { RecommendationEventInput } from "@/lib/matching/recommendation-events";
+import type { RecommendationEventInput } from "@/lib/matching/recommendation-event-input";
+
+async function recordRecommendationEventsFromBrowser(
+  events: RecommendationEventInput[],
+) {
+  const response = await fetch("/api/recommendation-events", {
+    body: JSON.stringify({ events }),
+    credentials: "same-origin",
+    headers: {
+      "content-type": "application/json",
+    },
+    keepalive: true,
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Recommendation telemetry request failed with status ${response.status}.`,
+    );
+  }
+}
+
+function reportRecommendationEvents(events: RecommendationEventInput[]) {
+  const payload = JSON.stringify({ events });
+
+  if (
+    typeof navigator !== "undefined" &&
+    navigator.sendBeacon(
+      "/api/recommendation-events",
+      new Blob([payload], { type: "application/json" }),
+    )
+  ) {
+    return;
+  }
+
+  void recordRecommendationEventsFromBrowser(events).catch((error) => {
+    console.error("Failed to record recommendation telemetry.", error);
+  });
+}
 
 export function RecommendationEventTracker({
   events,
@@ -14,7 +51,7 @@ export function RecommendationEventTracker({
 }) {
   useEffect(() => {
     if (events.length > 0) {
-      void recordRecommendationEventsAction(events);
+      reportRecommendationEvents(events);
     }
   }, [events]);
 
@@ -44,7 +81,7 @@ export function TrackedRecommendationLink({
       href={href}
       onClick={() => {
         startTransition(() => {
-          void recordRecommendationEventsAction([
+          reportRecommendationEvents([
             {
               eventType: "CLICK",
               matchScore,
