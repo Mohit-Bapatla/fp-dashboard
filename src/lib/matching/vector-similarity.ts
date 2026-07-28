@@ -46,10 +46,7 @@ export async function getEmbeddingVectorForEntity({
 }: {
   entityId: string;
   entityType:
-    | "OPPORTUNITY"
-    | "STUDENT_PROFILE"
-    | "RESUME"
-    | "PARTNER_ORGANIZATION";
+    "OPPORTUNITY" | "STUDENT_PROFILE" | "RESUME" | "PARTNER_ORGANIZATION";
 }) {
   const record = await prisma.embeddingRecord.findUnique({
     where: {

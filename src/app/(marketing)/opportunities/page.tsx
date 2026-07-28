@@ -173,14 +173,11 @@ async function PublicOpportunitiesContent({
 
   const opportunityQuery = {
     applicationMethod: (filters.applicationMethod || undefined) as
-      | ApplicationMethod
-      | undefined,
+      ApplicationMethod | undefined,
     availabilityStatus: (filters.availabilityStatus || undefined) as
-      | OpportunityAvailabilityStatus
-      | undefined,
+      OpportunityAvailabilityStatus | undefined,
     deadline: (filters.deadline || undefined) as
-      | PublicOpportunityDeadline
-      | undefined,
+      PublicOpportunityDeadline | undefined,
     grade: (filters.grade || undefined) as GradeLevelCode | undefined,
     location: filters.location || undefined,
     paidStatus: filters.paidStatus || undefined,

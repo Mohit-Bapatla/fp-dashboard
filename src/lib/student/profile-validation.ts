@@ -469,8 +469,7 @@ export function validateStudentProfileStep(
   const values = valuesFromFormData(formData);
   const errors: StudentProfileFieldErrors = {};
   const fields = onboardingStepFields[step] as
-    | readonly (keyof StudentProfileFormValues)[]
-    | undefined;
+    readonly (keyof StudentProfileFormValues)[] | undefined;
   const required = onboardingStepRequiredFields[step];
 
   if (!fields || !required) {

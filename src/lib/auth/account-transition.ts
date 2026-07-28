@@ -19,8 +19,7 @@ export async function acquireAccountTransitionLock(
 }
 
 export type StudentAccountTransitionBlockReason =
-  | "EXISTING_PARTNER_MEMBERSHIP"
-  | "NON_STUDENT_ROLE";
+  "EXISTING_PARTNER_MEMBERSHIP" | "NON_STUDENT_ROLE";
 
 export function getStudentAccountTransitionBlockReason({
   databaseRole,

@@ -105,11 +105,7 @@ const previewOpportunities: readonly PreviewOpportunity[] = [
 ] as const;
 
 type WalkthroughTarget =
-  | "filters"
-  | "listing"
-  | "eligibility"
-  | "action"
-  | "tracking";
+  "filters" | "listing" | "eligibility" | "action" | "tracking";
 
 const walkthroughSteps: readonly {
   description: string;

@@ -19,9 +19,7 @@ export type ResumeReviewCategoryName =
   (typeof resumeReviewCategoryNames)[number];
 
 export type ResumeReviewCategoryStatus =
-  | "STRONG"
-  | "NEEDS_ATTENTION"
-  | "MISSING";
+  "STRONG" | "NEEDS_ATTENTION" | "MISSING";
 
 export type ResumeReviewCategory = {
   action: string;
