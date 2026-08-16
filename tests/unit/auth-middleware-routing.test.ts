@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { requiresClerkMiddleware } from "@/lib/auth/middleware-routing";
+import {
+  isRecruiterDemoRoute,
+  requiresClerkMiddleware,
+} from "@/lib/auth/middleware-routing";
 
 describe("requiresClerkMiddleware", () => {
   it.each([
@@ -30,4 +33,21 @@ describe("requiresClerkMiddleware", () => {
   ])("does not make public marketing reads depend on Clerk: %s", (path) => {
     expect(requiresClerkMiddleware(path)).toBe(false);
   });
+});
+
+describe("isRecruiterDemoRoute", () => {
+  it.each(["/demo", "/demo/student", "/demo/partner/applicants/example"])(
+    "identifies only the isolated recruiter-demo route family: %s",
+    (path) => {
+      expect(isRecruiterDemoRoute(path)).toBe(true);
+      expect(requiresClerkMiddleware(path)).toBe(false);
+    },
+  );
+
+  it.each(["/", "/demonstration", "/dashboard/student", "/api/demo"])(
+    "does not classify unrelated routes as recruiter-demo routes: %s",
+    (path) => {
+      expect(isRecruiterDemoRoute(path)).toBe(false);
+    },
+  );
 });

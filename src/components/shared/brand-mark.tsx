@@ -6,10 +6,12 @@ export function BrandMark({
   compact = false,
   className,
   href = "/",
+  prefetch,
 }: {
   compact?: boolean;
   className?: string;
   href?: string;
+  prefetch?: boolean;
 }) {
   return (
     <Link
@@ -19,6 +21,7 @@ export function BrandMark({
         className,
       )}
       href={href}
+      prefetch={prefetch}
     >
       <span
         aria-hidden="true"

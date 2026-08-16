@@ -13,3 +13,7 @@ export function requiresClerkMiddleware(pathname: string): boolean {
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
+
+export function isRecruiterDemoRoute(pathname: string): boolean {
+  return pathname === "/demo" || pathname.startsWith("/demo/");
+}

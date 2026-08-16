@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 import {
+  privateDemoHeaders,
   privateDashboardHeaders,
   securityHeaders,
 } from "./src/lib/security/headers";
@@ -23,6 +24,10 @@ const nextConfig: NextConfig = {
       {
         headers: [...privateDashboardHeaders],
         source: "/dashboard/:path*",
+      },
+      {
+        headers: [...privateDemoHeaders],
+        source: "/demo/:path*",
       },
     ];
   },

@@ -10,6 +10,8 @@ export default function robots(): MetadataRoute.Robots {
       disallow: [
         "/dashboard",
         "/dashboard/",
+        "/demo",
+        "/demo/",
         "/sign-in",
         "/sign-in/",
         "/sign-up",
