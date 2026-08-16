@@ -4,18 +4,21 @@
   "private": true,
   "overrides": {
     "@clerk/shared": "4.13.1",
-    "@hono/node-server": "1.19.14",
+    "@hono/node-server": "1.19.15",
     "ajv": {
-      "fast-uri": "3.1.4"
+      "fast-uri": "3.1.5"
     },
-    "hono": "4.12.25",
+    "hono": "4.12.34",
+    "ip-address": "10.5.0",
+    "js-yaml": "4.3.1",
     "minimatch@^3.1.0": {
-      "brace-expansion": "5.0.8"
+      "brace-expansion": "5.0.9"
     },
     "minimatch@^10.0.0": {
-      "brace-expansion": "5.0.8"
+      "brace-expansion": "5.0.9"
     },
-    "postcss": "8.5.19",
+    "nanoid": "3.3.18",
+    "postcss": "8.5.26",
     "sharp": "0.35.3",
     "vite": "8.0.16"
   },
@@ -47,8 +50,8 @@
   "dependencies": {
     "@base-ui/react": "^1.4.1",
     "@clerk/nextjs": "^7.3.5",
-    "@prisma/adapter-pg": "7.8.0",
-    "@prisma/client": "7.8.0",
+    "@prisma/adapter-pg": "7.9.1",
+    "@prisma/client": "7.9.1",
     "@sentry/nextjs": "^10.53.1",
     "@supabase/supabase-js": "^2.105.4",
     "@vercel/analytics": "^2.0.1",
@@ -77,14 +80,14 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitest/coverage-v8": "^4.1.7",
+    "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
     "prettier": "^3.9.6",
-    "prisma": "7.8.0",
+    "prisma": "7.9.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.1",
     "typescript": "^5",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.10"
   }
 }
