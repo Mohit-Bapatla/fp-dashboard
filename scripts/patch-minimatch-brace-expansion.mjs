@@ -25,13 +25,17 @@ if (minimatchPackage.version !== "3.1.5") {
 
 const braceExpansionRange = minimatchPackage.dependencies?.["brace-expansion"];
 
-if (braceExpansionRange !== "^1.1.7" && braceExpansionRange !== "5.0.9") {
+if (
+  braceExpansionRange !== "^1.1.7" &&
+  braceExpansionRange !== "5.0.8" &&
+  braceExpansionRange !== "5.0.9"
+) {
   throw new Error(
     `Refusing to patch unexpected brace-expansion range ${braceExpansionRange}`,
   );
 }
 
-if (braceExpansionRange === "^1.1.7") {
+if (braceExpansionRange !== "5.0.9") {
   minimatchPackage.dependencies["brace-expansion"] = "5.0.9";
   writeFileSync(
     minimatchPackagePath,
