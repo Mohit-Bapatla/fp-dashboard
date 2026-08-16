@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildContentSecurityPolicy,
   privateDashboardHeaders,
+  privateDemoHeaders,
   securityHeaders,
 } from "@/lib/security/headers";
 
@@ -64,6 +65,16 @@ describe("security headers", () => {
         key: "Cache-Control",
         value: "private, no-cache, no-store, max-age=0, must-revalidate",
       },
+    ]);
+  });
+
+  it("prevents demo responses from being stored or indexed", () => {
+    expect(privateDemoHeaders).toEqual([
+      {
+        key: "Cache-Control",
+        value: "private, no-cache, no-store, max-age=0, must-revalidate",
+      },
+      { key: "X-Robots-Tag", value: "noindex, nofollow" },
     ]);
   });
 });

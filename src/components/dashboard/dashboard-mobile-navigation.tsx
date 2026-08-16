@@ -8,6 +8,8 @@ import { useState } from "react";
 import { BrandMark } from "@/components/shared/brand-mark";
 
 type DashboardMobileNavigationProps = {
+  brandHref?: string;
+  brandPrefetch?: boolean;
   workspaceBadge: ReactNode;
   workspaceDescription: string;
   workspaceLabel: string;
@@ -15,6 +17,8 @@ type DashboardMobileNavigationProps = {
 };
 
 export function DashboardMobileNavigation({
+  brandHref = "/",
+  brandPrefetch,
   workspaceBadge,
   workspaceDescription,
   workspaceLabel,
@@ -44,7 +48,7 @@ export function DashboardMobileNavigation({
         <Dialog.Viewport className="fixed inset-0 z-50 flex justify-start p-2 sm:p-3">
           <Dialog.Popup className="flex h-full w-full max-w-[22rem] flex-col overflow-hidden rounded-[14px] border border-white/70 bg-card text-foreground shadow-2xl outline-none transition duration-200 data-[ending-style]:-translate-x-5 data-[ending-style]:opacity-0 data-[starting-style]:-translate-x-5 data-[starting-style]:opacity-0">
             <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-4">
-              <BrandMark />
+              <BrandMark href={brandHref} prefetch={brandPrefetch} />
               <Dialog.Close
                 aria-label="Close dashboard navigation"
                 className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-brand-navy transition-colors hover:border-primary/25 hover:bg-blue-surface hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"

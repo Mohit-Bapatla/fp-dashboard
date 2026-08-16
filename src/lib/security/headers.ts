@@ -42,3 +42,8 @@ export const privateDashboardHeaders = [
     value: "private, no-cache, no-store, max-age=0, must-revalidate",
   },
 ] as const;
+
+export const privateDemoHeaders = [
+  ...privateDashboardHeaders,
+  { key: "X-Robots-Tag", value: "noindex, nofollow" },
+] as const;

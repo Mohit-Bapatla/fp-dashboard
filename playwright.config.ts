@@ -18,9 +18,13 @@ export default defineConfig({
     ? undefined
     : {
         command: webServerCommand,
+        env: {
+          DEMO_ACCESS_CODE:
+            process.env.DEMO_E2E_ACCESS_CODE ?? "fp-local-e2e-demo-only",
+        },
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
-        url: localBaseURL,
+        url: `${localBaseURL}/demo`,
       },
   projects: [
     {
